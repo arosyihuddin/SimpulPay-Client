@@ -101,7 +101,7 @@
     <div class="flex gap-2">
       {#each STEPS as label, i}
         <div class="flex-1 space-y-1.5">
-          <div class="h-1.5 rounded-full transition-all duration-500 {i <= step ? 'bg-[var(--accent)]' : 'bg-slate-200 dark:bg-slate-700'}" />
+          <div class="h-1.5 rounded-full transition-all duration-500 {i <= step ? 'bg-[var(--accent)]' : 'bg-slate-200 dark:bg-slate-700'}"></div>
           <p class="text-[10px] font-bold text-center uppercase tracking-wider transition-colors duration-300 {i === step ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}">
             {label}
           </p>
@@ -140,27 +140,28 @@
 
           <ErrBox msg={err} />
 
-          <div class="space-y-1.5">
-            <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Driver</label>
+          <fieldset class="space-y-1.5 border-0 p-0 m-0">
+            <legend class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Driver</legend>
             <div class="grid grid-cols-2 gap-2">
               {#each DRIVERS as d}
                 <button
                   type="button"
                   onclick={() => (driver = d)}
+                  aria-pressed={driver === d}
                   class="tactile-btn py-3 text-sm font-bold capitalize {driver === d ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}"
                 >
                   {d}
                 </button>
               {/each}
             </div>
-          </div>
+          </fieldset>
 
           {#if driver === 'postgres'}
             <div class="space-y-1.5">
-              <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">DATABASE_URL</label>
+              <label for="setup-dburl" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">DATABASE_URL</label>
               <div class="input-well px-4 py-3 flex items-center">
                 <i class="fa-solid fa-link text-[var(--text-muted)] mr-3"></i>
-                <input bind:value={dbUrl} placeholder="postgresql://user:pass@host:5432/db" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+                <input id="setup-dburl" bind:value={dbUrl} placeholder="postgresql://user:pass@host:5432/db" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
               </div>
               <p class="text-[11px] text-[var(--text-muted)]">Koneksi divalidasi & tabel dibuat otomatis saat simpan.</p>
             </div>
@@ -193,27 +194,27 @@
           <ErrBox msg={err} />
 
           <div class="space-y-1.5">
-            <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Username</label>
+            <label for="setup-user" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Username</label>
             <div class="input-well px-4 py-3 flex items-center">
               <i class="fa-regular fa-user text-[var(--text-muted)] mr-3"></i>
-              <input bind:value={username} placeholder="username" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" autofocus />
+              <input id="setup-user" bind:value={username} placeholder="username" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
             </div>
           </div>
           <div class="space-y-1.5">
-            <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Password</label>
+            <label for="setup-pass" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Password</label>
             <div class="input-well px-4 py-3 flex items-center">
               <i class="fa-solid fa-lock text-[var(--text-muted)] mr-3"></i>
-              <input type={showPass ? 'text' : 'password'} bind:value={password} placeholder="••••••••" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+              <input id="setup-pass" type={showPass ? 'text' : 'password'} bind:value={password} placeholder="••••••••" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
               <button type="button" onclick={() => (showPass = !showPass)} class="text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer" title={showPass ? 'Sembunyikan password' : 'Lihat password'}>
                 <i class="fa-solid {showPass ? 'fa-eye-slash' : 'fa-eye'} ml-2"></i>
               </button>
             </div>
           </div>
           <div class="space-y-1.5">
-            <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Konfirmasi Password</label>
+            <label for="setup-confirm" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Konfirmasi Password</label>
             <div class="input-well px-4 py-3 flex items-center">
               <i class="fa-solid fa-lock text-[var(--text-muted)] mr-3"></i>
-              <input type={showPass ? 'text' : 'password'} bind:value={confirm} placeholder="ulangi password" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+              <input id="setup-confirm" type={showPass ? 'text' : 'password'} bind:value={confirm} placeholder="ulangi password" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
             </div>
           </div>
 

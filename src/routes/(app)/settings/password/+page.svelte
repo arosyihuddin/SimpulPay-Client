@@ -42,24 +42,24 @@
     {#if err}<p class="text-xs font-semibold text-red-500 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30 rounded-xl px-3 py-2">{err}</p>{/if}
 
     <div class="space-y-1.5">
-      <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Password Lama</label>
+      <label for="pw-old" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Password Lama</label>
       <div class="input-well px-4 py-3 flex items-center">
         <i class="fa-solid fa-lock text-[var(--text-muted)] mr-3"></i>
-        <input type={show ? 'text' : 'password'} bind:value={oldPw} placeholder="password saat ini" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" autofocus />
+        <input id="pw-old" type={show ? 'text' : 'password'} bind:value={oldPw} placeholder="password saat ini" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
       </div>
     </div>
     <div class="space-y-1.5">
-      <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Password Baru</label>
+      <label for="pw-new" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Password Baru</label>
       <div class="input-well px-4 py-3 flex items-center">
         <i class="fa-solid fa-lock text-[var(--text-muted)] mr-3"></i>
-        <input type={show ? 'text' : 'password'} bind:value={newPw} placeholder="minimal 8 karakter" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+        <input id="pw-new" type={show ? 'text' : 'password'} bind:value={newPw} placeholder="minimal 8 karakter" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
       </div>
     </div>
     <div class="space-y-1.5">
-      <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Konfirmasi Password Baru</label>
+      <label for="pw-confirm" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Konfirmasi Password Baru</label>
       <div class="input-well px-4 py-3 flex items-center">
         <i class="fa-solid fa-lock text-[var(--text-muted)] mr-3"></i>
-        <input type={show ? 'text' : 'password'} bind:value={confirm} placeholder="ulangi password baru" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+        <input id="pw-confirm" type={show ? 'text' : 'password'} bind:value={confirm} placeholder="ulangi password baru" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
         <button type="button" onclick={() => (show = !show)} class="text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer" title={show ? 'Sembunyikan password' : 'Lihat password'}>
           <i class="fa-solid {show ? 'fa-eye-slash' : 'fa-eye'} ml-2"></i>
         </button>

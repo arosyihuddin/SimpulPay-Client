@@ -135,14 +135,14 @@
     </a>
 
     <div class="border-t border-[var(--border-subtle)] pt-4 space-y-2.5">
-      <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">API Key</label>
+      <h3 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">API Key</h3>
       <Row label="API Key Publik" val={s?.api_key_set ? s.api_key_masked : '—'} />
       <div class="flex gap-2">
         <button onclick={regenKey} class="tactile-btn flex-1 py-3 text-xs font-bold text-[var(--accent)] flex items-center justify-center gap-2">
           <i class="fa-solid fa-rotate"></i> {s?.api_key_set ? 'Regenerate' : 'Generate API Key'}
         </button>
         {#if s?.api_key_set}
-          <button onclick={delKey} class="tactile-btn px-4 py-3 text-xs font-bold text-red-500 flex items-center justify-center gap-2"><i class="fa-solid fa-trash-can"></i></button>
+          <button onclick={delKey} aria-label="Hapus API Key" class="tactile-btn px-4 py-3 text-xs font-bold text-red-500 flex items-center justify-center gap-2"><i class="fa-solid fa-trash-can"></i></button>
         {/if}
       </div>
     </div>
@@ -201,7 +201,7 @@
 
     <!-- Konfigurasi QRIS -->
     <div class="border-t border-[var(--border-subtle)] pt-4 space-y-3">
-      <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Konfigurasi QRIS</label>
+      <h3 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Konfigurasi QRIS</h3>
       <p class="text-xs text-[var(--text-muted)]">Upload gambar QRIS static dari merchant GoBiz. Dipakai bikin QR dinamis.</p>
 
       {#if s?.qris_static_set}

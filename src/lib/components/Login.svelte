@@ -52,17 +52,18 @@
     <ErrBox msg={err} />
 
     <div class="space-y-1.5">
-      <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Username</label>
+      <label for="login-user" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Username</label>
       <div class="input-well px-4 py-3 flex items-center">
         <i class="fa-regular fa-user text-[var(--text-muted)] mr-3"></i>
-        <input bind:value={username} placeholder="username" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" autofocus />
+        <input id="login-user" bind:value={username} placeholder="username" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
       </div>
     </div>
     <div class="space-y-1.5">
-      <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Password</label>
+      <label for="login-pass" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Password</label>
       <div class="input-well px-4 py-3 flex items-center">
         <i class="fa-solid fa-lock text-[var(--text-muted)] mr-3"></i>
         <input
+          id="login-pass"
           type={showPass ? 'text' : 'password'}
           bind:value={password}
           placeholder="••••••••"

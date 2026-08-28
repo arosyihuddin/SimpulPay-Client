@@ -14,6 +14,7 @@
   <button
     onclick={() => onChange(page - 1)}
     disabled={page <= 1}
+    aria-label="Halaman sebelumnya"
     class="tactile-btn w-9 h-9 flex items-center justify-center text-xs text-[var(--text-muted)] disabled:opacity-40 disabled:cursor-not-allowed"
   >
     <i class="fa-solid fa-chevron-left"></i>
@@ -26,6 +27,7 @@
   <button
     onclick={() => onChange(page + 1)}
     disabled={page >= totalPages}
+    aria-label="Halaman berikutnya"
     class="tactile-btn w-9 h-9 flex items-center justify-center text-xs text-[var(--text-muted)] disabled:opacity-40 disabled:cursor-not-allowed"
   >
     <i class="fa-solid fa-chevron-right"></i>
