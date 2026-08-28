@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg-base: #e6ebf2;
+  --text-main: #4a5568;
+  --text-muted: #94a3b8;
+  --shadow-light: #ffffff;
+  --shadow-dark: #cbd5e1;
+  --inset-light: #ffffff;
+  --inset-dark: #cbd5e1;
+  --border-subtle: rgba(203, 213, 225, 0.6);
+  --accent: #4f46e5;
+  --accent-soft: rgba(79, 70, 229, 0.1);
+}
+
+.dark {
+  --bg-base: #181c24;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --shadow-light: #222732;
+  --shadow-dark: #0e1116;
+  --inset-light: #222732;
+  --inset-dark: #0e1116;
+  --border-subtle: rgba(34, 39, 50, 0.8);
+  --accent: #818cf8;
+  --accent-soft: rgba(129, 140, 248, 0.12);
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Soft 3D Raised Box / Card */
+@utility tactile-box {
+  background: var(--bg-base);
+  box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+  border-radius: 1.5rem;
+  transition: all 0.2s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Soft 3D Inset Container (input fields / recessed wells) */
+@utility tactile-inset {
+  background: var(--bg-base);
+  box-shadow: inset 5px 5px 10px var(--inset-dark), inset -5px -5px 10px var(--inset-light);
+  border-radius: 1rem;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Soft 3D Tactile Button */
+@utility tactile-btn {
+  background: var(--bg-base);
+  box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+  border-radius: 1rem;
+  transition: all 0.15s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+@utility tactile-btn-hover {
+  &:hover {
+    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+    transform: translateY(-1px);
+  }
+  &:active,
+  &.active {
+    box-shadow: inset 4px 4px 8px var(--inset-dark), inset -4px -4px 8px var(--inset-light);
+    transform: translateY(1px);
+  }
+}
+
+/* Tactile Button Hover State */
+.tactile-btn:hover {
+  box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+  transform: translateY(-1px);
+}
+
+/* Tactile Button Active / Pressed State */
+.tactile-btn:active,
+.tactile-btn.active {
+  box-shadow: inset 4px 4px 8px var(--inset-dark), inset -4px -4px 8px var(--inset-light);
+  transform: translateY(1px);
+}
+
+/* Tactile Pill / Badge */
+@utility tactile-pill {
+  background: var(--bg-base);
+  box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+  border-radius: 9999px;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Recessed input row: icon + field */
+@utility input-well {
+  background: var(--bg-base);
+  box-shadow: inset 4px 4px 8px var(--inset-dark), inset -4px -4px 8px var(--inset-light);
+  border-radius: 1rem;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Accent text */
+@utility accent {
+  color: var(--accent);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--shadow-dark);
+  border-radius: 4px;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse-glow {
+  animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes setupSlide {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: none; }
+}
+.slide-in { animation: setupSlide 0.3s ease both; }
