@@ -1,6 +1,6 @@
 name = "gomerch-client"
 compatibility_date = "2026-08-28"
 
-# SPA static dari build/ (adapter-static). Tanpa `main` => assets-only Worker.
-# not_found_handling = single-page-application => semua route balik ke index.html.
-assets = { directory = "./build", binding = "ASSETS", not_found_handling = "single-page-application" }
+# SPA static dari build/ (adapter-static). Tanpa main => assets-only Worker.
+# Single-page-application => semua route fallback ke index.html.
+assets = { directory = "./build", not_found_handling = "single-page-application" }
