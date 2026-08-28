@@ -1,106 +1,154 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-@import 'tailwindcss';
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap");
+@import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --bg-base: #e6ebf2;
-  --text-main: #4a5568;
-  --text-muted: #94a3b8;
-  --shadow-light: #ffffff;
-  --shadow-dark: #cbd5e1;
-  --inset-light: #ffffff;
-  --inset-dark: #cbd5e1;
-  --border-subtle: rgba(203, 213, 225, 0.6);
-  --accent: #4f46e5;
-  --accent-soft: rgba(79, 70, 229, 0.1);
+  --bg-base: #e8e4df;
+  --text-main: #3d3a36;
+  --text-muted: #8a8580;
+  --shadow-light: rgba(255, 255, 255, 0.7);
+  --shadow-dark: rgba(160, 150, 140, 0.5);
+  --inset-light: rgba(255, 255, 255, 0.5);
+  --inset-dark: rgba(140, 130, 120, 0.4);
+  --border-subtle: rgba(180, 170, 160, 0.3);
+  --accent: #10b981;
+  --accent-soft: rgba(194, 112, 62, 0.12);
+  --wax-specular: rgba(255, 255, 255, 0.25);
+  --wax-grain: rgba(120, 100, 80, 0.06);
 }
 
 .dark {
-  --bg-base: #181c24;
-  --text-main: #e2e8f0;
-  --text-muted: #94a3b8;
-  --shadow-light: #222732;
-  --shadow-dark: #0e1116;
-  --inset-light: #222732;
-  --inset-dark: #0e1116;
-  --border-subtle: rgba(34, 39, 50, 0.8);
-  --accent: #818cf8;
-  --accent-soft: rgba(129, 140, 248, 0.12);
+  --bg-base: #181b24;
+  --text-main: #c8cdd8;
+  --text-muted: #6b7280;
+  --shadow-light: rgba(35, 40, 55, 0.5);
+  --shadow-dark: rgba(6, 7, 10, 0.85);
+  --inset-light: rgba(35, 40, 55, 0.6);
+  --inset-dark: rgba(4, 5, 8, 0.9);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --accent: #10b981;
+  --accent-soft: rgba(217, 119, 6, 0.12);
+  --wax-specular: rgba(255, 255, 255, 0.08);
+  --wax-grain: rgba(255, 255, 255, 0.02);
 }
 
 body {
   background-color: var(--bg-base);
   color: var(--text-main);
-  font-family: 'Inter', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   user-select: none;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Soft 3D Raised Box / Card */
+/* Wax Matte Card — raised clay/wax surface with micro-grain border */
 @utility tactile-box {
   background: var(--bg-base);
-  box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
-  border-radius: 1.5rem;
-  transition: all 0.2s ease, background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow:
+    20px 20px 40px var(--shadow-dark),
+    -14px -14px 36px var(--shadow-light),
+    inset 1px 1px 2px var(--wax-specular),
+    inset -1px -1px 3px var(--wax-grain);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2rem;
+  transition:
+    all 0.2s ease,
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
-/* Soft 3D Inset Container (input fields / recessed wells) */
+/* Wax Inset Screen — concave recessed well */
 @utility tactile-inset {
   background: var(--bg-base);
-  box-shadow: inset 5px 5px 10px var(--inset-dark), inset -5px -5px 10px var(--inset-light);
+  box-shadow:
+    inset 6px 6px 14px var(--inset-dark),
+    inset -5px -5px 12px var(--inset-light);
+  border: 1px solid var(--border-subtle);
   border-radius: 1rem;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
-/* Soft 3D Tactile Button */
+/* Wax Tactile Button — smooth matte press feel */
 @utility tactile-btn {
   background: var(--bg-base);
-  box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+  box-shadow:
+    5px 5px 12px var(--shadow-dark),
+    -5px -5px 12px var(--shadow-light),
+    inset 1px 1px 2px var(--wax-specular),
+    inset -1px -1px 2px var(--wax-grain);
+  border: 1px solid var(--border-subtle);
   border-radius: 1rem;
-  transition: all 0.15s ease, background 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    all 0.12s ease,
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 @utility tactile-btn-hover {
   &:hover {
-    box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+    box-shadow:
+      7px 7px 16px var(--shadow-dark),
+      -7px -7px 16px var(--shadow-light),
+      inset 1px 1px 2px var(--wax-specular);
     transform: translateY(-1px);
   }
   &:active,
   &.active {
-    box-shadow: inset 4px 4px 8px var(--inset-dark), inset -4px -4px 8px var(--inset-light);
+    box-shadow:
+      inset 4px 4px 10px var(--inset-dark),
+      inset -4px -4px 10px var(--inset-light);
     transform: translateY(1px);
   }
 }
 
 /* Tactile Button Hover State */
 .tactile-btn:hover {
-  box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+  box-shadow:
+    7px 7px 16px var(--shadow-dark),
+    -7px -7px 16px var(--shadow-light),
+    inset 1px 1px 2px var(--wax-specular);
   transform: translateY(-1px);
 }
 
 /* Tactile Button Active / Pressed State */
 .tactile-btn:active,
 .tactile-btn.active {
-  box-shadow: inset 4px 4px 8px var(--inset-dark), inset -4px -4px 8px var(--inset-light);
+  box-shadow:
+    inset 4px 4px 10px var(--inset-dark),
+    inset -4px -4px 10px var(--inset-light);
   transform: translateY(1px);
 }
 
-/* Tactile Pill / Badge */
+/* Wax Pill / Badge */
 @utility tactile-pill {
   background: var(--bg-base);
-  box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+  box-shadow:
+    3px 3px 7px var(--shadow-dark),
+    -3px -3px 7px var(--shadow-light),
+    inset 1px 1px 1px var(--wax-specular);
+  border: 1px solid var(--border-subtle);
   border-radius: 9999px;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* Recessed input row: icon + field */
 @utility input-well {
   background: var(--bg-base);
-  box-shadow: inset 4px 4px 8px var(--inset-dark), inset -4px -4px 8px var(--inset-light);
+  box-shadow:
+    inset 4px 4px 10px var(--inset-dark),
+    inset -4px -4px 10px var(--inset-light);
+  border: 1px solid var(--border-subtle);
   border-radius: 1rem;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* Accent text */
@@ -110,8 +158,8 @@ body {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-base);
@@ -122,15 +170,28 @@ body {
 }
 
 @keyframes pulseGlow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 .animate-pulse-glow {
   animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes setupSlide {
-  from { opacity: 0; transform: translateX(16px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-.slide-in { animation: setupSlide 0.3s ease both; }
+.slide-in {
+  animation: setupSlide 0.3s ease both;
+}
