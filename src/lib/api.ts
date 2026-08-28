@@ -11,7 +11,11 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
   let data: any = {};
-  try { data = await res.json(); } catch { /* non-JSON */ }
+  try { data = await res.json(); } catch {
+    const err: any = new Error(`Gagal terhubung ke server (${path})`);
+    err.status = 502;
+    throw err;
+  }
   if (!res.ok) {
     const err: any = new Error(data?.message || `HTTP ${res.status}`);
     err.status = res.status;
