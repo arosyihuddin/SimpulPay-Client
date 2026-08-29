@@ -98,7 +98,7 @@
 {#if modalOpen}
   <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (modalOpen = false)}></button>
-    <div class="tactile-box w-full max-w-lg p-6 relative z-50 rounded-2xl">
+    <div class="tactile-modal w-full max-w-lg p-6 relative z-50">
       <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
         <h3 class="text-lg font-bold">
           {#if step === 'provider'}Tambah Merchant Baru

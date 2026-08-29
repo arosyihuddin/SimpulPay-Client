@@ -197,7 +197,7 @@
 {#if modalOpen}
   <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (modalOpen = false)}></button>
-    <div class="tactile-box w-full max-w-lg p-6 relative z-50 rounded-2xl">
+    <div class="tactile-modal w-full max-w-lg p-6 relative z-50">
       <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
         <h3 class="text-lg font-bold">Kelola Langganan</h3>
         <button type="button" aria-label="Tutup" onclick={() => (modalOpen = false)} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
@@ -254,7 +254,7 @@
 {#if planModal}
   <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (planModal = false)}></button>
-    <div class="tactile-box w-full max-w-md p-6 relative z-50 rounded-2xl">
+    <div class="tactile-modal w-full max-w-md p-6 relative z-50">
       <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
         <h3 class="text-lg font-bold">Kelola Paket</h3>
         <button type="button" aria-label="Tutup" onclick={() => (planModal = false)} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>

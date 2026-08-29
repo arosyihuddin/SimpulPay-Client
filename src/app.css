@@ -140,6 +140,18 @@ body {
     box-shadow 0.3s ease;
 }
 
+/* Modal card — drop shadow only (no clay white glow), ala mockup clay-modal-card */
+@utility tactile-modal {
+  background: var(--card-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+.dark .tactile-modal {
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85);
+  border-color: #262626;
+}
+
 /* Recessed input row: icon + field */
 @utility input-well {
   background: var(--card-base);
