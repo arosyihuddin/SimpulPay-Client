@@ -1,33 +1,6 @@
 <script lang="ts">
-  // Mockup billing — langganan USER sistem GoMerch (pemakai API key), bukan merchant payment channel.
-
-  const SUBS = [
-    {
-      id: 'SUB-1042', name: 'CV Nusantara Digital', plan: 'Pro', status: 'Active',
-      statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30',
-      next: '2026-09-12', since: '2026-08-12', key: 'Aktif',
-    },
-    {
-      id: 'SUB-1041', name: 'PT Aplikasi Prima', plan: 'Enterprise', status: 'Active',
-      statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30',
-      next: '2026-09-05', since: '2026-08-05', key: 'Aktif',
-    },
-    {
-      id: 'SUB-1039', name: 'Toko Online Berkah', plan: 'Basic', status: 'Trial',
-      statusCls: 'bg-blue-100/70 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/30',
-      next: '2026-09-02', since: '2026-08-19', key: 'Aktif',
-    },
-    {
-      id: 'SUB-1036', name: 'Kafe Digital Nusantara', plan: 'Pro', status: 'Overdue',
-      statusCls: 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30',
-      next: '2026-08-28', since: '2026-07-28', key: 'Terbatas',
-    },
-    {
-      id: 'SUB-1028', name: 'Gadget Indo Sejahtera', plan: 'Basic', status: 'Suspended',
-      statusCls: 'bg-red-100/70 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-500/30',
-      next: '2026-08-15', since: '2026-07-15', key: 'Nonaktif',
-    },
-  ];
+  import Pagination from '$lib/components/Pagination.svelte';
+  // Mockup billing — paket langganan + riwayat pembayaran (invoice). Subscriber management pindah ke /users.
 
   type Plan = { name: string; price: number | string; features: string };
   const PLANS: Plan[] = [
@@ -35,30 +8,14 @@
     { name: 'Pro', price: 349000, features: '3 API key, 10.000 transaksi/bln' },
     { name: 'Enterprise', price: 'Custom', features: 'Unlimited, SLA, dedicated support' },
   ];
-
-  // Harga disimpan angka murni; format tampilan ditangani di sini.
   const fmtPrice = (p: number | string) =>
     p === 'Custom' ? 'Custom' : 'Rp ' + Number(p).toLocaleString('id-ID') + ' / bln';
-
-  // ---- Edit subscriber (mockup, update array lokal) ----
-  const STATUSES = ['Active', 'Trial', 'Overdue', 'Suspended'];
-  const KEY_STATUSES = ['Aktif', 'Terbatas', 'Nonaktif'];
-  let subs = $state(SUBS);
-
-  const fmtDate = (iso: string) =>
-    iso ? new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
   let plans = $state(PLANS);
-  let modalOpen = $state(false);
-  let editing = $state<any>(null);
-  let form = $state({ name: '', plan: 'Basic', status: 'Active', next: '', key: 'Aktif' });
 
-
-  // ---- Edit plan ----
+  // ---- Kelola paket ----
   let planModal = $state(false);
   let editingPlan = $state<any>(null);
   let planForm = $state({ name: '', price: '' as number | string, features: '' });
-  const PLANS_LIST = $derived(plans.map((p) => p.name));
-
   function openPlanEdit(p: any) {
     editingPlan = p;
     planForm = { name: p.name, price: p.price, features: p.features };
@@ -66,58 +23,61 @@
   }
   function savePlan() {
     const exists = plans.some((p) => p.name === editingPlan.name);
-    if (exists) {
-      plans = plans.map((p) => (p.name === editingPlan.name ? { ...p, name: planForm.name, price: planForm.price, features: planForm.features } : p));
-    } else {
-      plans = [...plans, { name: planForm.name, price: planForm.price, features: planForm.features }];
-    }
+    if (exists) plans = plans.map((p) => (p.name === editingPlan.name ? { ...p, name: planForm.name, price: planForm.price, features: planForm.features } : p));
+    else plans = [...plans, { name: planForm.name, price: planForm.price, features: planForm.features }];
     planModal = false;
   }
 
-  const statusCls = (st: string) =>
-    st === 'Active' ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
-    : st === 'Trial' ? 'bg-blue-100/70 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/30'
-    : st === 'Overdue' ? 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'
-    : 'bg-red-100/70 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-500/30';
+  // ---- Riwayat pembayaran (invoice) ----
+  const INVOICES = [
+    { id: 'INV-2026-0901', user: 'CV Nusantara Digital', plan: 'Pro', amount: 'Rp 349.000', date: '2026-09-01', method: 'Auto-debit BCA', status: 'Lunas', statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
+    { id: 'INV-2026-0801', user: 'CV Nusantara Digital', plan: 'Pro', amount: 'Rp 349.000', date: '2026-08-01', method: 'Auto-debit BCA', status: 'Lunas', statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
+    { id: 'INV-2026-0905', user: 'PT Aplikasi Prima', plan: 'Enterprise', amount: 'Custom', date: '2026-09-05', method: 'Transfer BNI', status: 'Lunas', statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
+    { id: 'INV-2026-0805', user: 'PT Aplikasi Prima', plan: 'Enterprise', amount: 'Custom', date: '2026-08-05', method: 'Transfer BNI', status: 'Lunas', statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
+    { id: 'INV-2026-0902', user: 'Toko Online Berkah', plan: 'Basic', amount: 'Rp 99.000', date: '2026-09-02', method: 'Auto-debit GoPay', status: 'Lunas', statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
+    { id: 'INV-2026-0802', user: 'Toko Online Berkah', plan: 'Basic', amount: 'Rp 99.000', date: '2026-08-02', method: 'Auto-debit GoPay', status: 'Lunas', statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
+    { id: 'INV-2026-0828', user: 'Kafe Digital Nusantara', plan: 'Pro', amount: 'Rp 349.000', date: '2026-08-28', method: 'Manual BCA', status: 'Menunggu', statusCls: 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30' },
+    { id: 'INV-2026-0728', user: 'Kafe Digital Nusantara', plan: 'Pro', amount: 'Rp 349.000', date: '2026-07-28', method: 'Auto-debit BCA', status: 'Lunas', statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
+    { id: 'INV-2026-0815', user: 'Gadget Indo Sejahtera', plan: 'Basic', amount: 'Rp 99.000', date: '2026-08-15', method: 'Auto-debit Mandiri', status: 'Gagal', statusCls: 'bg-red-100/70 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-500/30' },
+    { id: 'INV-2026-0715', user: 'Gadget Indo Sejahtera', plan: 'Basic', amount: 'Rp 99.000', date: '2026-07-15', method: 'Auto-debit Mandiri', status: 'Lunas', statusCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
+  ];
 
-  function openEdit(s: any) {
-    editing = s;
-    form = { name: s.name, plan: s.plan, status: s.status, next: s.next, key: s.key };
-    modalOpen = true;
-  }
-  function save() {
-    subs = subs.map((s) => (s.id === editing.id ? { ...s, name: form.name, plan: form.plan, status: form.status, next: form.next, key: form.key, statusCls: statusCls(form.status) } : s));
-    modalOpen = false;
-  }
+  let invoices = $state(INVOICES);
+  const PAGE_SIZE = 5;
+  let page = $state(1);
+  const pageItems = $derived(invoices.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
+  function setPage(p: number) { page = p; }
 
-  const active = $derived(subs.filter((s) => s.status === 'Active').length);
-  const trial = $derived(subs.filter((s) => s.status === 'Trial').length);
-  const overdue = $derived(subs.filter((s) => s.status === 'Overdue').length);
-  const suspended = $derived(subs.filter((s) => s.status === 'Suspended').length);
+  const fmtDate = (iso: string) =>
+    new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const lunas = $derived(invoices.filter((i) => i.status === 'Lunas').length);
+  const menunggu = $derived(invoices.filter((i) => i.status === 'Menunggu').length);
+  const gagal = $derived(invoices.filter((i) => i.status === 'Gagal').length);
 </script>
 
 <div class="space-y-6">
   <!-- Ringkasan -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Total Subscriber</p>
-      <p class="text-xl font-extrabold">{subs.length}</p>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Total Invoice</p>
+      <p class="text-xl font-extrabold">{invoices.length}</p>
     </div>
     <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Aktif</p>
-      <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{active}</p>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Lunas</p>
+      <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{lunas}</p>
     </div>
     <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Trial</p>
-      <p class="text-xl font-extrabold text-blue-600 dark:text-blue-400">{trial}</p>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Menunggu</p>
+      <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{menunggu}</p>
     </div>
     <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Overdue / Suspended</p>
-      <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{overdue} / {suspended}</p>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Gagal</p>
+      <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{gagal}</p>
     </div>
   </div>
 
-  <!-- Plan -->
+  <!-- Paket Langganan -->
   <div class="tactile-box p-5 space-y-3">
     <div class="flex items-center justify-between">
       <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-tags text-[var(--accent)]"></i> Paket Langganan</h2>
@@ -141,116 +101,58 @@
     </div>
   </div>
 
-  <!-- Daftar subscriber -->
+  <!-- Riwayat pembayaran (invoice) -->
   <div class="hidden md:block tactile-box overflow-x-auto">
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-[var(--text-muted)] border-b border-[var(--border-subtle)]">
-          <th class="px-4 py-3 font-medium">Subscriber</th>
+          <th class="px-4 py-3 font-medium">Invoice</th>
+          <th class="px-4 py-3 font-medium">User</th>
           <th class="px-4 py-3 font-medium">Plan</th>
+          <th class="px-4 py-3 font-medium">Jumlah</th>
+          <th class="px-4 py-3 font-medium">Tanggal</th>
+          <th class="px-4 py-3 font-medium">Metode</th>
           <th class="px-4 py-3 font-medium">Status</th>
-          <th class="px-4 py-3 font-medium">Tagihan Berikutnya</th>
-          <th class="px-4 py-3 font-medium">API Key</th>
-          <th class="px-4 py-3 font-medium text-right">Aksi</th>
         </tr>
       </thead>
       <tbody>
-        {#each subs as s (s.id)}
+        {#each pageItems as i (i.id)}
           <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
-            <td class="px-4 py-3">
-              <p class="font-bold">{s.name}</p>
-              <p class="text-xs font-mono text-[var(--text-muted)]">{s.id}</p>
-            </td>
-            <td class="px-4 py-3 font-semibold">{s.plan}</td>
-            <td class="px-4 py-3"><span class="text-xs font-semibold px-2.5 py-1 rounded-full {s.statusCls}">{s.status}</span></td>
-            <td class="px-4 py-3 text-xs">{fmtDate(s.next)}</td>
-            <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{s.key}</td>
-            <td class="px-4 py-3 text-right">
-              <button class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]" onclick={() => openEdit(s)}>Kelola</button>
-            </td>
+            <td class="px-4 py-3 font-mono text-xs font-bold">{i.id}</td>
+            <td class="px-4 py-3 font-semibold">{i.user}</td>
+            <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{i.plan}</td>
+            <td class="px-4 py-3 font-semibold">{i.amount}</td>
+            <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{fmtDate(i.date)}</td>
+            <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{i.method}</td>
+            <td class="px-4 py-3"><span class="text-xs font-semibold px-2.5 py-1 rounded-full {i.statusCls}">{i.status}</span></td>
           </tr>
         {/each}
       </tbody>
     </table>
+    <Pagination {page} total={invoices.length} pageSize={PAGE_SIZE} onChange={setPage} />
   </div>
 
-  <!-- Mobile cards -->
+  <!-- Card mobile -->
   <div class="md:hidden space-y-3">
-    {#each subs as s (s.id)}
+    {#each pageItems as i (i.id)}
       <div class="tactile-box p-4 space-y-2">
         <div class="flex items-center justify-between">
-          <p class="font-bold">{s.name}</p>
-          <span class="text-xs font-semibold px-2.5 py-1 rounded-full {s.statusCls}">{s.status}</span>
+          <p class="font-bold">{i.user}</p>
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full {i.statusCls}">{i.status}</span>
         </div>
-        <p class="text-xs font-mono text-[var(--text-muted)]">{s.id} · {s.plan}</p>
+        <p class="text-xs font-mono text-[var(--text-muted)]">{i.id} · {i.plan}</p>
         <div class="text-xs text-[var(--text-muted)] flex justify-between">
-          <span>Tagihan: {fmtDate(s.next)}</span>
-          <span>Key: {s.key}</span>
+          <span>{i.amount}</span>
+          <span>{fmtDate(i.date)}</span>
         </div>
-        <button class="tactile-btn w-full py-2 text-xs font-bold text-[var(--accent)]" onclick={() => openEdit(s)}>Kelola</button>
+        <p class="text-xs text-[var(--text-muted)]">{i.method}</p>
       </div>
     {/each}
+    <Pagination {page} total={invoices.length} pageSize={PAGE_SIZE} onChange={setPage} />
   </div>
 </div>
 
-<!-- Edit subscriber modal -->
-{#if modalOpen}
-  <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (modalOpen = false)}></button>
-    <div class="tactile-modal w-full max-w-lg p-6 relative z-50">
-      <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
-        <h3 class="text-lg font-bold">Kelola Langganan</h3>
-        <button type="button" aria-label="Tutup" onclick={() => (modalOpen = false)} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="space-y-4">
-        <div>
-          <label for="sub-name" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Nama Subscriber</label>
-          <input id="sub-name" bind:value={form.name} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="sub-plan" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Plan</label>
-            <select id="sub-plan" bind:value={form.plan} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none cursor-pointer">
-              {#each PLANS_LIST as p (p)}
-                <option value={p}>{p}</option>
-              {/each}
-            </select>
-          </div>
-          <div>
-            <label for="sub-status" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Status</label>
-            <select id="sub-status" bind:value={form.status} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none cursor-pointer">
-              {#each STATUSES as st (st)}
-                <option value={st}>{st}</option>
-              {/each}
-            </select>
-          </div>
-        </div>
-        <div>
-          <label for="sub-next" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Tagihan Berikutnya</label>
-          <input id="sub-next" type="date" bind:value={form.next} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
-        </div>
-        <div>
-          <label for="sub-key" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Status API Key</label>
-          <select id="sub-key" bind:value={form.key} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none cursor-pointer">
-            {#each KEY_STATUSES as k (k)}
-              <option value={k}>{k}</option>
-            {/each}
-          </select>
-        </div>
-
-        <div class="flex gap-2 pt-2">
-          <button onclick={save} class="tactile-btn flex-1 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
-            <i class="fa-solid fa-floppy-disk"></i> Simpan
-          </button>
-          <button onclick={() => (modalOpen = false)} class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Batal</button>
-        </div>
-      </div>
-    </div>
-  </div>
-{/if}
-
-<!-- Edit/Tambah plan modal -->
+<!-- Kelola Paket modal -->
 {#if planModal}
   <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (planModal = false)}></button>

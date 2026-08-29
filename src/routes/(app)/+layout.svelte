@@ -13,6 +13,7 @@
     { to: '/qris', label: 'QRIS', icon: 'fa-solid fa-qrcode', title: 'QRIS Dinamis', subtitle: 'Buat dan kelola kode QRIS pembayaran' },
     { to: '/transactions', label: 'Transaksi', icon: 'fa-solid fa-receipt', title: 'Daftar Transaksi', subtitle: 'Arsip transaksi yang berhasil diproses' },
     { to: '/billing', label: 'Billing', icon: 'fa-solid fa-credit-card', title: 'Billing', subtitle: 'Langganan pengguna & akses API key' },
+    { to: '/users', label: 'Users', icon: 'fa-solid fa-users', title: 'Users', subtitle: 'Kelola akun pengguna sistem' },
     { to: '/logs', label: 'Logs', icon: 'fa-solid fa-list', title: 'Aktivitas Sistem', subtitle: 'Log aksi dan event sistem gateway' },
     { to: '/settings', label: 'Settings', icon: 'fa-solid fa-gear', title: 'Pengaturan API', subtitle: 'Login GoBiz, kunci API, dan konfigurasi' },
     { to: '/developer', label: 'Developer', icon: 'fa-solid fa-code', title: 'Developer API', subtitle: 'Dokumentasi API v1 untuk integrasi aplikasi' },
