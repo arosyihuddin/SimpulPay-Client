@@ -37,8 +37,6 @@
 </script>
 
 <div class="space-y-6">
-  <h1 class="text-xl font-bold tracking-wide">Transaksi (Bulan Ini)</h1>
-
   <div class="tactile-box p-4 inline-block">
     <p class="text-[11px] text-[var(--text-muted)] font-medium">Total Nominal</p>
     <p class="text-2xl font-extrabold text-[var(--accent)]">{fmtIDR(grandTotal)}</p>

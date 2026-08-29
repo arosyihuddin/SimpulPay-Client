@@ -4,29 +4,29 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --bg-base: #e8e4df;
-  --text-main: #3d3a36;
-  --text-muted: #8a8580;
-  --shadow-light: rgba(255, 255, 255, 0.7);
-  --shadow-dark: rgba(160, 150, 140, 0.5);
-  --inset-light: rgba(255, 255, 255, 0.5);
-  --inset-dark: rgba(140, 130, 120, 0.4);
-  --border-subtle: rgba(180, 170, 160, 0.3);
-  --accent: #10b981;
-  --accent-soft: rgba(194, 112, 62, 0.12);
+  --bg-base: #e8f0ec;
+  --text-main: #1f2937;
+  --text-muted: #64748b;
+  --shadow-light: #ffffff;
+  --shadow-dark: rgba(163, 194, 177, 0.55);
+  --inset-light: rgba(255, 255, 255, 0.6);
+  --inset-dark: rgba(148, 180, 162, 0.5);
+  --border-subtle: rgba(163, 194, 177, 0.35);
+  --accent: #059669;
+  --accent-soft: rgba(16, 185, 129, 0.12);
   --wax-specular: rgba(255, 255, 255, 0.25);
   --wax-grain: rgba(120, 100, 80, 0.06);
 }
 
 .dark {
-  --bg-base: #181b24;
-  --text-main: #c8cdd8;
-  --text-muted: #6b7280;
-  --shadow-light: rgba(35, 40, 55, 0.5);
-  --shadow-dark: rgba(6, 7, 10, 0.85);
-  --inset-light: rgba(35, 40, 55, 0.6);
-  --inset-dark: rgba(4, 5, 8, 0.9);
-  --border-subtle: rgba(255, 255, 255, 0.04);
+  --bg-base: #0a0a0a;
+  --text-main: #f1f5f9;
+  --text-muted: #a3a3a3;
+  --shadow-light: #232323;
+  --shadow-dark: #050505;
+  --inset-light: #232323;
+  --inset-dark: #050505;
+  --border-subtle: rgba(255, 255, 255, 0.06);
   --accent: #10b981;
   --accent-soft: rgba(217, 119, 6, 0.12);
   --wax-specular: rgba(255, 255, 255, 0.08);
@@ -48,12 +48,12 @@ body {
 @utility tactile-box {
   background: var(--bg-base);
   box-shadow:
-    20px 20px 40px var(--shadow-dark),
-    -14px -14px 36px var(--shadow-light),
+    6px 6px 14px var(--shadow-dark),
+    -6px -6px 14px var(--shadow-light),
     inset 1px 1px 2px var(--wax-specular),
     inset -1px -1px 3px var(--wax-grain);
   border: 1px solid var(--border-subtle);
-  border-radius: 2rem;
+  border-radius: 1.25rem;
   transition:
     all 0.2s ease,
     background 0.3s ease,
@@ -64,8 +64,8 @@ body {
 @utility tactile-inset {
   background: var(--bg-base);
   box-shadow:
-    inset 6px 6px 14px var(--inset-dark),
-    inset -5px -5px 12px var(--inset-light);
+    inset 4px 4px 8px var(--inset-dark),
+    inset -4px -4px 8px var(--inset-light);
   border: 1px solid var(--border-subtle);
   border-radius: 1rem;
   transition:
@@ -77,8 +77,8 @@ body {
 @utility tactile-btn {
   background: var(--bg-base);
   box-shadow:
-    5px 5px 12px var(--shadow-dark),
-    -5px -5px 12px var(--shadow-light),
+    4px 4px 8px var(--shadow-dark),
+    -4px -4px 8px var(--shadow-light),
     inset 1px 1px 2px var(--wax-specular),
     inset -1px -1px 2px var(--wax-grain);
   border: 1px solid var(--border-subtle);
@@ -92,16 +92,16 @@ body {
 @utility tactile-btn-hover {
   &:hover {
     box-shadow:
-      7px 7px 16px var(--shadow-dark),
-      -7px -7px 16px var(--shadow-light),
+      8px 8px 18px var(--shadow-dark),
+      -8px -8px 18px var(--shadow-light),
       inset 1px 1px 2px var(--wax-specular);
     transform: translateY(-1px);
   }
   &:active,
   &.active {
     box-shadow:
-      inset 4px 4px 10px var(--inset-dark),
-      inset -4px -4px 10px var(--inset-light);
+      inset 3px 3px 6px var(--inset-dark),
+      inset -3px -3px 6px var(--inset-light);
     transform: translateY(1px);
   }
 }
@@ -109,8 +109,8 @@ body {
 /* Tactile Button Hover State */
 .tactile-btn:hover {
   box-shadow:
-    7px 7px 16px var(--shadow-dark),
-    -7px -7px 16px var(--shadow-light),
+    8px 8px 18px var(--shadow-dark),
+    -8px -8px 18px var(--shadow-light),
     inset 1px 1px 2px var(--wax-specular);
   transform: translateY(-1px);
 }
@@ -119,8 +119,8 @@ body {
 .tactile-btn:active,
 .tactile-btn.active {
   box-shadow:
-    inset 4px 4px 10px var(--inset-dark),
-    inset -4px -4px 10px var(--inset-light);
+    inset 3px 3px 6px var(--inset-dark),
+    inset -3px -3px 6px var(--inset-light);
   transform: translateY(1px);
 }
 
@@ -128,8 +128,8 @@ body {
 @utility tactile-pill {
   background: var(--bg-base);
   box-shadow:
-    3px 3px 7px var(--shadow-dark),
-    -3px -3px 7px var(--shadow-light),
+    3px 3px 6px var(--shadow-dark),
+    -3px -3px 6px var(--shadow-light),
     inset 1px 1px 1px var(--wax-specular);
   border: 1px solid var(--border-subtle);
   border-radius: 9999px;
@@ -162,11 +162,17 @@ body {
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-base);
+  background: #d8e6de;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #141414;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--shadow-dark);
+  background: #a3c2b1;
   border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #262626;
 }
 
 @keyframes pulseGlow {

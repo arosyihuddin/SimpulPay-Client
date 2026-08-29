@@ -39,7 +39,6 @@
 </script>
 
 <div class="space-y-6">
-  <h1 class="text-xl font-bold tracking-wide">Logs</h1>
   {#if err}<p class="text-xs font-semibold text-red-500">{err}</p>{/if}
   <div class="space-y-2.5">
     {#if busy}

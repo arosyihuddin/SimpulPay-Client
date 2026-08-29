@@ -68,8 +68,6 @@
 </script>
 
 <div class="space-y-6">
-  <h1 class="text-xl font-bold tracking-wide">QRIS</h1>
-
   <div class="tactile-box p-5 space-y-4">
     <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-qrcode text-[var(--accent)]"></i> Buat QRIS Dinamis</h2>
     {#if err}<p class="text-xs font-semibold text-red-500">{err}</p>{/if}

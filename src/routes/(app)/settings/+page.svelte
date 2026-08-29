@@ -116,8 +116,6 @@
 </script>
 
 <div class="space-y-6">
-  <h1 class="text-xl font-bold tracking-wide">Settings</h1>
-
   {#if err}<p class="text-xs font-semibold text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30 rounded-2xl px-4 py-3"><i class="fa-solid fa-circle-exclamation mr-2"></i>{err}</p>{/if}
   {#if msg}<p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-2xl px-4 py-3"><i class="fa-solid fa-circle-check mr-2"></i>{msg}</p>{/if}
 
