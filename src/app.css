@@ -5,6 +5,7 @@
 
 :root {
   --bg-base: #e8f0ec;
+  --card-base: #e8f0ec;
   --text-main: #1f2937;
   --text-muted: #64748b;
   --shadow-light: #ffffff;
@@ -20,6 +21,7 @@
 
 .dark {
   --bg-base: #0a0a0a;
+  --card-base: #141414;
   --text-main: #f1f5f9;
   --text-muted: #a3a3a3;
   --shadow-light: #232323;
@@ -46,7 +48,7 @@ body {
 
 /* Wax Matte Card — raised clay/wax surface with micro-grain border */
 @utility tactile-box {
-  background: var(--bg-base);
+  background: var(--card-base);
   box-shadow:
     6px 6px 14px var(--shadow-dark),
     -6px -6px 14px var(--shadow-light),
@@ -62,7 +64,7 @@ body {
 
 /* Wax Inset Screen — concave recessed well */
 @utility tactile-inset {
-  background: var(--bg-base);
+  background: var(--card-base);
   box-shadow:
     inset 4px 4px 8px var(--inset-dark),
     inset -4px -4px 8px var(--inset-light);
@@ -75,7 +77,7 @@ body {
 
 /* Wax Tactile Button — smooth matte press feel */
 @utility tactile-btn {
-  background: var(--bg-base);
+  background: var(--card-base);
   box-shadow:
     4px 4px 8px var(--shadow-dark),
     -4px -4px 8px var(--shadow-light),
@@ -126,7 +128,7 @@ body {
 
 /* Wax Pill / Badge */
 @utility tactile-pill {
-  background: var(--bg-base);
+  background: var(--card-base);
   box-shadow:
     3px 3px 6px var(--shadow-dark),
     -3px -3px 6px var(--shadow-light),
@@ -140,7 +142,7 @@ body {
 
 /* Recessed input row: icon + field */
 @utility input-well {
-  background: var(--bg-base);
+  background: var(--card-base);
   box-shadow:
     inset 4px 4px 10px var(--inset-dark),
     inset -4px -4px 10px var(--inset-light);
