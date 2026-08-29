@@ -5,15 +5,19 @@ export const auth = $state({
   authed: false,
   needsSetup: false,
   ready: false,
+  role: 'user' as string,
 });
 
 export async function checkAuth() {
   try {
-    await admin.me();
+    const r = await admin.me();
     auth.authed = true;
     auth.needsSetup = false;
+    // mockup: /admin/me sukses => admin. Role asli dari response me() (r.data.role).
+    auth.role = (r.data as any)?.role || 'admin';
   } catch {
     auth.authed = false;
+    auth.role = 'user';
     try {
       const r = await admin.setupStatus();
       auth.needsSetup = r.needsSetup;

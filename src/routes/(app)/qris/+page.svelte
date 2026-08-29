@@ -73,7 +73,7 @@
     {#if err}<p class="text-xs font-semibold text-red-500">{err}</p>{/if}
     {#if qrisStaticSet === false}
       <div class="bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl px-4 py-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
-        ⚠️ QRIS static belum diatur. Scan QRIS static dulu di <a href="/settings" class="underline">Settings → Konfigurasi QRIS</a> sebelum buat QR dinamis.
+        ⚠️ QRIS static belum diatur. Scan QRIS static dulu di <a href="/admin/settings" class="underline">Settings → Konfigurasi QRIS</a> sebelum buat QR dinamis.
       </div>
     {/if}
     <form onsubmit={create} class="flex gap-2">

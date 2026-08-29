@@ -12,24 +12,26 @@
     { to: '/merchants', label: 'Merchants', icon: 'fa-solid fa-store', title: 'Merchants', subtitle: 'Kelola channel e-wallet & gateway merchant' },
     { to: '/qris', label: 'QRIS', icon: 'fa-solid fa-qrcode', title: 'QRIS Dinamis', subtitle: 'Buat dan kelola kode QRIS pembayaran' },
     { to: '/transactions', label: 'Transaksi', icon: 'fa-solid fa-receipt', title: 'Daftar Transaksi', subtitle: 'Arsip transaksi yang berhasil diproses' },
-    { to: '/billing', label: 'Billing', icon: 'fa-solid fa-credit-card', title: 'Billing', subtitle: 'Langganan pengguna & akses API key' },
-    { to: '/users', label: 'Users', icon: 'fa-solid fa-users', title: 'Users', subtitle: 'Kelola akun pengguna sistem' },
-    { to: '/logs', label: 'Logs', icon: 'fa-solid fa-list', title: 'Aktivitas Sistem', subtitle: 'Log aksi dan event sistem gateway' },
-    { to: '/settings', label: 'Settings', icon: 'fa-solid fa-gear', title: 'Pengaturan API', subtitle: 'Login GoBiz, kunci API, dan konfigurasi' },
-    { to: '/developer', label: 'Developer', icon: 'fa-solid fa-code', title: 'Developer API', subtitle: 'Dokumentasi API v1 untuk integrasi aplikasi' },
+    { to: '/admin/billing', label: 'Billing Plans', icon: 'fa-solid fa-credit-card', title: 'Billing Plans', subtitle: 'Kelola paket langganan & langganan semua subscriber' },
+    { to: '/admin/users', label: 'Users', icon: 'fa-solid fa-users', title: 'Users', subtitle: 'Kelola akun pengguna sistem' },
+    { to: '/admin/logs', label: 'Logs', icon: 'fa-solid fa-list', title: 'Aktivitas Sistem', subtitle: 'Log aksi dan event sistem gateway' },
+    { to: '/admin/settings', label: 'Settings', icon: 'fa-solid fa-gear', title: 'Pengaturan API', subtitle: 'Login GoBiz, kunci API, dan konfigurasi' },
+    { to: '/admin/developer', label: 'Developer', icon: 'fa-solid fa-code', title: 'Developer API', subtitle: 'Dokumentasi API v1 untuk integrasi aplikasi' },
   ];
 
   const TITLES: Record<string, [string, string]> = Object.fromEntries(LINKS.map((l) => [l.to, [l.title, l.subtitle]]));
-  TITLES['/settings/password'] = ['Ganti Password', 'Ubah kata sandi akun admin'];
+  TITLES['/admin/settings/password'] = ['Ganti Password', 'Ubah kata sandi akun admin'];
 
   let username = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('gomerch_username') || 'Admin' : 'Admin');
 
   $effect(() => {
     if (auth.ready && !auth.authed) goto('/');
+    // guard admin: role != admin tidak boleh akses /admin/*
+    else if (auth.ready && auth.authed && auth.role !== 'admin' && activePath.startsWith('/admin')) goto('/dashboard');
   });
 
   const activePath = $derived($page.url.pathname);
-  const isActive = (to: string) => to === '/settings' ? activePath.startsWith('/settings') : activePath === to;
+  const isActive = (to: string) => (to.startsWith('/admin/')) ? activePath.startsWith(to) : activePath === to;
   const meta = $derived.by(() => {
     const [t, s] = TITLES[activePath] || TITLES['/dashboard'];
     return { title: t, subtitle: s };
@@ -102,7 +104,7 @@
 
     <!-- Bottom nav mobile — developer diluar (di Settings) -->
     <nav class="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-[var(--bg-base)]/95 backdrop-blur border-t border-slate-300/40 dark:border-slate-800/40 px-2 py-1.5 flex">
-      {#each LINKS.filter((l) => l.to !== '/developer') as l (l.to)}
+      {#each LINKS.filter((l) => l.to !== '/admin/developer') as l (l.to)}
         <a
           href={l.to}
           class="flex flex-col items-center gap-0.5 flex-1 py-1.5 px-1 rounded-xl text-[10px] font-semibold transition-all duration-200 active:scale-[0.95] {isActive(l.to) ? 'active text-[var(--accent)]' : 'text-[var(--text-muted)]'}"

@@ -17,14 +17,14 @@
       if (newPw.length < 8) throw new Error('Password baru minimal 8 karakter');
       if (newPw !== confirm) throw new Error('Konfirmasi password tidak cocok');
       await admin.changePassword(username, oldPw, newPw);
-      goto('/settings');
+      goto('/admin/settings');
     } catch (e: any) { err = e.message; }
     finally { busy = false; }
   }
 </script>
 
 <div class="max-w-md mx-auto space-y-5">
-  <a href="/settings" class="tactile-btn w-11 h-11 flex items-center justify-center text-[var(--text-muted)]" title="Kembali ke Settings">
+  <a href="/admin/settings" class="tactile-btn w-11 h-11 flex items-center justify-center text-[var(--text-muted)]" title="Kembali ke Settings">
     <i class="fa-solid fa-arrow-left"></i>
   </a>
 
@@ -70,7 +70,7 @@
       <button disabled={busy} class="tactile-btn flex-1 py-4 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
         <i class="fa-solid fa-floppy-disk"></i> {busy ? 'Menyimpan...' : 'Simpan'}
       </button>
-      <a href="/settings" class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Batal</a>
+      <a href="/admin/settings" class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Batal</a>
     </div>
   </form>
 </div>
