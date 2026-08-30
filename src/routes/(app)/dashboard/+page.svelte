@@ -54,10 +54,9 @@
   async function load() {
     if (!merchants.active) return;
     admin.dashboard(merchants.active.id).then((d) => (data = d.data)).catch((e) => (err = e.message));
-    loadAnnouncements();
   }
 
-  onMount(() => { loadMerchants(); });
+  onMount(() => { loadMerchants(); loadAnnouncements(); });
   $effect(() => { load(); });
 
   useWs((m) => {
