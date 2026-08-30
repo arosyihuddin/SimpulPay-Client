@@ -56,7 +56,7 @@
   const suspended = $derived(users.filter((u) => u.status === 'Suspended').length);
 
   const fmtDate = (iso: string) =>
-    new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    iso ? new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
   const initials = (name: string) => name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   const avatarCls = (st: string) =>
@@ -79,18 +79,48 @@
 
   let editOpen = $state(false);
   let editing = $state<any>(null);
-  let form = $state({ name: '', email: '', plan: 'Basic', role: 'Owner', status: 'Active', next: '', key: 'Aktif' });
+  const emptyForm = () => ({ name: '', email: '', password: '', plan: 'Basic', role: 'Owner', status: 'Active', next: '', key: 'Aktif' });
+  let form = $state(emptyForm());
+  let showPass = $state(false);
+  let formErr = $state('');
   function openEdit(u: any) {
     editing = u;
-    form = { name: u.name, email: u.email, plan: u.plan, role: u.role, status: u.status, next: u.next, key: u.key };
+    showPass = false;
+    formErr = '';
+    form = { name: u.name, email: u.email, password: '', plan: u.plan, role: u.role, status: u.status, next: u.next, key: u.key };
     editOpen = true;
   }
+  function openAdd() {
+    editing = null;
+    showPass = false;
+    formErr = '';
+    form = emptyForm();
+    editOpen = true;
+  }
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   function saveEdit() {
-    if (!form.name.trim() || !form.email.trim()) return;
-    users = users.map((u) =>
-      u.id === editing.id
-        ? { ...u, name: form.name, email: form.email, plan: form.plan, role: form.role, status: form.status, next: form.next, key: form.key, statusCls: statusCls(form.status) }
-        : u);
+    if (!form.name.trim() || !form.email.trim()) { formErr = 'Nama dan email wajib diisi.'; return; }
+    if (!EMAIL_RE.test(form.email)) { formErr = 'Format email tidak valid.'; return; }
+    if (!editing && !form.password.trim()) { formErr = 'Password wajib diisi.'; return; }
+    if (editing) {
+      users = users.map((u) =>
+        u.id === editing.id
+          ? { ...u, name: form.name, email: form.email, plan: form.plan, role: form.role, status: form.status, next: form.next, key: form.key, statusCls: statusCls(form.status) }
+          : u);
+    } else {
+      const num = Math.max(0, ...users.map((u) => parseInt(u.id.slice(2), 10))) + 1;
+      users = [
+        {
+          id: `U-${num}`, name: form.name, email: form.email,
+          plan: form.plan, status: form.status, role: form.role,
+          statusCls: statusCls(form.status),
+          apiKey: 'gomerch_live_••••••••••••', key: form.key, next: form.next,
+          lastActive: 'Baru saja', joined: new Date().toISOString().slice(0, 10),
+        },
+        ...users,
+      ];
+    }
+    formErr = '';
     editOpen = false;
   }
 </script>
@@ -116,15 +146,20 @@
     </div>
   </div>
 
-  <!-- Filter -->
-  <div class="relative max-w-md">
-    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm"></i>
-    <input
-      type="text"
-      bind:value={q}
-      placeholder="Cari nama atau email..."
-      class="w-full tactile-inset pl-10 pr-4 py-2.5 text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
-    />
+  <!-- Filter + Tambah -->
+  <div class="flex items-center gap-3">
+    <div class="relative flex-1 max-w-md">
+      <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm"></i>
+      <input
+        type="text"
+        bind:value={q}
+        placeholder="Cari nama atau email..."
+        class="w-full tactile-inset pl-10 pr-4 py-2.5 text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
+      />
+    </div>
+    <button onclick={openAdd} class="tactile-btn px-4 py-2.5 font-bold text-[var(--accent)] text-sm flex items-center gap-2 whitespace-nowrap">
+      <i class="fa-solid fa-plus"></i> Tambah
+    </button>
   </div>
 
   <!-- Tabel desktop -->
@@ -269,16 +304,19 @@
 {/if}
 
 <!-- Edit user modal -->
-{#if editOpen && editing}
+{#if editOpen}
   <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (editOpen = false)}></button>
     <div class="tactile-modal w-full max-w-md p-6 relative z-50">
       <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
-        <h3 class="text-lg font-bold">Edit User</h3>
+        <h3 class="text-lg font-bold">{editing ? 'Edit User' : 'Tambah User'}</h3>
         <button type="button" aria-label="Tutup" onclick={() => (editOpen = false)} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="space-y-4">
+        {#if formErr}
+          <p class="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{formErr}</p>
+        {/if}
         <div>
           <label for="user-name" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Nama</label>
           <input id="user-name" bind:value={form.name} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
@@ -287,6 +325,27 @@
           <label for="user-email" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Email</label>
           <input id="user-email" type="email" bind:value={form.email} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
         </div>
+        {#if !editing}
+          <div>
+            <label for="user-pass" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Password</label>
+            <div class="relative">
+              <input
+                id="user-pass"
+                type={showPass ? 'text' : 'password'}
+                bind:value={form.password}
+                class="w-full tactile-inset pl-4 pr-11 py-2.5 text-sm focus:outline-none"
+              />
+              <button
+                type="button"
+                onclick={() => (showPass = !showPass)}
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer"
+                title={showPass ? 'Sembunyikan password' : 'Lihat password'}
+              >
+                <i class="fa-solid {showPass ? 'fa-eye-slash' : 'fa-eye'}"></i>
+              </button>
+            </div>
+          </div>
+        {/if}
         <div class="grid grid-cols-3 gap-3">
           <div>
             <label for="user-plan" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Plan</label>
@@ -330,7 +389,7 @@
 
         <div class="flex gap-2 pt-2">
           <button onclick={saveEdit} class="tactile-btn flex-1 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
-            <i class="fa-solid fa-floppy-disk"></i> Simpan
+            <i class="fa-solid fa-floppy-disk"></i> {editing ? 'Simpan' : 'Tambah'}
           </button>
           <button onclick={() => (editOpen = false)} class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Batal</button>
         </div>

@@ -12,6 +12,8 @@
   let password = $state('');
   let showPass = $state(false);
 
+  const autofocus = (node: HTMLInputElement) => { node.focus(); };
+
   async function submit(e: SubmitEvent) {
     e.preventDefault();
     busy = true;
@@ -55,7 +57,7 @@
       <label for="login-user" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Username</label>
       <div class="input-well px-4 py-3 flex items-center">
         <i class="fa-regular fa-user text-[var(--text-muted)] mr-3"></i>
-        <input id="login-user" bind:value={username} placeholder="username" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+        <input id="login-user" use:autofocus bind:value={username} placeholder="username" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
       </div>
     </div>
     <div class="space-y-1.5">
