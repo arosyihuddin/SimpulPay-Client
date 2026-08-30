@@ -16,9 +16,9 @@
     { to: '/qris', label: 'QRIS', icon: 'fa-solid fa-qrcode', title: 'QRIS Dinamis', subtitle: 'Buat dan kelola kode QRIS pembayaran' },
     { to: '/transactions', label: 'Transaksi', icon: 'fa-solid fa-receipt', title: 'Daftar Transaksi', subtitle: 'Arsip transaksi yang berhasil diproses' },
     { to: '/billing', label: 'Billing', icon: 'fa-solid fa-credit-card', title: 'Billing', subtitle: 'Langganan & tagihan saya' },
-    { to: '/admin/logs', label: 'Logs', icon: 'fa-solid fa-list', title: 'Aktivitas Sistem', subtitle: 'Log aksi dan event sistem gateway' },
-    { to: '/admin/settings', label: 'Settings', icon: 'fa-solid fa-gear', title: 'Pengaturan API', subtitle: 'Login GoBiz, kunci API, dan konfigurasi' },
-    { to: '/admin/developer', label: 'Developer', icon: 'fa-solid fa-code', title: 'Developer API', subtitle: 'Dokumentasi API v1 untuk integrasi aplikasi' },
+    { to: '/logs', label: 'Logs', icon: 'fa-solid fa-list', title: 'Aktivitas Sistem', subtitle: 'Log aksi dan event sistem gateway' },
+    { to: '/settings', label: 'Settings', icon: 'fa-solid fa-gear', title: 'Pengaturan API', subtitle: 'Login GoBiz, kunci API, dan konfigurasi' },
+    { to: '/developer', label: 'Developer', icon: 'fa-solid fa-code', title: 'Developer API', subtitle: 'Dokumentasi API v1 untuk integrasi aplikasi' },
   ];
   const ADMIN_LINKS = [
     { to: '/admin/announcements', label: 'Announcements', icon: 'fa-solid fa-bullhorn', title: 'Announcements', subtitle: 'Broadcast pengumuman ke semua user' },
@@ -31,7 +31,7 @@
   const ADMIN_ONLY = ['/admin/announcements', '/admin/billing', '/admin/users'];
 
   const TITLES: Record<string, [string, string]> = Object.fromEntries(ALL_LINKS.map((l) => [l.to, [l.title, l.subtitle]]));
-  TITLES['/admin/settings/password'] = ['Ganti Password', 'Ubah kata sandi akun admin'];
+  TITLES['/settings/password'] = ['Ganti Password', 'Ubah kata sandi akun admin'];
 
   let username = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('gomerch_username') || 'Admin' : 'Admin');
 

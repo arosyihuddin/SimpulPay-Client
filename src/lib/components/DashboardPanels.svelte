@@ -211,7 +211,7 @@
           {/each}
         </div>
       </div>
-      <a href="/admin/settings" class="tactile-btn w-full mt-4 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
+      <a href="/settings" class="tactile-btn w-full mt-4 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
         <i class="fa-solid fa-users"></i> Semua Merchant
       </a>
     </div>

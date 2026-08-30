@@ -1,11 +1,15 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { admin, fmtIDR, fmtTime } from '$lib/api';
-  import { useWs } from '$lib/useWs';
-  import Skeleton from '$lib/components/Skeleton.svelte';
-  import Stat from '$lib/components/Stat.svelte';
-  import DashboardPanels from '$lib/components/DashboardPanels.svelte';
-  import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
+  import { onMount } from "svelte";
+  import { admin, fmtIDR, fmtTime } from "$lib/api";
+  import { useWs } from "$lib/useWs";
+  import Skeleton from "$lib/components/Skeleton.svelte";
+  import Stat from "$lib/components/Stat.svelte";
+  import DashboardPanels from "$lib/components/DashboardPanels.svelte";
+  import {
+    merchants,
+    loadMerchants,
+    setActiveMerchant,
+  } from "$lib/merchant.svelte";
 
   interface DashboardData {
     stats: {
@@ -27,53 +31,72 @@
   }
 
   let data = $state<DashboardData | null>(null);
-  let amount = $state('');
+  let amount = $state("");
   let created = $state<any>(null);
-  let err = $state('');
+  let err = $state("");
   let busy = $state(false);
 
-  interface Announcement { id: number; title: string; message: string; type: string; active: boolean; created_at: number; }
+  interface Announcement {
+    id: number;
+    title: string;
+    message: string;
+    type: string;
+    active: boolean;
+    created_at: number;
+  }
   let announcements = $state<Announcement[]>([]);
   const ANNO_TYPE_CLS: Record<string, string> = {
-    info: 'bg-blue-100/70 dark:bg-blue-500/10 border-blue-200/60 dark:border-blue-500/30 text-blue-700 dark:text-blue-300',
-    warning: 'bg-amber-100/70 dark:bg-amber-500/10 border-amber-200/60 dark:border-amber-500/30 text-amber-700 dark:text-amber-300',
-    important: 'bg-red-100/70 dark:bg-red-500/10 border-red-200/60 dark:border-red-500/30 text-red-700 dark:text-red-300',
+    info: "bg-blue-100/70 dark:bg-blue-500/10 border-blue-200/60 dark:border-blue-500/30 text-blue-700 dark:text-blue-300",
+    warning:
+      "bg-amber-100/70 dark:bg-amber-500/10 border-amber-200/60 dark:border-amber-500/30 text-amber-700 dark:text-amber-300",
+    important:
+      "bg-red-100/70 dark:bg-red-500/10 border-red-200/60 dark:border-red-500/30 text-red-700 dark:text-red-300",
   };
   const ANNO_ICON: Record<string, string> = {
-    info: 'fa-solid fa-circle-info',
-    warning: 'fa-solid fa-triangle-exclamation',
-    important: 'fa-solid fa-shield-halved',
+    info: "fa-solid fa-circle-info",
+    warning: "fa-solid fa-triangle-exclamation",
+    important: "fa-solid fa-shield-halved",
   };
   async function loadAnnouncements() {
     try {
       const r = await admin.listAnnouncements({ active: true });
       announcements = r.data.announcements;
-    } catch { /* non-kritis */ }
+    } catch {
+      /* non-kritis */
+    }
   }
 
   async function load() {
     if (!merchants.active) return;
-    admin.dashboard(merchants.active.id).then((d) => (data = d.data)).catch((e) => (err = e.message));
+    admin
+      .dashboard(merchants.active.id)
+      .then((d) => (data = d.data))
+      .catch((e) => (err = e.message));
   }
 
-  onMount(() => { loadMerchants(); loadAnnouncements(); });
-  $effect(() => { load(); });
+  onMount(() => {
+    loadMerchants();
+    loadAnnouncements();
+  });
+  $effect(() => {
+    load();
+  });
 
   useWs((m) => {
-    if (m.type === 'qris_created' || m.type === 'qris_status') load();
+    if (m.type === "qris_created" || m.type === "qris_status") load();
   });
 
   async function createQris(e: SubmitEvent) {
     e.preventDefault();
     busy = true;
-    err = '';
+    err = "";
     created = null;
     try {
       const a = parseInt(amount, 10);
-      if (!a || a <= 0) throw new Error('Nominal tidak valid');
+      if (!a || a <= 0) throw new Error("Nominal tidak valid");
       const res = await admin.createQris(a, merchants.active?.id);
       created = res.data;
-      amount = '';
+      amount = "";
       load();
     } catch (e: any) {
       err = e.message;
@@ -89,11 +112,16 @@
 <div class="space-y-6">
   {#if merchants.list.length > 1}
     <div class="flex items-center gap-3">
-      <label for="dash-merchant" class="text-xs font-bold text-[var(--text-muted)] whitespace-nowrap"><i class="fa-solid fa-store mr-1"></i> Merchant</label>
+      <label
+        for="dash-merchant"
+        class="text-xs font-bold text-[var(--text-muted)] whitespace-nowrap"
+        ><i class="fa-solid fa-store mr-1"></i> Merchant</label
+      >
       <select
         id="dash-merchant"
-        value={merchants.activeId ?? ''}
-        onchange={(e) => setActiveMerchant((e.target as HTMLSelectElement).value)}
+        value={merchants.activeId ?? ""}
+        onchange={(e) =>
+          setActiveMerchant((e.target as HTMLSelectElement).value)}
         class="w-full max-w-xs tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer"
       >
         {#each merchants.list as m (m.id)}
@@ -103,8 +131,13 @@
     </div>
   {/if}
   {#if session?.exists === false}
-    <div class="bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl px-4 py-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
-      ⚠️ Sesi GoBiz belum ada. Login OTP lewat <a href="/admin/settings" class="underline">Settings</a>.
+    <div
+      class="bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl px-4 py-3 text-xs font-semibold text-amber-700 dark:text-amber-300"
+    >
+      ⚠️ Sesi GoBiz belum ada. Login OTP lewat <a
+        href="/settings"
+        class="underline">Settings</a
+      >.
     </div>
   {/if}
 
@@ -112,8 +145,13 @@
   {#if announcements.length > 0}
     <div class="space-y-3">
       {#each announcements as a (a.id)}
-        <div class="rounded-2xl border px-4 py-3 text-sm {ANNO_TYPE_CLS[a.type] || ANNO_TYPE_CLS.info}">
-          <p class="font-bold flex items-center gap-2"><i class="{ANNO_ICON[a.type] || ANNO_ICON.info}"></i>{a.title}</p>
+        <div
+          class="rounded-2xl border px-4 py-3 text-sm {ANNO_TYPE_CLS[a.type] ||
+            ANNO_TYPE_CLS.info}"
+        >
+          <p class="font-bold flex items-center gap-2">
+            <i class={ANNO_ICON[a.type] || ANNO_ICON.info}></i>{a.title}
+          </p>
           {#if a.message}<p class="text-xs mt-1 opacity-90">{a.message}</p>{/if}
         </div>
       {/each}
@@ -146,39 +184,69 @@
 
   {#if data}
     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-      <Stat icon="fa-solid fa-money-bill-trend-up" label="Hari Ini" value={fmtIDR(s?.today_income)} />
-      <Stat icon="fa-solid fa-chart-line" label="Bulan Ini" value={s?.month_income == null ? '—' : fmtIDR(s.month_income)} />
-      <Stat icon="fa-solid fa-receipt" label="Transaksi" value={String(s?.total_transactions ?? '—')} />
-      <Stat icon="fa-solid fa-qrcode" label="QRIS Aktif" value={String(s?.active_qris ?? 0)} />
-      <Stat icon="fa-solid fa-folder" label="Total QRIS" value={String(s?.total_qris ?? 0)} />
+      <Stat
+        icon="fa-solid fa-money-bill-trend-up"
+        label="Hari Ini"
+        value={fmtIDR(s?.today_income)}
+      />
+      <Stat
+        icon="fa-solid fa-chart-line"
+        label="Bulan Ini"
+        value={s?.month_income == null ? "—" : fmtIDR(s.month_income)}
+      />
+      <Stat
+        icon="fa-solid fa-receipt"
+        label="Transaksi"
+        value={String(s?.total_transactions ?? "—")}
+      />
+      <Stat
+        icon="fa-solid fa-qrcode"
+        label="QRIS Aktif"
+        value={String(s?.active_qris ?? 0)}
+      />
+      <Stat
+        icon="fa-solid fa-folder"
+        label="Total QRIS"
+        value={String(s?.total_qris ?? 0)}
+      />
     </div>
   {/if}
 
   {#if data?.month_fetch_error}
-    <p class="text-xs text-[var(--text-muted)]">Catatan: {data.month_fetch_error}</p>
+    <p class="text-xs text-[var(--text-muted)]">
+      Catatan: {data.month_fetch_error}
+    </p>
   {/if}
 
   {#if session?.exists}
     <div class="tactile-box p-5 text-sm space-y-2.5">
       <div class="flex items-center gap-3">
-        <div class="tactile-btn w-10 h-10 flex items-center justify-center text-emerald-500 text-sm font-bold">
-          {(session.outlet || 'G').slice(0, 1)}
+        <div
+          class="tactile-btn w-10 h-10 flex items-center justify-center text-emerald-500 text-sm font-bold"
+        >
+          {(session.outlet || "G").slice(0, 1)}
         </div>
-        <span class="font-semibold">{session.outlet || 'Outlet'}</span>
+        <span class="font-semibold">{session.outlet || "Outlet"}</span>
       </div>
       <div class="flex justify-between gap-3">
         <span class="text-[var(--text-muted)] shrink-0">HP</span>
-        <span class="break-all text-right">{session.phone || '-'}</span>
+        <span class="break-all text-right">{session.phone || "-"}</span>
       </div>
       <div class="flex justify-between gap-3">
         <span class="text-[var(--text-muted)] shrink-0">Merchant ID</span>
-        <span class="break-all text-right">{session.merchant_id || '-'}</span>
+        <span class="break-all text-right">{session.merchant_id || "-"}</span>
       </div>
       <div class="flex justify-between">
         <span class="text-[var(--text-muted)]">Token</span>
-        <span class={session.expired ? 'text-red-500' : 'text-emerald-500'}>
-          <i class="fa-solid {session.expired ? 'fa-circle-xmark' : 'fa-circle-check'} mr-1"></i>
-          {session.expired ? 'Expired' : 'Valid'} · {fmtTime(session.expires_at)}
+        <span class={session.expired ? "text-red-500" : "text-emerald-500"}>
+          <i
+            class="fa-solid {session.expired
+              ? 'fa-circle-xmark'
+              : 'fa-circle-check'} mr-1"
+          ></i>
+          {session.expired ? "Expired" : "Valid"} · {fmtTime(
+            session.expires_at,
+          )}
         </span>
       </div>
     </div>

@@ -140,7 +140,7 @@
 
     <Row label="Username" val={displayUser || '—'} />
 
-    <a href="/admin/settings/password" class="tactile-btn w-full py-3 text-xs font-bold text-[var(--accent)] flex items-center justify-center gap-2">
+    <a href="/settings/password" class="tactile-btn w-full py-3 text-xs font-bold text-[var(--accent)] flex items-center justify-center gap-2">
       <i class="fa-solid fa-key"></i> Ganti Password
     </a>
 
@@ -285,7 +285,7 @@
   <!-- Mobile only — developer & logout -->
   <div class="lg:hidden tactile-box p-5 space-y-2.5">
     <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-arrow-right-from-bracket text-[var(--accent)]"></i> Akun</h2>
-    <a href="/admin/developer" class="tactile-btn flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-[var(--text-muted)]">
+    <a href="/developer" class="tactile-btn flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-[var(--text-muted)]">
       <i class="fa-solid fa-code w-5"></i><span>Developer API</span>
     </a>
     <button onclick={logout} class="tactile-btn flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-red-500 w-full">
