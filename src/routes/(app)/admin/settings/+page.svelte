@@ -3,13 +3,13 @@
   import { admin } from '$lib/api';
   import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
   import Row from '$lib/components/Row.svelte';
+  import { addToast } from '$lib/toast.svelte';
 
   interface ApiKey { id: string; label: string | null; key_masked: string; status: string; }
   interface SettingsData { merchants: unknown[]; api_keys: ApiKey[]; }
 
   let s = $state<SettingsData | null>(null);
   let err = $state('');
-  let msg = $state('');
   const displayUser = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('gomerch_username') || '' : '');
 
   // Sesi GoBiz (per-merchant, dari dashboard)
@@ -44,7 +44,7 @@
     e.preventDefault(); otpBusy = true; err = '';
     try {
       const res = await admin.otpRequest(phone);
-      otpToken = res.data.otp_token; uniqueId = res.data.unique_id; step = 'otp'; msg = `OTP dikirim ke ${phone}`;
+      otpToken = res.data.otp_token; uniqueId = res.data.unique_id; step = 'otp'; addToast('info', `OTP dikirim ke ${phone}`);
     } catch (e: any) { err = e.message; }
     finally { otpBusy = false; }
   }
@@ -53,7 +53,7 @@
     e.preventDefault(); otpBusy = true; err = '';
     try {
       const res = await admin.otpVerify(phone, otp, otpToken, uniqueId, merchants.active?.id);
-      msg = `Login GoBiz sukses: ${res.data.outlet_name} (${res.data.phone_number})`;
+      addToast('success', `Login GoBiz sukses: ${res.data.outlet_name} (${res.data.phone_number})`);
       step = 'phone'; phone = ''; otp = ''; otpToken = ''; uniqueId = ''; load();
     } catch (e: any) { err = e.message; }
     finally { otpBusy = false; }
@@ -61,7 +61,7 @@
 
   async function refreshGoBiz() {
     otpBusy = true; err = '';
-    try { const res = await admin.refreshSession(merchants.active?.id); msg = `Sesi GoBiz di-refresh, berlaku hingga ${res.data.expires_at}`; }
+    try { const res = await admin.refreshSession(merchants.active?.id); addToast('success', `Sesi GoBiz di-refresh, berlaku hingga ${res.data.expires_at}`); }
     catch (e: any) { err = e.message; }
     finally { otpBusy = false; }
   }
@@ -69,7 +69,7 @@
   async function deleteGoBiz() {
     if (!confirm('Hapus sesi GoBiz? Login OTP ulang diperlukan.')) return;
     otpBusy = true; err = '';
-    try { await admin.deleteGoBizSession(merchants.active?.id); msg = 'Sesi GoBiz dihapus. Login OTP ulang untuk akses transaksi.'; step = 'phone'; load(); }
+    try { await admin.deleteGoBizSession(merchants.active?.id); addToast('success', 'Sesi GoBiz dihapus. Login OTP ulang untuk akses transaksi.'); step = 'phone'; load(); }
     catch (e: any) { err = e.message; }
     finally { otpBusy = false; }
   }
@@ -86,7 +86,7 @@
   async function parseQrisImage() {
     if (!qrisImg) return;
     qrisBusy = true; err = '';
-    try { const res = await admin.parseQrisImage(qrisImg); qrisParsed = res.data; msg = `QRIS terbaca: ${res.data.merchant_name || res.data.merchant_id || 'merchant'}`; }
+    try { const res = await admin.parseQrisImage(qrisImg); qrisParsed = res.data; addToast('info', `QRIS terbaca: ${res.data.merchant_name || res.data.merchant_id || 'merchant'}`); }
     catch (e: any) { err = e.message; }
     finally { qrisBusy = false; }
   }
@@ -97,7 +97,7 @@
     try {
       await admin.saveQrisStatic(qrisParsed.code, merchants.active?.id);
       if (qrisParsed.merchant_id) await admin.saveMerchantId(qrisParsed.merchant_id, merchants.active?.id).catch(() => {});
-      msg = 'QRIS static & merchant ID tersimpan. QR dinamis sekarang bisa dibuat.';
+      addToast('success', 'QRIS static & merchant ID tersimpan. QR dinamis sekarang bisa dibuat.');
       qrisParsed = null; qrisImg = null; load();
     } catch (e: any) { err = e.message; }
     finally { qrisBusy = false; }
@@ -112,7 +112,7 @@
   async function delKey(id: string) {
     if (!confirm('Hapus API key? Endpoint publik akan mati.')) return;
     err = '';
-    try { await admin.deleteApiKey(id); msg = 'API key dihapus.'; load(); }
+    try { await admin.deleteApiKey(id); addToast('success', 'API key dihapus.'); load(); }
     catch (e: any) { err = e.message; }
   }
 
@@ -124,7 +124,6 @@
 
 <div class="space-y-6">
   {#if err}<p class="text-xs font-semibold text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30 rounded-2xl px-4 py-3"><i class="fa-solid fa-circle-exclamation mr-2"></i>{err}</p>{/if}
-  {#if msg}<p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-2xl px-4 py-3"><i class="fa-solid fa-circle-check mr-2"></i>{msg}</p>{/if}
   {#if newKey}
     <div class="bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-2xl px-4 py-3 text-xs space-y-1">
       <p class="font-semibold text-emerald-700 dark:text-emerald-300"><i class="fa-solid fa-circle-check mr-2"></i>API key baru dibuat — salin sekarang, tidak akan ditampilkan lagi:</p>
@@ -219,7 +218,7 @@
               <button disabled={otpBusy} class="tactile-btn flex-1 py-4 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
                 <i class="fa-solid fa-check"></i> {otpBusy ? 'Verifikasi...' : 'Verifikasi OTP'}
               </button>
-              <button onclick={() => { step = 'phone'; otp = ''; msg = ''; }} class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Batal</button>
+              <button onclick={() => { step = 'phone'; otp = ''; }} class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Batal</button>
             </div>
           </form>
         {/if}

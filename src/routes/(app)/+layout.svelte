@@ -5,6 +5,7 @@
   import { auth, checkAuth } from '$lib/auth.svelte';
   import { theme, toggleTheme } from '$lib/theme.svelte';
   import Logo from '$lib/components/Logo.svelte';
+  import Toast from '$lib/components/Toast.svelte';
   let { children } = $props();
 
   const LINKS = [
@@ -37,17 +38,49 @@
     return { title: t, subtitle: s };
   });
 
-  // Notifikasi (UI-only, data contoh ala mockup)
+  // Notifikasi — data real dari backend (GET /admin/notifications).
   let notifOpen = $state(false);
-  let notifs = $state([
-    { icon: 'fa-solid fa-arrow-down-left', cls: 'text-emerald-500', title: 'Payout Berhasil: Rp 142.000.000 ke BCA', time: '2 menit lalu' },
-    { icon: 'fa-solid fa-triangle-exclamation', cls: 'text-amber-500', title: 'Lonjakan trafik tinggi di API Endpoint v2', time: '10 menit lalu' },
-    { icon: 'fa-solid fa-shield-alert', cls: 'text-rose-500', title: 'Peringatan Fraud terdeteksi & dicegah', time: '1 jam lalu' },
-  ]);
-  const notifCount = $derived(notifs.length);
-  function markAllRead() {
-    notifs = [];
-    notifOpen = false;
+  let notifLoading = $state(false);
+  interface Notif { id: number; type: string; title: string; message: string; read: boolean; created_at: number; }
+  let notifs = $state<Notif[]>([]);
+  let unread = $state(0);
+  async function loadNotifs() {
+    if (notifLoading) return;
+    notifLoading = true;
+    try {
+      const r = await admin.listNotifications();
+      notifs = r.data.notifications;
+      unread = r.data.unread;
+    } catch { /* non-kritis, diam */ }
+    finally { notifLoading = false; }
+  }
+  const notifCount = $derived(unread);
+  const notifMeta = (type: string) =>
+    type === 'payout' || type === 'settlement'
+      ? { icon: 'fa-solid fa-arrow-down-left', cls: 'text-emerald-500' }
+      : type === 'fraud' || type === 'warning'
+        ? { icon: 'fa-solid fa-shield-alert', cls: 'text-rose-500' }
+        : type === 'info'
+          ? { icon: 'fa-solid fa-circle-info', cls: 'text-blue-500' }
+          : { icon: 'fa-solid fa-bell', cls: 'text-[var(--accent)]' };
+  const fmtNotifTime = (n: number) => {
+    const d = new Date(n); const m = Math.round((Date.now() - n) / 60000);
+    if (m < 1) return 'baru saja';
+    if (m < 60) return `${m} menit lalu`;
+    const h = Math.round(m / 60); if (h < 24) return `${h} jam lalu`;
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+  };
+  async function markRead(n: Notif) {
+    if (n.read) return;
+    notifs = notifs.map((x) => (x.id === n.id ? { ...x, read: true } : x));
+    unread = Math.max(0, unread - 1);
+    await admin.markNotificationRead(n.id).catch(() => {});
+  }
+  async function markAllRead() {
+    const unreadList = notifs.filter((n) => !n.read);
+    notifs = notifs.map((x) => ({ ...x, read: true }));
+    unread = 0;
+    await Promise.all(unreadList.map((n) => admin.markNotificationRead(n.id).catch(() => {})));
   }
 
   async function logout() {
@@ -141,7 +174,7 @@
           <!-- Notifications -->
           <div class="relative">
             <button
-              onclick={() => (notifOpen = !notifOpen)}
+              onclick={() => { notifOpen = !notifOpen; if (!notifOpen) return; loadNotifs(); }}
               class="tactile-btn w-11 h-11 flex items-center justify-center relative hover:text-[var(--accent)]"
               title="Notifikasi"
             >
@@ -161,17 +194,25 @@
                   {/if}
                 </div>
                 <div class="space-y-2 text-xs">
-                  {#if notifs.length === 0}
-                    <p class="text-center text-[var(--text-muted)] py-4 font-semibold">Semua notifikasi sudah dibaca</p>
+                  {#if notifLoading && notifs.length === 0}
+                    <p class="text-center text-[var(--text-muted)] py-4 font-semibold">Memuat...</p>
+                  {:else if notifs.length === 0}
+                    <p class="text-center text-[var(--text-muted)] py-4 font-semibold">Belum ada notifikasi</p>
                   {:else}
-                    {#each notifs as n, i (i)}
-                      <div class="p-2.5 rounded-xl tactile-inset flex items-start space-x-2">
-                        <i class="{n.icon} {n.cls} mt-0.5 flex-shrink-0"></i>
-                        <div>
-                          <p class="font-semibold">{n.title}</p>
-                          <span class="text-[var(--text-muted)] text-[10px]">{n.time}</span>
+                    {#each notifs as n (n.id)}
+                      <button
+                        type="button"
+                        onclick={() => markRead(n)}
+                        class="w-full text-left p-2.5 rounded-xl tactile-inset flex items-start space-x-2 {!n.read ? 'opacity-100' : 'opacity-50'}"
+                      >
+                        <i class="{notifMeta(n.type).icon} {notifMeta(n.type).cls} mt-0.5 flex-shrink-0"></i>
+                        <div class="min-w-0">
+                          <p class="font-semibold truncate">{n.title}</p>
+                          {#if n.message}<p class="text-[var(--text-muted)] truncate">{n.message}</p>{/if}
+                          <span class="text-[var(--text-muted)] text-[10px]">{fmtNotifTime(n.created_at)}</span>
                         </div>
-                      </div>
+                        {#if !n.read}<span class="ml-auto mt-1 w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>{/if}
+                      </button>
                     {/each}
                   {/if}
                 </div>
@@ -189,4 +230,6 @@
       </footer>
     </div>
   </div>
+
+  <Toast />
 {/if}

@@ -4,6 +4,7 @@
   import { useWs } from '$lib/useWs';
   import Pagination from '$lib/components/Pagination.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
+  import { addToast } from '$lib/toast.svelte';
 
   interface QrisRow {
     id: string; code: string; amount: number; base_amount: number; unique_code: number;
@@ -57,6 +58,7 @@
       if (!a || a <= 0) throw new Error('Nominal tidak valid');
       const res = await admin.createQris(a, merchants.active?.id);
       created = res.data; amount = ''; load();
+      addToast('success', 'QRIS dinamis dibuat.');
     } catch (e: any) { err = e.message; }
     finally { busy = false; }
   }

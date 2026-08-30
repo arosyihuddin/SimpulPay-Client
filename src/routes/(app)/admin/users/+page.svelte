@@ -1,6 +1,7 @@
 <script lang="ts">
   import Pagination from '$lib/components/Pagination.svelte';
   import { admin } from '$lib/api';
+  import { addToast } from '$lib/toast.svelte';
 
   // User sistem GoMerch — data dari backend (GET /admin/users).
   // Field billing (name/email/plan/status/key/next) opsional; terisi setelah backend di-update.
@@ -13,15 +14,19 @@
     updated_at: number;
     name?: string;
     email?: string;
-    plan?: string;
+    plan?: { id: string; name: string; type: string; price: number; max_merchants: number; daily_paid_limit: number | null; } | null;
+    subscription?: { id: string; plan_id: string; status: string; starts_at: number; ends_at: number | null; } | null;
+    latest_invoice?: { id: string; amount: number; status: string; period_start: number; period_end: number; created_at: number; } | null;
     status?: string;
     next?: string;
     key?: string;
     lastActive?: string;
     joined?: string;
   }
+  interface Plan { id: string; name: string; type: string; price: number; max_merchants: number; daily_paid_limit: number | null; features_json: string | null; active: boolean; }
 
   let users = $state<User[]>([]);
+  let plans = $state<Plan[]>([]);
   let loading = $state(true);
   let loadErr = $state('');
 
@@ -29,8 +34,8 @@
     loading = true;
     loadErr = '';
     try {
-      const r = await admin.listUsers();
-      users = r.data.users;
+      const u = await admin.listUsers();
+      users = u.data.users;
     } catch (e: any) {
       loadErr = e.message;
     } finally {
@@ -38,6 +43,22 @@
     }
   }
   $effect(() => { load(); });
+
+  // Ambil plan real dari DB (dipanggil pas buka modal add/edit).
+  let planLoading = $state(false);
+  let planErr = $state('');
+  async function loadPlans() {
+    planLoading = true;
+    planErr = '';
+    try {
+      const p = await admin.listPlans();
+      plans = p.data.plans;
+    } catch (e: any) {
+      planErr = e.message;
+    } finally {
+      planLoading = false;
+    }
+  }
 
   let q = $state('');
   const PAGE_SIZE = 5;
@@ -56,8 +77,10 @@
 
   const ROLES = ['admin', 'customer'];
   const STATUSES = ['active', 'suspended', 'banned'];
-  const PLAN_OPTS = ['Basic', 'Pro', 'Enterprise'];
-  const KEY_STATUSES = ['Aktif', 'Terbatas', 'Nonaktif'];
+  // Plan aktif dari backend, pakai id sebagai value.
+  const PLAN_OPTS = $derived(plans.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name })));
+  const defaultPlan = $derived(PLAN_OPTS[0]?.id || '');
+  $effect(() => { if (defaultPlan && !PLAN_OPTS.some((p) => p.id === form.plan)) form.plan = defaultPlan; });
 
   const roleLabel = (r: string) => (r === 'admin' ? 'admin' : 'customer');
   const roleCls = (r: string) =>
@@ -87,17 +110,27 @@
   // ---- Form tambah / edit ----
   let editOpen = $state(false);
   let editing = $state<User | null>(null);
-  const emptyForm = () => ({ username: '', password: '', role: 'customer', name: '', email: '', plan: 'Basic', status: 'active', next: '', key: 'Aktif' });
+  const emptyForm = () => ({ username: '', password: '', role: 'customer', name: '', email: '', plan: '', status: 'active', next: '' });
   let form = $state(emptyForm());
   let showPass = $state(false);
   let formErr = $state('');
   let saving = $state(false);
 
+  // Generate password acak (12 karakter, huruf+angka+simbol).
+  function genPass() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    form.password = Array.from(crypto.getRandomValues(new Uint32Array(12)))
+      .map((n) => chars[n % chars.length])
+      .join('');
+    showPass = true;
+  }
+
   function openEdit(u: User) {
     editing = u;
     showPass = false;
     formErr = '';
-    form = { username: u.username, password: '', role: u.role, name: u.name || '', email: u.email || '', plan: u.plan || 'Basic', status: u.status || 'Active', next: u.next || '', key: u.key || 'Aktif' };
+    loadPlans();
+    form = { username: u.username, password: '', role: u.role, name: u.name || '', email: u.email || '', plan: u.plan?.id || defaultPlan, status: u.status || 'active', next: u.next || '' };
     editOpen = true;
   }
   function openAdd() {
@@ -105,6 +138,7 @@
     showPass = false;
     formErr = '';
     form = emptyForm();
+    loadPlans();
     editOpen = true;
   }
 
@@ -120,7 +154,7 @@
     if (!editing && form.password.length < 8) { formErr = 'Password minimal 8 karakter.'; return; }
     if (editing && form.password && form.password.length < 8) { formErr = 'Password minimal 8 karakter.'; return; }
     if (!ROLES.includes(form.role)) { formErr = 'Role tidak valid.'; return; }
-    const extra = { name, email, plan: form.plan, status: form.status, next: form.next, key: form.key };
+    const extra = { name, email, plan_id: form.plan, status: form.status, next: form.next };
     saving = true;
     try {
       if (editing) {
@@ -132,6 +166,7 @@
       }
       await load();
       editOpen = false;
+      addToast('success', editing ? 'User diperbarui.' : 'User ditambahkan.');
     } catch (e: any) {
       formErr = e.message;
     } finally {
@@ -152,6 +187,7 @@
       await admin.deleteUser(id);
       users = users.filter((u) => u.id !== id);
       delTarget = null;
+      addToast('success', 'User dihapus.');
     } catch (e: any) {
       delErr = e.message;
     } finally {
@@ -225,7 +261,6 @@
             <th class="px-4 py-3 font-medium">Status</th>
             <th class="px-4 py-3 font-medium">Role</th>
             <th class="px-4 py-3 font-medium">Tagihan</th>
-            <th class="px-4 py-3 font-medium">API Key</th>
             <th class="px-4 py-3 font-medium text-right">Aksi</th>
           </tr>
         </thead>
@@ -243,7 +278,7 @@
                   </div>
                 </div>
               </td>
-              <td class="px-4 py-3 font-semibold">{u.plan || '—'}</td>
+              <td class="px-4 py-3 font-semibold">{u.plan?.name || '—'}</td>
               <td class="px-4 py-3">
                 {#if u.status}
                   <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(u.status)}">{u.status}</span>
@@ -253,7 +288,6 @@
               </td>
               <td class="px-4 py-3"><span class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(u.role)}">{roleLabel(u.role)}</span></td>
               <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{fmtDate(u.next)}</td>
-              <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{u.key || '—'}</td>
               <td class="px-4 py-3 text-right">
                 <div class="flex items-center justify-end gap-2">
                   <button class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]" onclick={() => openDetail(u)}>Lihat</button>
@@ -290,12 +324,11 @@
             {#if u.status}
               <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(u.status)}">{u.status}</span>
             {/if}
-            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--border-subtle)]/50 text-[var(--text-muted)]">{u.plan || '—'}</span>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--border-subtle)]/50 text-[var(--text-muted)]">{u.plan?.name || '—'}</span>
             <span class="text-xs font-mono text-[var(--text-muted)] ml-auto">{u.id}</span>
           </div>
           <div class="text-xs text-[var(--text-muted)] flex justify-between">
             <span>Tagihan: {fmtDate(u.next)}</span>
-            <span>Key: {u.key || '—'}</span>
           </div>
           <div class="flex gap-2">
             <button class="tactile-btn flex-1 py-2 text-xs font-bold text-[var(--accent)]" onclick={() => openDetail(u)}>Lihat</button>
@@ -348,7 +381,7 @@
         </div>
         <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
           <span class="text-[var(--text-muted)]">Plan</span>
-          <span class="font-semibold">{sel.plan || '—'}</span>
+          <span class="font-semibold">{sel.plan?.name || '—'}</span>
         </div>
         <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
           <span class="text-[var(--text-muted)]">Status</span>
@@ -357,10 +390,6 @@
           {:else}
             <span class="text-[var(--text-muted)]">—</span>
           {/if}
-        </div>
-        <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
-          <span class="text-[var(--text-muted)]">Status API Key</span>
-          <span class="font-semibold">{sel.key || '—'}</span>
         </div>
         <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
           <span class="text-[var(--text-muted)]">Tagihan Berikutnya</span>
@@ -425,9 +454,15 @@
           </div>
           <div>
             <label for="user-plan" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Plan</label>
+            {#if planErr}
+              <p class="text-xs font-semibold text-red-500 mb-1">Gagal muat plan: {planErr}</p>
+            {/if}
             <select id="user-plan" bind:value={form.plan} class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer">
-              {#each PLAN_OPTS as p (p)}
-                <option value={p}>{p}</option>
+              {#if PLAN_OPTS.length === 0}
+                <option value="">{planLoading ? 'Memuat plan...' : 'Belum ada plan'}</option>
+              {/if}
+              {#each PLAN_OPTS as p (p.id)}
+                <option value={p.id}>{p.name}</option>
               {/each}
             </select>
           </div>
@@ -441,21 +476,20 @@
               {/each}
             </select>
           </div>
-          <div>
-            <label for="user-key" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Status API Key</label>
-            <select id="user-key" bind:value={form.key} class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer">
-              {#each KEY_STATUSES as k (k)}
-                <option value={k}>{k}</option>
-              {/each}
-            </select>
-          </div>
         </div>
         <div>
           <label for="user-next" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Tagihan Berikutnya</label>
           <input id="user-next" type="date" bind:value={form.next} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
         </div>
         <div>
-          <label for="user-pass" class="block text-xs font-bold text-[var(--text-muted)] mb-1">{editing ? 'Password Baru (opsional)' : 'Password'}</label>
+          <div class="flex items-center justify-between mb-1">
+            <label for="user-pass" class="block text-xs font-bold text-[var(--text-muted)]">{editing ? 'Password Baru (opsional)' : 'Password'}</label>
+            {#if !editing}
+              <button type="button" onclick={genPass} class="text-[10px] font-bold text-[var(--accent)] flex items-center gap-1 hover:opacity-80 cursor-pointer">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Generate
+              </button>
+            {/if}
+          </div>
           <div class="relative">
             <input
               id="user-pass"

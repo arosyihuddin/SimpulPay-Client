@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { admin } from '$lib/api';
   import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
+  import { addToast } from '$lib/toast.svelte';
 
   const TYPE_META: Record<string, { label: string; icon: string; cls: string }> = {
     gopay: { label: 'GoPay', icon: 'fa-solid fa-mobile-screen', cls: 'text-emerald-600 dark:text-emerald-400' },
@@ -24,12 +25,13 @@
     try {
       await admin.updateMerchant(m.id, { status: m.status === 'active' ? 'inactive' : 'active' });
       await loadMerchants();
+      addToast('success', `Merchant "${m.name}" ${m.status === 'active' ? 'dinonaktifkan' : 'diaktifkan'}.`);
     } catch (e: any) { err = e.message; }
   }
   async function remove(m: any) {
     if (!confirm(`Hapus merchant "${m.name}"? Sesi GoBiz ikut terhapus.`)) return;
     err = '';
-    try { await admin.deleteMerchant(m.id); await loadMerchants(); }
+    try { await admin.deleteMerchant(m.id); await loadMerchants(); addToast('success', `Merchant "${m.name}" dihapus.`); }
     catch (e: any) { err = e.message; }
   }
 
@@ -55,6 +57,7 @@
       await admin.createMerchant(nm, provider);
       await loadMerchants();
       modalOpen = false;
+      addToast('success', 'Merchant ditambahkan.');
     } catch (e: any) { modalErr = e.message; }
     finally { saving = false; }
   }

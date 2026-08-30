@@ -2,6 +2,7 @@
   // Admin billing — kelola paket langganan (CRUD) + langganan subscriber (real API /admin/plans & /admin/subscriptions).
   import { onMount } from 'svelte';
   import { admin } from '$lib/api';
+  import { addToast } from '$lib/toast.svelte';
 
   interface Plan {
     id: string; name: string; type: 'free' | 'paid'; price: number; max_merchants: number;
@@ -82,19 +83,20 @@
       else await admin.createPlan(body);
       planModal = false;
       load();
+      addToast('success', editingPlan ? 'Paket diperbarui.' : 'Paket ditambahkan.');
     } catch (e: any) { err = e.message; }
   }
   async function delPlan(p: Plan) {
     if (!confirm(`Hapus paket "${p.name}"?`)) return;
     err = '';
-    try { await admin.deletePlan(p.id); load(); }
+    try { await admin.deletePlan(p.id); load(); addToast('success', 'Paket dihapus.'); }
     catch (e: any) { err = e.message; }
   }
 
   async function doCancel() {
     if (!cancelSub) return;
     err = '';
-    try { await admin.cancelSubscription(cancelSub.id); cancelSub = null; load(); }
+    try { await admin.cancelSubscription(cancelSub.id); cancelSub = null; load(); addToast('success', 'Langganan dibatalkan.'); }
     catch (e: any) { err = e.message; }
   }
 

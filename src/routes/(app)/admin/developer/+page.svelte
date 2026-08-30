@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { admin, API_BASE } from '$lib/api';
+  import { addToast } from '$lib/toast.svelte';
 
   interface SwaggerDoc { info: { title: string; version: string; description?: string }; paths: Record<string, Record<string, any>>; }
 
@@ -74,6 +75,7 @@
             const res = await admin.createApiKey();
             apiKey = res.data.api_key_masked; showKey = true;
             copy(res.data.api_key, () => (copied = true));
+            addToast('success', 'API key baru dibuat & disalin.');
           } catch (e: any) { docErr = e.message; }
         }}
         class="tactile-btn w-full py-3 text-xs font-bold text-[var(--accent)] flex items-center justify-center gap-2"
