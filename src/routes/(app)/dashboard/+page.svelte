@@ -32,9 +32,29 @@
   let err = $state('');
   let busy = $state(false);
 
+  interface Announcement { id: number; title: string; message: string; type: string; active: boolean; created_at: number; }
+  let announcements = $state<Announcement[]>([]);
+  const ANNO_TYPE_CLS: Record<string, string> = {
+    info: 'bg-blue-100/70 dark:bg-blue-500/10 border-blue-200/60 dark:border-blue-500/30 text-blue-700 dark:text-blue-300',
+    warning: 'bg-amber-100/70 dark:bg-amber-500/10 border-amber-200/60 dark:border-amber-500/30 text-amber-700 dark:text-amber-300',
+    important: 'bg-red-100/70 dark:bg-red-500/10 border-red-200/60 dark:border-red-500/30 text-red-700 dark:text-red-300',
+  };
+  const ANNO_ICON: Record<string, string> = {
+    info: 'fa-solid fa-circle-info',
+    warning: 'fa-solid fa-triangle-exclamation',
+    important: 'fa-solid fa-shield-halved',
+  };
+  async function loadAnnouncements() {
+    try {
+      const r = await admin.listAnnouncements({ active: true });
+      announcements = r.data.announcements;
+    } catch { /* non-kritis */ }
+  }
+
   async function load() {
     if (!merchants.active) return;
     admin.dashboard(merchants.active.id).then((d) => (data = d.data)).catch((e) => (err = e.message));
+    loadAnnouncements();
   }
 
   onMount(() => { loadMerchants(); });
@@ -86,6 +106,18 @@
   {#if session?.exists === false}
     <div class="bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl px-4 py-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
       ⚠️ Sesi GoBiz belum ada. Login OTP lewat <a href="/admin/settings" class="underline">Settings</a>.
+    </div>
+  {/if}
+
+  <!-- Announcements aktif — broadcast admin ke user -->
+  {#if announcements.length > 0}
+    <div class="space-y-3">
+      {#each announcements as a (a.id)}
+        <div class="rounded-2xl border px-4 py-3 text-sm {ANNO_TYPE_CLS[a.type] || ANNO_TYPE_CLS.info}">
+          <p class="font-bold flex items-center gap-2"><i class="{ANNO_ICON[a.type] || ANNO_ICON.info}"></i>{a.title}</p>
+          {#if a.message}<p class="text-xs mt-1 opacity-90">{a.message}</p>{/if}
+        </div>
+      {/each}
     </div>
   {/if}
 

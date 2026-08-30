@@ -81,6 +81,19 @@ export const admin = {
   // Notifications
   listNotifications: () => api<any>('/admin/notifications'),
   markNotificationRead: (id: number) => api<any>(`/admin/notifications/${id}/read`, { method: 'POST' }),
+
+  // Announcements (broadcast admin → user)
+  listAnnouncements: (opts: { active?: boolean; limit?: number; offset?: number } = {}) =>
+    api<any>(`/admin/announcements?${new URLSearchParams({
+      limit: String(opts.limit ?? 50),
+      offset: String(opts.offset ?? 0),
+      ...(opts.active ? { active: '1' } : {}),
+    })}`),
+  createAnnouncement: (body: { title: string; message: string; type?: string; active?: boolean }) =>
+    api<any>('/admin/announcements', { method: 'POST', body }),
+  updateAnnouncement: (id: number, patch: Record<string, unknown>) =>
+    api<any>(`/admin/announcements/${id}`, { method: 'PATCH', body: patch }),
+  deleteAnnouncement: (id: number) => api<any>(`/admin/announcements/${id}`, { method: 'DELETE' }),
 };
 
 export const fmtIDR = (n: number | null | undefined) =>

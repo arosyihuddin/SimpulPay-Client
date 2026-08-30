@@ -21,13 +21,14 @@
     { to: '/admin/developer', label: 'Developer', icon: 'fa-solid fa-code', title: 'Developer API', subtitle: 'Dokumentasi API v1 untuk integrasi aplikasi' },
   ];
   const ADMIN_LINKS = [
+    { to: '/admin/announcements', label: 'Announcements', icon: 'fa-solid fa-bullhorn', title: 'Announcements', subtitle: 'Broadcast pengumuman ke semua user' },
     { to: '/admin/billing', label: 'Billing Plans', icon: 'fa-solid fa-credit-card', title: 'Billing Plans', subtitle: 'Kelola paket langganan & langganan semua subscriber' },
     { to: '/admin/users', label: 'Users', icon: 'fa-solid fa-users', title: 'Users', subtitle: 'Kelola akun pengguna sistem' },
   ];
   const ALL_LINKS = [...USER_LINKS, ...ADMIN_LINKS];
   const LINKS = $derived(auth.role === 'admin' ? ALL_LINKS : USER_LINKS);
   // Halaman yang diblokir untuk non-admin.
-  const ADMIN_ONLY = ['/admin/billing', '/admin/users'];
+  const ADMIN_ONLY = ['/admin/announcements', '/admin/billing', '/admin/users'];
 
   const TITLES: Record<string, [string, string]> = Object.fromEntries(ALL_LINKS.map((l) => [l.to, [l.title, l.subtitle]]));
   TITLES['/admin/settings/password'] = ['Ganti Password', 'Ubah kata sandi akun admin'];
