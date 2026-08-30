@@ -103,7 +103,7 @@
 
     {#if paths.length > 0}
       <div class="space-y-2">
-        {#each paths as [path, methods] ([path])}
+        {#each paths as [path, methods] (path)}
           {#each Object.entries(methods) as [method, op] (`${method} ${path}`)}
             {#snippet body()}
               <div class="rounded-xl bg-[var(--bg-base)] shadow-[inset_3px_3px_6px_var(--inset-dark),inset_-3px_-3px_6px_var(--inset-light)] overflow-hidden">

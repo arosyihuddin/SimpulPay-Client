@@ -46,6 +46,10 @@ export const admin = {
   saveMerchantId: (merchant_id: string) => api<any>('/admin/merchant-id', { method: 'POST', body: { merchant_id } }),
   generateApiKey: (action: 'generate' | 'delete' = 'generate') => api<any>('/admin/api-key', { method: 'POST', body: { action } }),
   changePassword: (username: string, old_password: string, new_password: string) => api<any>('/admin/change-password', { method: 'POST', body: { username, old_password, new_password } }),
+	listUsers: (limit = 50, offset = 0) => api<any>(`/admin/users?limit=${limit}&offset=${offset}`),
+	createUser: (username: string, password: string, role: string, extra?: Record<string, unknown>) => api<any>('/admin/users', { method: 'POST', body: { username, password, role, ...extra } }),
+	updateUser: (id: string, patch: Record<string, unknown>) => api<any>(`/admin/users/${id}`, { method: 'PATCH', body: patch }),
+	deleteUser: (id: string) => api<any>(`/admin/users/${id}`, { method: 'DELETE' }),
 };
 
 export const fmtIDR = (n: number | null | undefined) =>
