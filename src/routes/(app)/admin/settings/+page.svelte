@@ -1,18 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { admin } from '$lib/api';
+  import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
   import Row from '$lib/components/Row.svelte';
 
-  interface SettingsData {
-    port: string; api_key_set: boolean; api_key_masked: string; api_key: string;
-    qris_static_set: boolean; qris_static_masked: string; gopay_merchant_id: string;
-    gobiz_session_exists: boolean; database_path: string;
-  }
+  interface ApiKey { id: string; label: string | null; key_masked: string; status: string; }
+  interface SettingsData { merchants: unknown[]; api_keys: ApiKey[]; }
 
   let s = $state<SettingsData | null>(null);
   let err = $state('');
   let msg = $state('');
   const displayUser = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('gomerch_username') || '' : '');
+
+  // Sesi GoBiz (per-merchant, dari dashboard)
+  let session = $state<{ exists: boolean; phone?: string; outlet?: string; merchant_id?: string | null; expired?: boolean; expires_at?: string | null } | null>(null);
 
   // Login GoBiz
   let phone = $state('');
@@ -27,10 +28,17 @@
   let qrisParsed = $state<any | null>(null);
   let qrisBusy = $state(false);
 
+  // API key baru
+  let newKeyLabel = $state('');
+  let newKey = $state('');
+
   async function load() {
+    if (!merchants.active) return;
     admin.settings().then((d) => (s = d.data)).catch((e) => (err = e.message));
+    admin.dashboard(merchants.active.id).then((d) => (session = d.data.gobiz_session)).catch(() => {});
   }
-  onMount(() => { load(); });
+  onMount(() => { loadMerchants(); });
+  $effect(() => { load(); });
 
   async function requestOtp(e: SubmitEvent) {
     e.preventDefault(); otpBusy = true; err = '';
@@ -44,7 +52,7 @@
   async function verifyOtp(e: SubmitEvent) {
     e.preventDefault(); otpBusy = true; err = '';
     try {
-      const res = await admin.otpVerify(phone, otp, otpToken, uniqueId);
+      const res = await admin.otpVerify(phone, otp, otpToken, uniqueId, merchants.active?.id);
       msg = `Login GoBiz sukses: ${res.data.outlet_name} (${res.data.phone_number})`;
       step = 'phone'; phone = ''; otp = ''; otpToken = ''; uniqueId = ''; load();
     } catch (e: any) { err = e.message; }
@@ -53,7 +61,7 @@
 
   async function refreshGoBiz() {
     otpBusy = true; err = '';
-    try { const res = await admin.refreshSession(); msg = `Sesi GoBiz di-refresh, berlaku hingga ${res.data.expires_at}`; }
+    try { const res = await admin.refreshSession(merchants.active?.id); msg = `Sesi GoBiz di-refresh, berlaku hingga ${res.data.expires_at}`; }
     catch (e: any) { err = e.message; }
     finally { otpBusy = false; }
   }
@@ -61,7 +69,7 @@
   async function deleteGoBiz() {
     if (!confirm('Hapus sesi GoBiz? Login OTP ulang diperlukan.')) return;
     otpBusy = true; err = '';
-    try { await admin.deleteGoBizSession(); msg = 'Sesi GoBiz dihapus. Login OTP ulang untuk akses transaksi.'; step = 'phone'; load(); }
+    try { await admin.deleteGoBizSession(merchants.active?.id); msg = 'Sesi GoBiz dihapus. Login OTP ulang untuk akses transaksi.'; step = 'phone'; load(); }
     catch (e: any) { err = e.message; }
     finally { otpBusy = false; }
   }
@@ -87,25 +95,24 @@
     if (!qrisParsed) return;
     qrisBusy = true; err = '';
     try {
-      await admin.saveQrisStatic(qrisParsed.code);
-      if (qrisParsed.merchant_id) await admin.saveMerchantId(qrisParsed.merchant_id).catch(() => {});
+      await admin.saveQrisStatic(qrisParsed.code, merchants.active?.id);
+      if (qrisParsed.merchant_id) await admin.saveMerchantId(qrisParsed.merchant_id, merchants.active?.id).catch(() => {});
       msg = 'QRIS static & merchant ID tersimpan. QR dinamis sekarang bisa dibuat.';
       qrisParsed = null; qrisImg = null; load();
     } catch (e: any) { err = e.message; }
     finally { qrisBusy = false; }
   }
 
-  async function regenKey() {
-    if (s?.api_key_set && !confirm('Regenerate API key? Aplikasi lama pakai key lama akan gagal.')) return;
+  async function genKey() {
     err = '';
-    try { const res = await admin.generateApiKey('generate'); msg = `API key baru dibuat: ${res.data.api_key}`; load(); }
+    try { const res = await admin.createApiKey(newKeyLabel || undefined); newKey = res.data.api_key; newKeyLabel = ''; load(); }
     catch (e: any) { err = e.message; }
   }
 
-  async function delKey() {
+  async function delKey(id: string) {
     if (!confirm('Hapus API key? Endpoint publik akan mati.')) return;
     err = '';
-    try { await admin.generateApiKey('delete'); msg = 'API key dihapus.'; load(); }
+    try { await admin.deleteApiKey(id); msg = 'API key dihapus.'; load(); }
     catch (e: any) { err = e.message; }
   }
 
@@ -118,6 +125,12 @@
 <div class="space-y-6">
   {#if err}<p class="text-xs font-semibold text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30 rounded-2xl px-4 py-3"><i class="fa-solid fa-circle-exclamation mr-2"></i>{err}</p>{/if}
   {#if msg}<p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-2xl px-4 py-3"><i class="fa-solid fa-circle-check mr-2"></i>{msg}</p>{/if}
+  {#if newKey}
+    <div class="bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-2xl px-4 py-3 text-xs space-y-1">
+      <p class="font-semibold text-emerald-700 dark:text-emerald-300"><i class="fa-solid fa-circle-check mr-2"></i>API key baru dibuat — salin sekarang, tidak akan ditampilkan lagi:</p>
+      <p class="font-mono break-all text-emerald-700 dark:text-emerald-300">{newKey}</p>
+    </div>
+  {/if}
 
   <!-- SECTION USER -->
   <section class="tactile-box p-5 space-y-4">
@@ -134,14 +147,27 @@
 
     <div class="border-t border-[var(--border-subtle)] pt-4 space-y-2.5">
       <h3 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">API Key</h3>
-      <Row label="API Key Publik" val={s?.api_key_set ? s.api_key_masked : '—'} />
+      {#if s?.api_keys.length}
+        <div class="space-y-2">
+          {#each s.api_keys as k (k.id)}
+            <div class="flex items-center justify-between gap-2 tactile-inset px-3 py-2.5 rounded-xl">
+              <div class="min-w-0">
+                <p class="text-xs font-semibold truncate">{k.label || 'Tanpa label'}</p>
+                <p class="font-mono text-xs text-[var(--text-muted)] break-all">{k.key_masked}</p>
+              </div>
+              <button onclick={() => delKey(k.id)} aria-label="Hapus API key" class="tactile-btn px-3 py-2 text-xs font-bold text-red-500 shrink-0"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <p class="text-xs text-[var(--text-muted)]">Belum ada API key.</p>
+      {/if}
       <div class="flex gap-2">
-        <button onclick={regenKey} class="tactile-btn flex-1 py-3 text-xs font-bold text-[var(--accent)] flex items-center justify-center gap-2">
-          <i class="fa-solid fa-rotate"></i> {s?.api_key_set ? 'Regenerate' : 'Generate API Key'}
-        </button>
-        {#if s?.api_key_set}
-          <button onclick={delKey} aria-label="Hapus API Key" class="tactile-btn px-4 py-3 text-xs font-bold text-red-500 flex items-center justify-center gap-2"><i class="fa-solid fa-trash-can"></i></button>
-        {/if}
+        <div class="input-well px-3 py-2 flex items-center flex-1">
+          <i class="fa-solid fa-tag text-[var(--text-muted)] mr-2"></i>
+          <input type="text" bind:value={newKeyLabel} placeholder="Label (opsional)" class="bg-transparent w-full text-xs focus:outline-none placeholder:text-[var(--text-muted)]" />
+        </div>
+        <button onclick={genKey} class="tactile-btn px-4 py-2 text-xs font-bold text-[var(--accent)] shrink-0"><i class="fa-solid fa-plus mr-1"></i>Buat</button>
       </div>
     </div>
   </section>
@@ -153,7 +179,23 @@
       <div><h2 class="font-semibold">Merchant</h2><p class="text-xs text-[var(--text-muted)]">Login GoBiz, QRIS, dan identitas merchant</p></div>
     </div>
 
-    {#if !s?.gobiz_session_exists}
+    {#if merchants.list.length > 1}
+      <div class="flex items-center gap-3">
+        <label for="set-merchant" class="text-xs font-bold text-[var(--text-muted)] whitespace-nowrap">Merchant</label>
+        <select
+          id="set-merchant"
+          value={merchants.activeId ?? ''}
+          onchange={(e) => setActiveMerchant((e.target as HTMLSelectElement).value)}
+          class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer"
+        >
+          {#each merchants.list as m (m.id)}
+            <option value={m.id}>{m.name}</option>
+          {/each}
+        </select>
+      </div>
+    {/if}
+
+    {#if session && !session.exists}
       <div class="space-y-3">
         <p class="text-xs text-[var(--text-muted)]">Login OTP untuk mengakses API transaksi GoPay.</p>
         {#if step === 'phone'}
@@ -182,10 +224,11 @@
           </form>
         {/if}
       </div>
-    {:else}
+    {:else if session}
       <div class="space-y-3">
         <p class="text-xs text-[var(--text-muted)]">Token berlaku 24 jam, auto-refresh handled backend.</p>
-        <Row label="Sesi GoBiz" val="Aktif" />
+        <Row label="Sesi GoBiz" val={session.outlet || 'Aktif'} />
+        {#if session.merchant_id}<Row label="Merchant ID" val={session.merchant_id} />{/if}
         <div class="flex gap-2">
           <button onclick={refreshGoBiz} disabled={otpBusy} class="tactile-btn flex-1 py-4 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
             <i class="fa-solid fa-arrows-rotate"></i> Refresh
@@ -202,14 +245,14 @@
       <h3 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Konfigurasi QRIS</h3>
       <p class="text-xs text-[var(--text-muted)]">Upload gambar QRIS static dari merchant GoBiz. Dipakai bikin QR dinamis.</p>
 
-      {#if s?.qris_static_set}
+      {#if merchants.active?.qris_static_set}
         <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
           <span class="text-[var(--text-muted)] shrink-0 text-sm">QRIS Static</span>
-          <span class="font-mono text-xs break-all text-right text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i>Terpasang ({s.qris_static_masked}...)</span>
+          <span class="font-mono text-xs break-all text-right text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i>Terpasang</span>
         </div>
       {/if}
-      {#if s?.gopay_merchant_id}
-        <Row label="Merchant ID" val={s.gopay_merchant_id} />
+      {#if merchants.active?.gopay_merchant_id}
+        <Row label="Merchant ID" val={merchants.active.gopay_merchant_id} />
       {/if}
 
       <label class="input-well px-4 py-3 flex items-center gap-3 cursor-pointer">
@@ -239,20 +282,6 @@
       </div>
     </div>
   </section>
-
-  <!-- INFO SERVER (read-only) -->
-  <div class="tactile-box p-5 space-y-2">
-    <div class="flex items-center gap-2">
-      <i class="fa-solid fa-server text-[var(--text-muted)]"></i>
-      <h2 class="font-semibold">Info Server <span class="text-[10px] text-[var(--text-muted)] font-normal">(read-only)</span></h2>
-    </div>
-    {#if s}
-      <div class="text-sm space-y-2">
-        <Row label="Port" val={s.port} />
-        <Row label="Database" val={s.database_path} />
-      </div>
-    {/if}
-  </div>
 
   <!-- Mobile only — developer & logout -->
   <div class="lg:hidden tactile-box p-5 space-y-2.5">

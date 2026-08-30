@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { admin, fmtIDR, fmtTime, API_BASE } from '$lib/api';
+  import { merchants } from '$lib/merchant.svelte';
   import { useWs } from '$lib/useWs';
   import Pagination from '$lib/components/Pagination.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
@@ -27,11 +27,10 @@
   let err = $state('');
   let busy = $state(false);
   let loading = $state(true);
-  let qrisStaticSet = $state<boolean | null>(null);
 
   async function load() {
     loading = true;
-    admin.listQris(PAGE_SIZE, (page - 1) * PAGE_SIZE)
+    admin.listQris(PAGE_SIZE, (page - 1) * PAGE_SIZE, merchants.active?.id)
       .then((d) => { rows = d.data.qris; total = d.data.total; })
       .catch((e) => (err = e.message))
       .finally(() => (loading = false));
@@ -50,17 +49,13 @@
     }
   });
 
-  onMount(() => {
-    admin.settings().then((d) => (qrisStaticSet = !!d.data.qris_static_set)).catch(() => {});
-  });
-
   async function create(e: SubmitEvent) {
     e.preventDefault();
     busy = true; err = ''; created = null;
     try {
       const a = parseInt(amount, 10);
       if (!a || a <= 0) throw new Error('Nominal tidak valid');
-      const res = await admin.createQris(a);
+      const res = await admin.createQris(a, merchants.active?.id);
       created = res.data; amount = ''; load();
     } catch (e: any) { err = e.message; }
     finally { busy = false; }
@@ -71,7 +66,7 @@
   <div class="tactile-box p-5 space-y-4">
     <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-qrcode text-[var(--accent)]"></i> Buat QRIS Dinamis</h2>
     {#if err}<p class="text-xs font-semibold text-red-500">{err}</p>{/if}
-    {#if qrisStaticSet === false}
+    {#if merchants.active && !merchants.active.qris_static_set}
       <div class="bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl px-4 py-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
         ⚠️ QRIS static belum diatur. Scan QRIS static dulu di <a href="/admin/settings" class="underline">Settings → Konfigurasi QRIS</a> sebelum buat QR dinamis.
       </div>
@@ -81,7 +76,7 @@
         <i class="fa-solid fa-money-bill text-[var(--text-muted)] mr-3"></i>
         <input type="number" min="1" bind:value={amount} placeholder="Nominal (Rp)" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
       </div>
-      <button type="submit" disabled={busy || qrisStaticSet === false} class="tactile-btn px-5 py-3 font-bold text-[var(--accent)] flex items-center gap-2">
+      <button type="submit" disabled={busy || (merchants.active && !merchants.active.qris_static_set)} class="tactile-btn px-5 py-3 font-bold text-[var(--accent)] flex items-center gap-2">
         <i class="fa-solid fa-plus"></i> {busy ? 'Buat...' : 'Buat'}
       </button>
     </form>

@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { theme } from '$lib/theme.svelte';
   import { admin, fmtIDR, fmtTime } from '$lib/api';
+  import { merchants } from '$lib/merchant.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
 
   // ---- Chart volume (data sample ala mockup, tak ada backend time-series) ----
@@ -80,8 +81,8 @@
     { name: 'SSL / TLS Shield', ok: true, label: 'Secure' },
   ];
 
-  onMount(() => {
-    admin.transactions(1, 5).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
+  $effect(() => {
+    admin.transactions(1, 5, merchants.active?.id).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
   });
 </script>
 

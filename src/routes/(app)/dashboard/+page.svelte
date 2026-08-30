@@ -5,6 +5,7 @@
   import Skeleton from '$lib/components/Skeleton.svelte';
   import Stat from '$lib/components/Stat.svelte';
   import DashboardPanels from '$lib/components/DashboardPanels.svelte';
+  import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
 
   interface DashboardData {
     stats: {
@@ -30,20 +31,17 @@
   let created = $state<any>(null);
   let err = $state('');
   let busy = $state(false);
-  let qrisStaticSet = $state<boolean | null>(null);
 
   async function load() {
-    admin.dashboard().then((d) => (data = d.data)).catch((e) => (err = e.message));
+    if (!merchants.active) return;
+    admin.dashboard(merchants.active.id).then((d) => (data = d.data)).catch((e) => (err = e.message));
   }
 
-  onMount(() => { load(); });
+  onMount(() => { loadMerchants(); });
+  $effect(() => { load(); });
 
   useWs((m) => {
     if (m.type === 'qris_created' || m.type === 'qris_status') load();
-  });
-
-  onMount(() => {
-    admin.settings().then((d) => (qrisStaticSet = !!d.data.qris_static_set)).catch(() => {});
   });
 
   async function createQris(e: SubmitEvent) {
@@ -54,7 +52,7 @@
     try {
       const a = parseInt(amount, 10);
       if (!a || a <= 0) throw new Error('Nominal tidak valid');
-      const res = await admin.createQris(a);
+      const res = await admin.createQris(a, merchants.active?.id);
       created = res.data;
       amount = '';
       load();
@@ -70,6 +68,21 @@
 </script>
 
 <div class="space-y-6">
+  {#if merchants.list.length > 1}
+    <div class="flex items-center gap-3">
+      <label for="dash-merchant" class="text-xs font-bold text-[var(--text-muted)] whitespace-nowrap"><i class="fa-solid fa-store mr-1"></i> Merchant</label>
+      <select
+        id="dash-merchant"
+        value={merchants.activeId ?? ''}
+        onchange={(e) => setActiveMerchant((e.target as HTMLSelectElement).value)}
+        class="w-full max-w-xs tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer"
+      >
+        {#each merchants.list as m (m.id)}
+          <option value={m.id}>{m.name}</option>
+        {/each}
+      </select>
+    </div>
+  {/if}
   {#if session?.exists === false}
     <div class="bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl px-4 py-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
       ⚠️ Sesi GoBiz belum ada. Login OTP lewat <a href="/admin/settings" class="underline">Settings</a>.

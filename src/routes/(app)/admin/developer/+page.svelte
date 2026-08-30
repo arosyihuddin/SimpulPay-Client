@@ -25,7 +25,7 @@
   let copiedBody = $state<string | null>(null);
 
   onMount(() => {
-    admin.settings().then((d) => (apiKey = d.data.api_key || '')).catch(() => {});
+    admin.listApiKeys().then((d) => { const k = d.data.api_keys[0]; if (k) apiKey = k.key_masked; }).catch(() => {});
     fetch(`${API_BASE}/docs/json`)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((j) => (doc = j))
@@ -71,8 +71,8 @@
       <button
         onclick={async () => {
           try {
-            const res = await admin.generateApiKey('generate');
-            apiKey = res.data.api_key; showKey = true;
+            const res = await admin.createApiKey();
+            apiKey = res.data.api_key_masked; showKey = true;
             copy(res.data.api_key, () => (copied = true));
           } catch (e: any) { docErr = e.message; }
         }}

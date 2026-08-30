@@ -50,13 +50,12 @@
   function setPage(p: number) { page = p; }
   $effect(() => { if (page > Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))) page = 1; });
 
-  const active = $derived(users.filter((u) => u.status === 'Active').length);
-  const trial = $derived(users.filter((u) => u.status === 'Trial').length);
-  const overdue = $derived(users.filter((u) => u.status === 'Overdue').length);
-  const suspended = $derived(users.filter((u) => u.status === 'Suspended').length);
+  const active = $derived(users.filter((u) => u.status === 'active').length);
+  const suspended = $derived(users.filter((u) => u.status === 'suspended').length);
+  const banned = $derived(users.filter((u) => u.status === 'banned').length);
 
-  const ROLES = ['admin', 'user'];
-  const STATUSES = ['Active', 'Trial', 'Overdue', 'Suspended'];
+  const ROLES = ['admin', 'customer'];
+  const STATUSES = ['active', 'suspended', 'banned'];
   const PLAN_OPTS = ['Basic', 'Pro', 'Enterprise'];
   const KEY_STATUSES = ['Aktif', 'Terbatas', 'Nonaktif'];
 
@@ -66,9 +65,8 @@
       ? 'bg-violet-100/70 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-500/30'
       : 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30';
   const statusCls = (st: string | undefined) =>
-    st === 'Active' ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
-    : st === 'Trial' ? 'bg-blue-100/70 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/30'
-    : st === 'Overdue' ? 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'
+    st === 'active' ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
+    : st === 'suspended' ? 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'
     : 'bg-red-100/70 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-500/30';
 
   const displayName = (u: User) => u.name || u.username;
@@ -77,9 +75,8 @@
     iso ? new Date(typeof iso === 'number' ? iso : iso + (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? 'T00:00:00' : '')).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
   const fmtTime = (ts: number) => ts ? new Date(ts).toLocaleString('id-ID') : '—';
   const avatarCls = (u: User) =>
-    u.status === 'Active' ? 'text-emerald-600 dark:text-emerald-300'
-    : u.status === 'Trial' ? 'text-blue-600 dark:text-blue-300'
-    : u.status === 'Overdue' ? 'text-amber-600 dark:text-amber-300'
+    u.status === 'active' ? 'text-emerald-600 dark:text-emerald-300'
+    : u.status === 'suspended' ? 'text-amber-600 dark:text-amber-300'
     : 'text-red-600 dark:text-red-300';
 
   // ---- Detail user modal ----
@@ -90,7 +87,7 @@
   // ---- Form tambah / edit ----
   let editOpen = $state(false);
   let editing = $state<User | null>(null);
-  const emptyForm = () => ({ username: '', password: '', role: 'user', name: '', email: '', plan: 'Basic', status: 'Active', next: '', key: 'Aktif' });
+  const emptyForm = () => ({ username: '', password: '', role: 'customer', name: '', email: '', plan: 'Basic', status: 'active', next: '', key: 'Aktif' });
   let form = $state(emptyForm());
   let showPass = $state(false);
   let formErr = $state('');
@@ -175,12 +172,12 @@
       <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{active}</p>
     </div>
     <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Trial</p>
-      <p class="text-xl font-extrabold text-blue-600 dark:text-blue-400">{trial}</p>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Suspended</p>
+      <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{suspended}</p>
     </div>
     <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Overdue / Suspended</p>
-      <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{overdue} / {suspended}</p>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Banned</p>
+      <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{banned}</p>
     </div>
   </div>
 
@@ -423,7 +420,7 @@
             <label for="user-role" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Role</label>
             <select id="user-role" bind:value={form.role} class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer">
               <option value="admin">admin</option>
-              <option value="user">customer</option>
+              <option value="customer">customer</option>
             </select>
           </div>
           <div>

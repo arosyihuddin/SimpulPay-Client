@@ -1,5 +1,6 @@
 <script lang="ts">
   import { admin, fmtIDR, fmtTime } from '$lib/api';
+  import { merchants } from '$lib/merchant.svelte';
   import { useWs } from '$lib/useWs';
   import Pagination from '$lib/components/Pagination.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
@@ -22,7 +23,7 @@
 
   async function load() {
     busy = true;
-    admin.transactions(page, PAGE_SIZE)
+    admin.transactions(page, PAGE_SIZE, merchants.active?.id)
       .then((d) => {
         const list: Tx[] = d.data?.transactions || [];
         txs = list; total = d.data?.total || 0;
