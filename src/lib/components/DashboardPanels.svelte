@@ -15,17 +15,21 @@
   function drawChart() {
     const el = canvasRef;
     if (!el || typeof (window as any).Chart === 'undefined' || !volume) return;
+    // Snapshot biar Chart.js pegang plain object — dia mutasi data (tambah _meta),
+    // kalau dapat proxy $state langsung, Svelte lempar state_descriptors_fixed.
+    const v = $state.snapshot(volume);
     const isDark = theme.dark;
     const tickColor = isDark ? '#a3a3a3' : '#064e3b';
     const gridColor = isDark ? 'rgba(38, 38, 38, 0.5)' : 'rgba(203, 222, 212, 0.4)';
+    const maxVal = Math.max(...v.data, 1);
     if (chart) chart.destroy();
     chart = new (window as any).Chart(el, {
       type: 'line',
       data: {
-        labels: volume.labels,
+        labels: v.labels,
         datasets: [{
           label: 'Volume (Rp)',
-          data: volume.data,
+          data: v.data,
           borderColor: '#059669',
           backgroundColor: 'rgba(5, 150, 105, 0.1)',
           borderWidth: 3,
@@ -43,7 +47,7 @@
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11, weight: 'bold' } } },
+          y: { beginAtZero: true, max: maxVal, grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11, weight: 'bold' } } },
           x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11, weight: 'bold' } } },
         },
       },
@@ -56,8 +60,7 @@
   // ---- Transaksi terbaru (real backend: /transactions/recent) ----
   let txs = $state<any[] | null>(null);
 
-  // ---- Ringkasan merchant (real backend: /merchants/summary) ----
-  let summary = $state<{ id: string; name: string; status: string }[]>([]);
+  // ---- Ringkasan merchant (real backend: /merchants/summary, diisi store) ----
 
   // ---- Data contoh panel lain (Payout/Top/Infra — sample) ----
   const PAYOUT = { batch: '#9420', amount: 340_500_000, pct: 82 };
@@ -82,10 +85,8 @@
       : 'bg-slate-200/60 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300 border border-slate-300/50 dark:border-slate-600/40';
 
   $effect(() => {
-    const mid = merchants.active?.id;
-    admin.recentTransactions(5, mid).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
-    admin.transactionVolume(range, mid).then((d) => (volume = d.data)).catch(() => (volume = null));
-    admin.merchantSummary().then((d) => (summary = d.data?.merchants || [])).catch(() => (summary = []));
+    admin.recentTransactions(5).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
+    admin.transactionVolume(range).then((d) => (volume = d.data)).catch(() => (volume = null));
   });
 </script>
 
@@ -116,11 +117,11 @@
           <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto mb-2 shadow-lg animate-pulse">
             <i class="fa-solid fa-qrcode"></i>
           </div>
-          <span class="text-xs font-bold px-3 py-1 rounded-full bg-white/90 dark:bg-black/80 text-emerald-800 dark:text-emerald-300 shadow">{summary.length} Merchant</span>
+          <span class="text-xs font-bold px-3 py-1 rounded-full bg-white/90 dark:bg-black/80 text-emerald-800 dark:text-emerald-300 shadow">{merchants.summary.length} Merchant</span>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-2 mt-4 text-xs">
-        {#each summary.slice(0, 4) as m (m.id)}
+        {#each merchants.summary.slice(0, 4) as m (m.id)}
           <div class="tactile-inset p-2.5 flex justify-between items-center">
             <span class="font-bold truncate">{m.name}</span>
             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full {statusCls(m.status)}">{m.status}</span>

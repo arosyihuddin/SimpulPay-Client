@@ -5,10 +5,7 @@
   import Skeleton from "$lib/components/Skeleton.svelte";
   import Stat from "$lib/components/Stat.svelte";
   import DashboardPanels from "$lib/components/DashboardPanels.svelte";
-  import {
-    merchants,
-    loadMerchants,
-  } from "$lib/merchant.svelte";
+  import { loadSummary } from "$lib/merchant.svelte";
 
   interface DashboardData {
     stats: {
@@ -63,13 +60,13 @@
 
   async function load() {
     admin
-      .dashboard(merchants.active?.id)
+      .dashboard()
       .then((d) => (data = d.data))
       .catch((e) => (err = e.message));
   }
 
   onMount(() => {
-    loadMerchants();
+    loadSummary();
     loadAnnouncements();
   });
   $effect(() => {

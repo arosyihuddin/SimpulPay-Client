@@ -13,14 +13,22 @@ export interface Merchant {
   updated_at: number;
 }
 
+export interface MerchantSummary {
+  id: string;
+  name: string;
+  status: string;
+}
+
 export const merchants = $state<{
   list: Merchant[];
+  summary: MerchantSummary[];
   activeId: string | null;
   loading: boolean;
   error: string;
   active: Merchant | null;
 }>({
   list: [],
+  summary: [],
   activeId: null,
   loading: false,
   error: '',
@@ -48,4 +56,22 @@ export async function loadMerchants() {
 
 export function setActiveMerchant(id: string) {
   merchants.activeId = id;
+}
+
+/** Isi summary dari /merchants/summary — lightweight, tanpa detail penuh. */
+export async function loadSummary() {
+  try {
+    const r = await admin.merchantSummary();
+    merchants.summary = r.data?.merchants || [];
+    // Set activeId kalau belum ada atau tidak cocok sama summary.
+    if (
+      merchants.summary.length &&
+      (!merchants.activeId ||
+        !merchants.summary.some((m) => m.id === merchants.activeId))
+    ) {
+      merchants.activeId = merchants.summary[0].id;
+    }
+  } catch {
+    merchants.summary = [];
+  }
 }
