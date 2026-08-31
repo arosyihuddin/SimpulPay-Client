@@ -155,6 +155,12 @@ export const admin = {
   deleteAnnouncement: (id: number) =>
     api<any>(`/admin/announcements/${id}`, { method: "DELETE" }),
 
+  // Langganan saya + invoice (customer)
+  mySubscription: () => api<any>("/subscriptions"),
+  myInvoices: () => api<any>("/invoices"),
+  subscribe: (planId: string, amount = 0) =>
+    api<any>("/subscriptions", { method: "POST", body: { plan_id: planId, amount } }),
+
   // Admin-only: logs, users, billing plans write, subscriptions, invoices
   logs: (limit = 100, offset = 0) =>
     api<any>(`/logs?limit=${limit}&offset=${offset}`),
