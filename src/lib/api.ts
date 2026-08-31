@@ -118,10 +118,13 @@ export const admin = {
 
   // Settings + API keys (customer routes)
   settings: () => api<any>("/settings"),
-  createApiKey: (label?: string) =>
+  createApiKey: (label?: string, merchantId?: string | null) =>
     api<any>("/api-keys", {
       method: "POST",
-      body: label ? { label } : {},
+      body: {
+        ...(label ? { label } : {}),
+        merchant_id: merchantId || undefined,
+      },
     }),
   listApiKeys: () => api<any>("/api-keys"),
   deleteApiKey: (id: string) =>

@@ -18,7 +18,12 @@
     { to: '/billing', label: 'Billing', icon: 'fa-solid fa-credit-card', title: 'Billing', subtitle: 'Langganan & tagihan saya' },
     { to: '/logs', label: 'Logs', icon: 'fa-solid fa-list', title: 'Aktivitas Sistem', subtitle: 'Log aksi dan event sistem gateway' },
     { to: '/settings', label: 'Settings', icon: 'fa-solid fa-gear', title: 'Pengaturan API', subtitle: 'Login GoBiz, kunci API, dan konfigurasi' },
-    { to: '/developer', label: 'Developer', icon: 'fa-solid fa-code', title: 'Developer API', subtitle: 'Dokumentasi API v1 untuk integrasi aplikasi' },
+  ];
+  // Developer = group collapse: Docs + API Key.
+  const DEVELOPER = { to: '/developer', label: 'Developer', icon: 'fa-solid fa-code' };
+  const DEV_LINKS = [
+    { to: '/developer', label: 'Docs', icon: 'fa-solid fa-book', title: 'Dokumentasi API', subtitle: 'Dokumentasi API v1 & Swagger UI' },
+    { to: '/developer/api-keys', label: 'API Key', icon: 'fa-solid fa-key', title: 'API Keys', subtitle: 'Kelola API key untuk integrasi aplikasi' },
   ];
   const ADMIN_LINKS = [
     { to: '/admin/announcements', label: 'Announcements', icon: 'fa-solid fa-bullhorn', title: 'Announcements', subtitle: 'Broadcast pengumuman ke semua user' },
@@ -30,7 +35,7 @@
   // Halaman yang diblokir untuk non-admin.
   const ADMIN_ONLY = ['/admin/announcements', '/admin/billing', '/admin/users'];
 
-  const TITLES: Record<string, [string, string]> = Object.fromEntries(ALL_LINKS.map((l) => [l.to, [l.title, l.subtitle]]));
+  const TITLES: Record<string, [string, string]> = Object.fromEntries([...ALL_LINKS, ...DEV_LINKS].map((l) => [l.to, [l.title, l.subtitle]]));
   TITLES['/settings/password'] = ['Ganti Password', 'Ubah kata sandi akun admin'];
 
   let username = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('gomerch_username') || 'Admin' : 'Admin');
@@ -43,6 +48,9 @@
 
   const activePath = $derived($page.url.pathname);
   const isActive = (to: string) => (to.startsWith('/admin/')) ? activePath.startsWith(to) : activePath === to;
+  // Developer collapse — auto-buka kalau route aktif di dalamnya.
+  let devOpen = $state(false);
+  $effect(() => { if (activePath.startsWith(DEVELOPER.to)) devOpen = true; });
   const meta = $derived.by(() => {
     const [t, s] = TITLES[activePath] || TITLES['/dashboard'];
     return { title: t, subtitle: s };
@@ -125,6 +133,32 @@
               <span>{l.label}</span>
             </a>
           {/each}
+
+          <!-- Developer group (collapse) -->
+          <div class="space-y-1.5">
+            <button
+              onclick={() => (devOpen = !devOpen)}
+              class="tactile-btn w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold {devOpen ? 'active text-[var(--accent)]' : 'text-slate-500 dark:text-slate-400'} cursor-pointer"
+              aria-expanded={devOpen}
+            >
+              <i class="{DEVELOPER.icon} w-5"></i>
+              <span class="flex-1 text-left">{DEVELOPER.label}</span>
+              <i class="fa-solid fa-chevron-down text-[10px] transition-transform {devOpen ? 'rotate-180' : ''}"></i>
+            </button>
+            {#if devOpen}
+              <div class="space-y-1.5 pl-3">
+                {#each DEV_LINKS as l (l.to)}
+                  <a
+                    href={l.to}
+                    class="tactile-btn flex items-center gap-3 px-4 py-2.5 text-sm font-semibold {isActive(l.to) ? 'active text-[var(--accent)]' : 'text-slate-500 dark:text-slate-400'}"
+                  >
+                    <i class="{l.icon} w-5"></i>
+                    <span>{l.label}</span>
+                  </a>
+                {/each}
+              </div>
+            {/if}
+          </div>
 
           {#if auth.role === 'admin'}
             <div class="pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Admin</div>

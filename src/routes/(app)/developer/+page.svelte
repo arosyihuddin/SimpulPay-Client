@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { admin, API_BASE } from '$lib/api';
-  import { addToast } from '$lib/toast.svelte';
+  import { API_BASE } from '$lib/api';
 
   interface SwaggerDoc { info: { title: string; version: string; description?: string }; paths: Record<string, Record<string, any>>; }
 
@@ -16,17 +15,12 @@
   const docsUrl = `${API_BASE}/docs`;
   const baseUrl = API_BASE || location.origin;
 
-  let apiKey = $state('');
-  let copied = $state(false);
-  let showKey = $state(false);
   let doc = $state<SwaggerDoc | null>(null);
   let docErr = $state('');
   let open = $state<string | null>(null);
-  let copiedCurl = $state(false);
   let copiedBody = $state<string | null>(null);
 
   onMount(() => {
-    admin.listApiKeys().then((d) => { const k = d.data.api_keys[0]; if (k) apiKey = k.key_masked; }).catch(() => {});
     fetch(`${API_BASE}/docs/json`)
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((j) => (doc = j))
@@ -36,11 +30,6 @@
   const copy = (text: string, after: () => void) => {
     navigator.clipboard.writeText(text).then(() => { after(); setTimeout(after, 2000); }).catch(() => {});
   };
-
-  const copyKey = () => { if (apiKey) copy(apiKey, () => (copied = true)); };
-
-  const curl = $derived(`curl -H "Authorization: Bearer ${apiKey || 'API_KEY'}" \\
-  ${baseUrl}/api/v1/health`);
 
   const paths = $derived(Object.entries(doc?.paths || {}));
 </script>
@@ -54,46 +43,6 @@
     <a href={docsUrl} target="_blank" class="tactile-btn px-5 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2 shrink-0">
       <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Swagger
     </a>
-  </div>
-
-  <div class="tactile-box p-5 space-y-3">
-    <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-key text-[var(--accent)]"></i> API Key</h2>
-    {#if apiKey}
-      <div class="input-well px-4 py-3 flex items-center">
-        <code class="font-mono text-xs flex-1 break-all">{showKey ? apiKey : apiKey.slice(0, 4) + '****' + apiKey.slice(-4)}</code>
-        <button onclick={() => (showKey = !showKey)} class="text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer shrink-0 ml-1" title={showKey ? 'Sembunyikan' : 'Tampilkan'}>
-          <i class="fa-solid {showKey ? 'fa-eye-slash' : 'fa-eye'}"></i>
-        </button>
-        <button onclick={copyKey} class="text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer shrink-0 ml-2" title="Salin API key">
-          <i class="fa-solid {copied ? 'fa-check text-emerald-500' : 'fa-copy'}"></i>
-        </button>
-      </div>
-    {:else}
-      <button
-        onclick={async () => {
-          try {
-            const res = await admin.createApiKey();
-            apiKey = res.data.api_key_masked; showKey = true;
-            copy(res.data.api_key, () => (copied = true));
-            addToast('success', 'API key baru dibuat & disalin.');
-          } catch (e: any) { docErr = e.message; }
-        }}
-        class="tactile-btn w-full py-3 text-xs font-bold text-[var(--accent)] flex items-center justify-center gap-2"
-      >
-        <i class="fa-solid fa-key"></i> Generate API Key
-      </button>
-    {/if}
-    <p class="text-xs text-[var(--text-muted)]">Gunakan sebagai Bearer token atau header <code class="font-mono">X-Api-Key</code>.</p>
-    <div class="relative">
-      <button
-        onclick={() => copy(curl, () => (copiedCurl = true))}
-        class="absolute top-3 right-3 tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent)]"
-        title="Salin contoh curl"
-      >
-        <i class="fa-solid {copiedCurl ? 'fa-check text-emerald-500' : 'fa-copy'}"></i>
-      </button>
-      <pre class="text-xs bg-[var(--bg-base)] p-4 pr-12 rounded-xl shadow-[inset_4px_4px_8px_var(--inset-dark),inset_-4px_-4px_8px_var(--inset-light)] overflow-x-auto whitespace-pre-wrap break-all">{curl}</pre>
-    </div>
   </div>
 
   <div class="tactile-box p-5 space-y-3">
