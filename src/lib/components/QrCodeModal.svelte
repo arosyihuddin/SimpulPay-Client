@@ -32,7 +32,7 @@
         </div>
       {/if}
       {#if qrAmount}
-        <p class="text-center text-sm"><span class="text-[var(--text-muted)]">Nominal </span><span class="font-bold text-[var(--accent)]">{fmtIDR(qrAmount)}</span></p>
+        <p class="text-center text-sm"><span class="text-[var(--text-muted)]">Nominal</span><span class="font-bold text-[var(--accent)] ml-2">{fmtIDR(qrAmount)}</span></p>
       {/if}
       <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
     </div>
