@@ -67,8 +67,7 @@ export const admin = {
     api<any>(`/merchants/${id}`, { method: "DELETE" }),
 
   // Per-merchant: dashboard, qris, GoBiz (customer routes)
-  dashboard: (merchantId?: string | null) =>
-    api<any>(withMerchant("/dashboard", merchantId)),
+  dashboard: () => api<any>("/dashboard"),
   createQris: (amount: number, merchantId?: string | null) =>
     api<any>(withMerchant("/qris", merchantId), {
       method: "POST",
@@ -85,10 +84,10 @@ export const admin = {
   // Transaksi per-merchant
   merchantTransactions: (merchantId: string, limit = 50, offset = 0) =>
     api<any>(`/merchants/${merchantId}/transactions?limit=${limit}&offset=${offset}`),
-  recentTransactions: (limit = 5, merchantId?: string | null) =>
-    api<any>(`/transactions/recent?limit=${limit}${merchantId ? `&merchant_id=${encodeURIComponent(merchantId)}` : ""}`),
-  transactionVolume: (range = "7", merchantId?: string | null) =>
-    api<any>(`/transactions/volume?range=${range}${merchantId ? `&merchant_id=${encodeURIComponent(merchantId)}` : ""}`),
+  recentTransactions: (limit = 5) =>
+    api<any>(`/transactions/recent?limit=${limit}`),
+  transactionVolume: (range = "7") =>
+    api<any>(`/transactions/volume?range=${range}`),
 
   // GoBiz (customer routes, path `/merchants/:id/*`)
   otpRequest: (merchantId: string, phone: string) =>
@@ -109,8 +108,6 @@ export const admin = {
     }),
   refreshSession: (merchantId: string) =>
     api<any>(`/merchants/${merchantId}/refresh`, { method: "POST" }),
-  deleteGoBizSession: (merchantId: string) =>
-    api<any>(`/merchants/${merchantId}/clean`, { method: "DELETE" }),
   parseQrisImage: (image: string, merchantId: string) =>
     api<any>(`/merchants/${merchantId}/qris-parse`, {
       method: "POST",
@@ -187,9 +184,6 @@ export const admin = {
   listSubscriptions: () => api<any>("/admin/subscriptions"),
   cancelSubscription: (id: string) =>
     api<any>(`/admin/subscriptions/${id}/cancel`, { method: "POST" }),
-  listInvoices: () => api<any>("/admin/invoices"),
-  markInvoicePaid: (id: string) =>
-    api<any>(`/admin/invoices/${id}/paid`, { method: "POST" }),
 };
 
 export const fmtIDR = (n: number | null | undefined) =>

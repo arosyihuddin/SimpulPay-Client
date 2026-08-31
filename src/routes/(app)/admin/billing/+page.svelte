@@ -8,11 +8,11 @@
 
   interface Plan {
     id: string; name: string; type: 'free' | 'paid'; price: number; max_merchants: number;
-    daily_paid_limit: number | null; features_json: string | null; active: boolean; created_at: number; updated_at: number;
+    daily_paid_limit: number | null; features_json: string | null; active: boolean;
   }
   interface Subscription {
     id: string; user_id: string; plan_id: string; status: 'active' | 'cancelled' | 'expired';
-    starts_at: number; ends_at: number | null; created_at: number; updated_at: number;
+    starts_at: number; ends_at: number | null;
     plan_name?: string; username?: string;
   }
 
@@ -42,7 +42,6 @@
     } catch {}
     return [];
   };
-  const fmtFeatures = (j: string | null) => parseFeatures(j).join(' · ');
   const fmtPrice = (p: number) => p <= 0 ? 'Gratis' : 'Rp ' + p.toLocaleString('id-ID') + ' / bln';
   const fmtDate = (n: number | null) =>
     n ? new Date(n).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';

@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { admin } from '$lib/api';
   import { addToast } from '$lib/toast.svelte';
-  import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
+  import { merchants, loadMerchants } from '$lib/merchant.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 

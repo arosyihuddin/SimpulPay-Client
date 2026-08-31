@@ -15,13 +15,9 @@
     name?: string;
     email?: string;
     plan?: { id: string; name: string; type: string; price: number; max_merchants: number; daily_paid_limit: number | null; } | null;
-    subscription?: { id: string; plan_id: string; status: string; starts_at: number; ends_at: number | null; } | null;
-    latest_invoice?: { id: string; amount: number; status: string; period_start: number; period_end: number; created_at: number; } | null;
     status?: string;
     next?: string;
-    key?: string;
     lastActive?: string;
-    joined?: string;
   }
   interface Plan { id: string; name: string; type: string; price: number; max_merchants: number; daily_paid_limit: number | null; features_json: string | null; active: boolean; }
 

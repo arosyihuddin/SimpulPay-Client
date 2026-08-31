@@ -24,14 +24,12 @@ export const merchants = $state<{
   summary: MerchantSummary[];
   activeId: string | null;
   loading: boolean;
-  error: string;
   active: Merchant | null;
 }>({
   list: [],
   summary: [],
   activeId: null,
   loading: false,
-  error: '',
   get active() {
     return this.list.find((m: Merchant) => m.id === this.activeId) ?? null;
   },
@@ -39,7 +37,6 @@ export const merchants = $state<{
 
 export async function loadMerchants() {
   merchants.loading = true;
-  merchants.error = '';
   try {
     const r = await admin.listMerchants();
     merchants.list = r.data.merchants;
@@ -47,8 +44,8 @@ export async function loadMerchants() {
     if (!merchants.activeId || !merchants.list.some((m) => m.id === merchants.activeId)) {
       merchants.activeId = merchants.list[0]?.id ?? null;
     }
-  } catch (e: any) {
-    merchants.error = e.message;
+  } catch {
+    /* diam */
   } finally {
     merchants.loading = false;
   }

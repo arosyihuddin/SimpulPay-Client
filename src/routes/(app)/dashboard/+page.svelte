@@ -26,7 +26,6 @@
   }
 
   let data = $state<DashboardData | null>(null);
-  let err = $state("");
 
   interface Announcement {
     id: number;
@@ -62,7 +61,7 @@
     admin
       .dashboard()
       .then((d) => (data = d.data))
-      .catch((e) => (err = e.message));
+      .catch(() => {});
   }
 
   onMount(() => {
