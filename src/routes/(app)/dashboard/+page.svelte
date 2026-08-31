@@ -8,7 +8,6 @@
   import {
     merchants,
     loadMerchants,
-    setActiveMerchant,
   } from "$lib/merchant.svelte";
 
   interface DashboardData {
@@ -27,14 +26,10 @@
       expired?: boolean;
       expires_at?: string | null;
     };
-    month_fetch_error?: string | null;
   }
 
   let data = $state<DashboardData | null>(null);
-  let amount = $state("");
-  let created = $state<any>(null);
   let err = $state("");
-  let busy = $state(false);
 
   interface Announcement {
     id: number;
@@ -85,61 +80,12 @@
     if (m.type === "qris_created" || m.type === "qris_status") load();
   });
 
-  async function createQris(e: SubmitEvent) {
-    e.preventDefault();
-    busy = true;
-    err = "";
-    created = null;
-    try {
-      const a = parseInt(amount, 10);
-      if (!a || a <= 0) throw new Error("Nominal tidak valid");
-      const res = await admin.createQris(a, merchants.active?.id);
-      created = res.data;
-      amount = "";
-      load();
-    } catch (e: any) {
-      err = e.message;
-    } finally {
-      busy = false;
-    }
-  }
-
   const s = $derived(data?.stats);
   const session = $derived(data?.gobiz_session);
 </script>
 
 <div class="space-y-6">
-  {#if merchants.list.length > 1}
-    <div class="flex items-center gap-3">
-      <label
-        for="dash-merchant"
-        class="text-xs font-bold text-[var(--text-muted)] whitespace-nowrap"
-        ><i class="fa-solid fa-store mr-1"></i> Merchant</label
-      >
-      <select
-        id="dash-merchant"
-        value={merchants.activeId ?? ""}
-        onchange={(e) =>
-          setActiveMerchant((e.target as HTMLSelectElement).value)}
-        class="w-full max-w-xs tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer"
-      >
-        {#each merchants.list as m (m.id)}
-          <option value={m.id}>{m.name}</option>
-        {/each}
-      </select>
-    </div>
-  {/if}
-  {#if session?.exists === false}
-    <div
-      class="bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl px-4 py-3 text-xs font-semibold text-amber-700 dark:text-amber-300"
-    >
-      ⚠️ Sesi GoBiz belum ada. Login OTP lewat <a
-        href="/merchants"
-        class="underline">halaman Merchant</a
-      >.
-    </div>
-  {/if}
-
+  
   <!-- Announcements aktif — broadcast admin ke user -->
   {#if announcements.length > 0}
     <div class="space-y-3">
@@ -209,12 +155,6 @@
         value={String(s?.total_qris ?? 0)}
       />
     </div>
-  {/if}
-
-  {#if data?.month_fetch_error}
-    <p class="text-xs text-[var(--text-muted)]">
-      Catatan: {data.month_fetch_error}
-    </p>
   {/if}
 
   {#if session?.exists}

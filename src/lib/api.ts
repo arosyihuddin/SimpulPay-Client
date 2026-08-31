@@ -58,6 +58,7 @@ export const admin = {
 
   // Merchant CRUD (customer routes, tanpa /admin)
   listMerchants: () => api<any>("/merchants"),
+  merchantSummary: () => api<any>("/merchants/summary"),
   createMerchant: (name: string, type = "gopay") =>
     api<any>("/merchants", { method: "POST", body: { name, type } }),
   updateMerchant: (id: string, patch: Record<string, unknown>) =>
@@ -84,6 +85,10 @@ export const admin = {
   // Transaksi per-merchant
   merchantTransactions: (merchantId: string, limit = 50, offset = 0) =>
     api<any>(`/merchants/${merchantId}/transactions?limit=${limit}&offset=${offset}`),
+  recentTransactions: (limit = 5, merchantId?: string | null) =>
+    api<any>(`/transactions/recent?limit=${limit}${merchantId ? `&merchant_id=${encodeURIComponent(merchantId)}` : ""}`),
+  transactionVolume: (range = "7", merchantId?: string | null) =>
+    api<any>(`/transactions/volume?range=${range}${merchantId ? `&merchant_id=${encodeURIComponent(merchantId)}` : ""}`),
 
   // GoBiz (customer routes, path `/merchants/:id/*`)
   otpRequest: (merchantId: string, phone: string) =>

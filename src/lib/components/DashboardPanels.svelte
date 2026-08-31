@@ -6,21 +6,15 @@
   import { merchants } from '$lib/merchant.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
 
-  // ---- Chart volume (data sample ala mockup, tak ada backend time-series) ----
+  // ---- Chart volume (real backend: /transactions/volume) ----
   let range = $state('7');
   let chart: any = null;
   let canvasRef = $state<HTMLCanvasElement | null>(null);
-
-  const RANGES: Record<string, { labels: string[]; data: number[] }> = {
-    '7': { labels: ['22 Mei', '23 Mei', '24 Mei', '25 Mei', '26 Mei', '27 Mei', '28 Mei'], data: [1.2, 2.4, 3.1, 2.8, 4.9, 3.8, 4.82] },
-    '30': { labels: Array.from({ length: 10 }, (_, i) => `${i * 3 + 1} Mei`), data: [1.0, 1.8, 2.5, 2.1, 3.4, 4.1, 3.0, 3.9, 4.5, 4.8] },
-    today: { labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'], data: [0.4, 0.2, 1.8, 3.2, 2.7, 2.1] },
-  };
+  let volume = $state<{ labels: string[]; data: number[]; total: number } | null>(null);
 
   function drawChart() {
     const el = canvasRef;
-    if (!el || typeof (window as any).Chart === 'undefined') return;
-    const d = RANGES[range] || RANGES['7'];
+    if (!el || typeof (window as any).Chart === 'undefined' || !volume) return;
     const isDark = theme.dark;
     const tickColor = isDark ? '#a3a3a3' : '#064e3b';
     const gridColor = isDark ? 'rgba(38, 38, 38, 0.5)' : 'rgba(203, 222, 212, 0.4)';
@@ -28,10 +22,10 @@
     chart = new (window as any).Chart(el, {
       type: 'line',
       data: {
-        labels: d.labels,
+        labels: volume.labels,
         datasets: [{
-          label: 'Volume (Miliar Rp)',
-          data: d.data,
+          label: 'Volume (Rp)',
+          data: volume.data,
           borderColor: '#059669',
           backgroundColor: 'rgba(5, 150, 105, 0.1)',
           borderWidth: 3,
@@ -56,16 +50,17 @@
     });
   }
 
-  $effect(() => { drawChart(); }); // re-draw saat theme/range berubah
-  onMount(() => { drawChart(); });
+  $effect(() => { drawChart(); }); // re-draw saat volume/theme berubah
   onMount(() => { return () => { chart?.destroy(); }; });
 
-  // ---- Transaksi terbaru (data asli backend) ----
+  // ---- Transaksi terbaru (real backend: /transactions/recent) ----
   let txs = $state<any[] | null>(null);
 
-  // ---- Data contoh panel lain ----
+  // ---- Ringkasan merchant (real backend: /merchants/summary) ----
+  let summary = $state<{ id: string; name: string; status: string }[]>([]);
+
+  // ---- Data contoh panel lain (Payout/Top/Infra — sample) ----
   const PAYOUT = { batch: '#9420', amount: 340_500_000, pct: 82 };
-  const CHANNELS = ['BCA VA', 'Mandiri VA', 'QRIS Gateway', 'E-Wallets'];
   const TOP = [
     { icon: 'fa-solid fa-bag-shopping', cls: 'text-emerald-600 dark:text-emerald-300', name: 'PT Toko Digital', vol: 'Rp 1.2B / bln', tier: 'Tier 1', tierCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
     { icon: 'fa-solid fa-shirt', cls: 'text-emerald-600 dark:text-emerald-300', name: 'Fashion Nusantara', vol: 'Rp 850M / bln', tier: 'Tier 1', tierCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
@@ -81,8 +76,16 @@
     { name: 'SSL / TLS Shield', ok: true, label: 'Secure' },
   ];
 
+  const statusCls = (st: string) =>
+    st === 'active'
+      ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
+      : 'bg-slate-200/60 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300 border border-slate-300/50 dark:border-slate-600/40';
+
   $effect(() => {
-    admin.transactions(5, 0, merchants.active?.id).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
+    const mid = merchants.active?.id;
+    admin.recentTransactions(5, mid).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
+    admin.transactionVolume(range, mid).then((d) => (volume = d.data)).catch(() => (volume = null));
+    admin.merchantSummary().then((d) => (summary = d.data?.merchants || [])).catch(() => (summary = []));
   });
 </script>
 
@@ -104,23 +107,23 @@
     </div>
 
     <div class="tactile-box p-6 flex flex-col justify-between">
-      <h3 class="font-bold mb-3 flex items-center gap-2"><i class="fa-solid fa-earth-asia text-[var(--accent)]"></i> Routing Channels</h3>
+      <h3 class="font-bold mb-3 flex items-center gap-2"><i class="fa-solid fa-store text-[var(--accent)]"></i> Merchant</h3>
       <div class="relative w-full h-48 rounded-2xl tactile-inset flex items-center justify-center overflow-hidden">
         <div class="absolute inset-0 flex items-center justify-center opacity-30">
           <div class="w-40 h-40 border-4 border-dashed border-emerald-700 rounded-full animate-spin"></div>
         </div>
         <div class="z-10 text-center p-4">
           <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto mb-2 shadow-lg animate-pulse">
-            <i class="fa-solid fa-server"></i>
+            <i class="fa-solid fa-qrcode"></i>
           </div>
-          <span class="text-xs font-bold px-3 py-1 rounded-full bg-white/90 dark:bg-black/80 text-emerald-800 dark:text-emerald-300 shadow">Active Multi-Acquirer Router</span>
+          <span class="text-xs font-bold px-3 py-1 rounded-full bg-white/90 dark:bg-black/80 text-emerald-800 dark:text-emerald-300 shadow">{summary.length} Merchant</span>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-2 mt-4 text-xs">
-        {#each CHANNELS as c (c)}
+        {#each summary.slice(0, 4) as m (m.id)}
           <div class="tactile-inset p-2.5 flex justify-between items-center">
-            <span class="font-bold">{c}</span>
-            <span class="font-extrabold text-emerald-600 dark:text-emerald-400">Online</span>
+            <span class="font-bold truncate">{m.name}</span>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full {statusCls(m.status)}">{m.status}</span>
           </div>
         {/each}
       </div>
