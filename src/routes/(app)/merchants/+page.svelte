@@ -110,14 +110,9 @@
   {#if err}<p class="text-xs font-semibold text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30 rounded-2xl px-4 py-3"><i class="fa-solid fa-circle-exclamation mr-2"></i>{err}</p>{/if}
 
   <div class="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-4">
-    <div class="flex gap-2">
-      <button onclick={loadMerchants} title="Refresh daftar merchant" aria-label="Refresh" class="tactile-btn px-4 py-2.5 font-bold text-[var(--text-muted)] flex items-center gap-2">
-        <i class="fa-solid fa-rotate"></i>
-      </button>
-      <button onclick={openAdd} class="tactile-btn px-5 py-2.5 font-bold text-[var(--accent)] flex items-center gap-2">
-        <i class="fa-solid fa-plus"></i> Tambah Merchant
-      </button>
-    </div>
+    <button onclick={openAdd} class="tactile-btn px-5 py-2.5 font-bold text-[var(--accent)] flex items-center gap-2">
+      <i class="fa-solid fa-plus"></i> Tambah Merchant
+    </button>
   </div>
 
   {#if merchants.loading && merchants.list.length === 0}
