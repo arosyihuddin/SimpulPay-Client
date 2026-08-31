@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { admin } from '$lib/api';
   import { addToast } from '$lib/toast.svelte';
+  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
   interface Plan {
     id: string; name: string; type: 'free' | 'paid'; price: number; max_merchants: number;
@@ -24,6 +25,9 @@
   let planForm = $state({ name: '', type: 'paid', price: '0', max_merchants: '1', daily_paid_limit: '', features: [] as string[] });
 
   let cancelSub = $state<Subscription | null>(null);
+  let cancelBusy = $state(false);
+  let delPlanTarget = $state<Plan | null>(null);
+  let deletingPlan = $state(false);
 
   const parseFeatures = (j: string | null): string[] => {
     if (!j) return [];
@@ -86,18 +90,24 @@
       addToast('success', editingPlan ? 'Paket diperbarui.' : 'Paket ditambahkan.');
     } catch (e: any) { err = e.message; }
   }
-  async function delPlan(p: Plan) {
-    if (!confirm(`Hapus paket "${p.name}"?`)) return;
+  async function delPlan() {
+    const target = delPlanTarget;
+    if (!target) return;
+    deletingPlan = true;
     err = '';
-    try { await admin.deletePlan(p.id); load(); addToast('success', 'Paket dihapus.'); }
-    catch (e: any) { err = e.message; }
+    try { await admin.deletePlan(target.id); delPlanTarget = null; load(); addToast('success', 'Paket dihapus.'); }
+    catch (e: any) { err = e.message; delPlanTarget = null; }
+    finally { deletingPlan = false; }
   }
 
   async function doCancel() {
-    if (!cancelSub) return;
+    const target = cancelSub;
+    if (!target) return;
+    cancelBusy = true;
     err = '';
-    try { await admin.cancelSubscription(cancelSub.id); cancelSub = null; load(); addToast('success', 'Langganan dibatalkan.'); }
+    try { await admin.cancelSubscription(target.id); cancelSub = null; load(); addToast('success', 'Langganan dibatalkan.'); }
     catch (e: any) { err = e.message; }
+    finally { cancelBusy = false; }
   }
 
   const active = $derived(subs.filter((s) => s.status === 'active').length);
@@ -157,7 +167,7 @@
               </p>
               <div class="flex gap-1 shrink-0">
                 <button type="button" aria-label="Edit {p.name}" onclick={() => openPlanEdit(p)} class="text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer px-1"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" aria-label="Hapus {p.name}" onclick={() => delPlan(p)} class="text-[var(--text-muted)] hover:text-red-500 cursor-pointer px-1"><i class="fa-solid fa-trash-can"></i></button>
+                <button type="button" aria-label="Hapus {p.name}" onclick={() => (delPlanTarget = p)} class="text-[var(--text-muted)] hover:text-red-500 cursor-pointer px-1"><i class="fa-solid fa-trash-can"></i></button>
               </div>
             </div>
             <p class="text-lg font-extrabold text-[var(--accent)]">{fmtPrice(p.price)}</p>
@@ -348,9 +358,21 @@
       <h3 class="text-lg font-bold mb-2">Batalkan Langganan</h3>
       <p class="text-sm text-[var(--text-muted)]">Batalkan langganan <span class="font-semibold text-[var(--text-main)]">{cancelSub.username || cancelSub.id}</span>? Aksi tidak bisa dibatalkan.</p>
       <div class="flex gap-2 pt-4">
-        <button onclick={doCancel} class="tactile-btn flex-1 py-3 font-bold text-red-500 flex items-center justify-center gap-2"><i class="fa-solid fa-ban"></i> Batalkan</button>
+        <button disabled={cancelBusy} onclick={doCancel} class="tactile-btn flex-1 py-3 font-bold text-red-500 flex items-center justify-center gap-2"><i class="fa-solid fa-ban"></i> {cancelBusy ? 'Membatalkan...' : 'Batalkan'}</button>
         <button onclick={() => (cancelSub = null)} class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Tutup</button>
       </div>
     </div>
   </div>
 {/if}
+
+<!-- Hapus paket confirm -->
+<ConfirmModal
+  open={delPlanTarget !== null}
+  title="Hapus Paket"
+  confirmLabel="Ya, Hapus"
+  busy={deletingPlan}
+  onConfirm={delPlan}
+  onClose={() => (delPlanTarget = null)}
+>
+  <p class="text-sm text-[var(--text-muted)] leading-relaxed">Hapus paket <span class="font-bold text-[var(--text-main)]">"{delPlanTarget?.name}"</span>? Subscriber di paket ini bisa terpengaruh.</p>
+</ConfirmModal>

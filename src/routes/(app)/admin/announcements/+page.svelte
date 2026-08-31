@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { admin } from '$lib/api';
   import { addToast } from '$lib/toast.svelte';
+  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
   interface Announcement {
     id: number;
@@ -30,6 +31,9 @@
   let form = $state({ title: '', message: '', type: 'info', active: true });
   let formErr = $state('');
   let saving = $state(false);
+
+  let delTarget = $state<Announcement | null>(null);
+  let deleting = $state(false);
 
   const fmtDate = (n: number) => new Date(n).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
   const fmtTime = (n: number) => new Date(n).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -81,14 +85,18 @@
       addToast('success', a.active ? 'Pengumuman dinonaktifkan.' : 'Pengumuman diaktifkan.');
     } catch (e: any) { err = e.message; }
   }
-  async function del(a: Announcement) {
-    if (!confirm(`Hapus pengumuman "${a.title}"?`)) return;
+  async function del() {
+    const target = delTarget;
+    if (!target) return;
+    deleting = true;
     try {
-      await admin.deleteAnnouncement(a.id);
-      items = items.filter((x) => x.id !== a.id);
+      await admin.deleteAnnouncement(target.id);
+      items = items.filter((x) => x.id !== target.id);
       total--;
+      delTarget = null;
       addToast('success', 'Pengumuman dihapus.');
-    } catch (e: any) { err = e.message; }
+    } catch (e: any) { err = e.message; delTarget = null; }
+    finally { deleting = false; }
   }
 </script>
 
@@ -138,7 +146,7 @@
                 <div class="flex items-center justify-end gap-2">
                   <button class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]" onclick={() => toggleActive(a)} title={a.active ? 'Nonaktifkan' : 'Aktifkan'} aria-label={a.active ? 'Nonaktifkan pengumuman' : 'Aktifkan pengumuman'}><i class="fa-solid {a.active ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
                   <button class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]" onclick={() => openEdit(a)} aria-label="Edit pengumuman"><i class="fa-solid fa-pen"></i></button>
-                  <button class="tactile-btn px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => del(a)} aria-label="Hapus pengumuman"><i class="fa-solid fa-trash-can"></i></button>
+                  <button class="tactile-btn px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => (delTarget = a)} aria-label="Hapus pengumuman"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
               </td>
             </tr>
@@ -161,7 +169,7 @@
           <div class="flex gap-2">
             <button class="tactile-btn flex-1 py-2 text-xs font-bold text-[var(--text-muted)]" onclick={() => toggleActive(a)}><i class="fa-solid {a.active ? 'fa-eye-slash' : 'fa-eye'} mr-1"></i>{a.active ? 'Nonaktifkan' : 'Aktifkan'}</button>
             <button class="tactile-btn px-3 py-2 text-xs font-bold text-[var(--accent)]" onclick={() => openEdit(a)} aria-label="Edit pengumuman"><i class="fa-solid fa-pen"></i></button>
-            <button class="tactile-btn px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => del(a)} aria-label="Hapus pengumuman"><i class="fa-solid fa-trash-can"></i></button>
+            <button class="tactile-btn px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => (delTarget = a)} aria-label="Hapus pengumuman"><i class="fa-solid fa-trash-can"></i></button>
           </div>
         </div>
       {/each}
@@ -224,3 +232,15 @@
     </div>
   </div>
 {/if}
+
+<!-- Hapus pengumuman confirm -->
+<ConfirmModal
+  open={delTarget !== null}
+  title="Hapus Pengumuman"
+  confirmLabel="Ya, Hapus"
+  busy={deleting}
+  onConfirm={del}
+  onClose={() => (delTarget = null)}
+>
+  <p class="text-sm text-[var(--text-muted)] leading-relaxed">Hapus pengumuman <span class="font-bold text-[var(--text-main)]">"{delTarget?.title}"</span>? Broadcast ke semua user akan hilang.</p>
+</ConfirmModal>

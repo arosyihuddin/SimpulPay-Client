@@ -4,6 +4,7 @@
   import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
   import Row from '$lib/components/Row.svelte';
   import { addToast } from '$lib/toast.svelte';
+  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
   interface ApiKey { id: string; label: string | null; key_masked: string; status: string; }
   interface SettingsData { merchants: unknown[]; api_keys: ApiKey[]; }
@@ -31,6 +32,11 @@
   // API key baru
   let newKeyLabel = $state('');
   let newKey = $state('');
+
+  // Confirm modals
+  let delGoBiz = $state(false);
+  let delKeyId = $state<string | null>(null);
+  let deleting = $state(false);
 
   async function load() {
     if (!merchants.active) return;
@@ -67,7 +73,7 @@
   }
 
   async function deleteGoBiz() {
-    if (!confirm('Hapus sesi GoBiz? Login OTP ulang diperlukan.')) return;
+    delGoBiz = false;
     otpBusy = true; err = '';
     try { await admin.deleteGoBizSession(merchants.active?.id); addToast('success', 'Sesi GoBiz dihapus. Login OTP ulang untuk akses transaksi.'); step = 'phone'; load(); }
     catch (e: any) { err = e.message; }
@@ -109,11 +115,13 @@
     catch (e: any) { err = e.message; }
   }
 
-  async function delKey(id: string) {
-    if (!confirm('Hapus API key? Endpoint publik akan mati.')) return;
-    err = '';
-    try { await admin.deleteApiKey(id); addToast('success', 'API key dihapus.'); load(); }
-    catch (e: any) { err = e.message; }
+  async function delKey() {
+    const id = delKeyId;
+    if (!id) return;
+    deleting = true; err = '';
+    try { await admin.deleteApiKey(id); delKeyId = null; addToast('success', 'API key dihapus.'); load(); }
+    catch (e: any) { err = e.message; delKeyId = null; }
+    finally { deleting = false; }
   }
 
   async function logout() {
@@ -154,7 +162,7 @@
                 <p class="text-xs font-semibold truncate">{k.label || 'Tanpa label'}</p>
                 <p class="font-mono text-xs text-[var(--text-muted)] break-all">{k.key_masked}</p>
               </div>
-              <button onclick={() => delKey(k.id)} aria-label="Hapus API key" class="tactile-btn px-3 py-2 text-xs font-bold text-red-500 shrink-0"><i class="fa-solid fa-trash-can"></i></button>
+              <button onclick={() => (delKeyId = k.id)} aria-label="Hapus API key" class="tactile-btn px-3 py-2 text-xs font-bold text-red-500 shrink-0"><i class="fa-solid fa-trash-can"></i></button>
             </div>
           {/each}
         </div>
@@ -232,7 +240,7 @@
           <button onclick={refreshGoBiz} disabled={otpBusy} class="tactile-btn flex-1 py-4 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
             <i class="fa-solid fa-arrows-rotate"></i> Refresh
           </button>
-          <button onclick={deleteGoBiz} disabled={otpBusy} class="tactile-btn px-5 py-4 font-bold text-red-500 flex items-center gap-2">
+          <button onclick={() => (delGoBiz = true)} disabled={otpBusy} class="tactile-btn px-5 py-4 font-bold text-red-500 flex items-center gap-2">
             <i class="fa-solid fa-trash-can"></i> Hapus
           </button>
         </div>
@@ -293,3 +301,28 @@
     </button>
   </div>
 </div>
+
+<!-- Hapus sesi GoBiz confirm -->
+<ConfirmModal
+  open={delGoBiz}
+  title="Hapus Sesi GoBiz"
+  confirmLabel="Ya, Hapus"
+  busy={otpBusy}
+  busyLabel="Menghapus..."
+  onConfirm={deleteGoBiz}
+  onClose={() => (delGoBiz = false)}
+>
+  <p class="text-sm text-[var(--text-muted)] leading-relaxed">Hapus sesi GoBiz? Login OTP ulang diperlukan untuk mengakses transaksi.</p>
+</ConfirmModal>
+
+<!-- Hapus API key confirm -->
+<ConfirmModal
+  open={delKeyId !== null}
+  title="Hapus API Key"
+  confirmLabel="Ya, Hapus"
+  busy={deleting}
+  onConfirm={delKey}
+  onClose={() => (delKeyId = null)}
+>
+  <p class="text-sm text-[var(--text-muted)] leading-relaxed">Hapus API key? Endpoint publik yang pakai key ini langsung mati.</p>
+</ConfirmModal>

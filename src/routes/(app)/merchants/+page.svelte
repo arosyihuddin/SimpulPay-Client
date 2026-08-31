@@ -4,6 +4,7 @@
   import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
   import { addToast } from '$lib/toast.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
+  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
   const TYPE_META: Record<string, { label: string; icon: string; cls: string }> = {
     gopay: { label: 'GoPay', icon: 'fa-solid fa-mobile-screen', cls: 'text-emerald-600 dark:text-emerald-400' },
@@ -19,6 +20,9 @@
   let err = $state('');
   const fmtDate = (n: number) => new Date(n).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
+  let delTarget = $state<any | null>(null);
+  let deleting = $state(false);
+
   onMount(() => { loadMerchants(); });
 
   async function toggleStatus(m: any) {
@@ -29,11 +33,14 @@
       addToast('success', `Merchant "${m.name}" ${m.status === 'active' ? 'dinonaktifkan' : 'diaktifkan'}.`);
     } catch (e: any) { err = e.message; }
   }
-  async function remove(m: any) {
-    if (!confirm(`Hapus merchant "${m.name}"? Sesi GoBiz ikut terhapus.`)) return;
+  async function remove() {
+    const target = delTarget;
+    if (!target) return;
+    deleting = true;
     err = '';
-    try { await admin.deleteMerchant(m.id); await loadMerchants(); addToast('success', `Merchant "${m.name}" dihapus.`); }
-    catch (e: any) { err = e.message; }
+    try { await admin.deleteMerchant(target.id); delTarget = null; await loadMerchants(); addToast('success', `Merchant "${target.name}" dihapus.`); }
+    catch (e: any) { err = e.message; delTarget = null; }
+    finally { deleting = false; }
   }
 
   // ---- Tambah Merchant ----
@@ -148,7 +155,7 @@
               <button onclick={() => toggleStatus(m)} class="tactile-btn flex-1 py-2.5 text-[var(--text-muted)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
                 <i class="fa-solid {m.status === 'active' ? 'fa-pause' : 'fa-play'}"></i> {m.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
               </button>
-              <button onclick={() => remove(m)} aria-label="Hapus {m.name}" class="tactile-btn px-3.5 py-2.5 text-red-500 font-bold text-xs rounded-xl flex items-center justify-center">
+              <button onclick={() => (delTarget = m)} aria-label="Hapus {m.name}" class="tactile-btn px-3.5 py-2.5 text-red-500 font-bold text-xs rounded-xl flex items-center justify-center">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </div>
@@ -202,3 +209,15 @@
     </div>
   </div>
 {/if}
+
+<!-- Hapus merchant confirm -->
+<ConfirmModal
+  open={delTarget !== null}
+  title="Hapus Merchant"
+  confirmLabel="Ya, Hapus"
+  busy={deleting}
+  onConfirm={remove}
+  onClose={() => (delTarget = null)}
+>
+  <p class="text-sm text-[var(--text-muted)] leading-relaxed">Hapus merchant <span class="font-bold text-[var(--text-main)]">"{delTarget?.name}"</span>? Sesi GoBiz ikut terhapus.</p>
+</ConfirmModal>

@@ -4,6 +4,7 @@
   import { addToast } from '$lib/toast.svelte';
   import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
+  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
   interface ApiKey {
     id: string;
@@ -27,6 +28,9 @@
 
   let freshKey = $state<{ api_key: string } | null>(null);
   let copied = $state(false);
+
+  let delTarget = $state<ApiKey | null>(null);
+  let deleting = $state(false);
 
   const fmtDate = (n: number | null) =>
     n ? new Date(n).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -58,14 +62,20 @@
     } catch (e: any) { modalErr = e.message; }
     finally { saving = false; }
   }
-  async function del(k: ApiKey) {
-    if (!confirm(`Hapus API key${k.label ? ' "' + k.label + '"' : ''}? Endpoint publik pakai key ini akan mati.`)) return;
+  async function del() {
+    const target = delTarget;
+    if (!target) return;
+    deleting = true;
     try {
-      await admin.deleteApiKey(k.id);
-      keys = keys.filter((x) => x.id !== k.id);
+      await admin.deleteApiKey(target.id);
+      keys = keys.filter((x) => x.id !== target.id);
+      delTarget = null;
       addToast('success', 'API key dihapus.');
-    } catch (e: any) { err = e.message; }
+    } catch (e: any) { err = e.message; delTarget = null; }
+    finally { deleting = false; }
   }
+  const merchantName = (id: string | null) =>
+    id ? merchants.list.find((m) => m.id === id)?.name || id : 'Random / unbound';
   const copy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       copied = true;
@@ -86,6 +96,22 @@
       </div>
     </div>
   {/if}
+
+<!-- Hapus API key confirm -->
+<ConfirmModal
+  open={delTarget !== null}
+  title="Hapus API Key"
+  confirmLabel="Ya, Hapus"
+  busy={deleting}
+  onConfirm={del}
+  onClose={() => (delTarget = null)}
+>
+  <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+    Hapus API key <span class="font-bold text-[var(--text-main)]">{delTarget?.label || 'Tanpa label'}</span>
+    (<code class="font-mono text-[var(--accent)]">{delTarget?.key_masked}</code>)?<br />
+    Endpoint publik yang pakai key ini langsung mati dan tidak bisa dikembalikan.
+  </p>
+</ConfirmModal>
 
   <div class="flex items-center justify-between gap-3">
     <div class="text-xs text-[var(--text-muted)] font-medium">
@@ -124,10 +150,10 @@
             </div>
             <p class="font-mono text-xs text-[var(--text-muted)] mt-1">{k.key_masked}</p>
             <p class="text-[10px] text-[var(--text-muted)] mt-1">
-              <i class="fa-solid fa-store mr-1"></i>Merchant {k.merchant_id} · Dibuat {fmtDate(k.created_at)} · Terakhir dipakai {fmtDate(k.last_used_at)}
+              <i class="fa-solid fa-store mr-1"></i>Merchant {merchantName(k.merchant_id)} · Dibuat {fmtDate(k.created_at)} · Terakhir dipakai {fmtDate(k.last_used_at)}
             </p>
           </div>
-          <button onclick={() => del(k)} aria-label="Hapus API key" class="tactile-btn px-3 py-2 text-xs font-bold text-red-500 shrink-0"><i class="fa-solid fa-trash-can"></i></button>
+          <button onclick={() => (delTarget = k)} aria-label="Hapus API key" class="tactile-btn px-3 py-2 text-xs font-bold text-red-500 shrink-0"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       {/each}
     </div>
