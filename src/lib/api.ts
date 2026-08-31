@@ -65,7 +65,7 @@ export const admin = {
   deleteMerchant: (id: string) =>
     api<any>(`/merchants/${id}`, { method: "DELETE" }),
 
-  // Per-merchant: dashboard, qris, transaksi, GoBiz (customer routes)
+  // Per-merchant: dashboard, qris, GoBiz (customer routes)
   dashboard: (merchantId?: string | null) =>
     api<any>(withMerchant("/dashboard", merchantId)),
   createQris: (amount: number, merchantId?: string | null) =>
@@ -73,47 +73,41 @@ export const admin = {
       method: "POST",
       body: { amount },
     }),
-  listQris: (limit = 50, offset = 0, merchantId?: string | null) =>
-    api<any>(withMerchant(`/qris?limit=${limit}&offset=${offset}`, merchantId)),
-  transactions: (page = 1, pageSize = 20, merchantId?: string | null) =>
+
+  // Semua transaksi — semua merchant user, filter lewat query
+  transactions: (limit = 50, offset = 0, merchantId?: string | null) =>
     api<any>(
-      withMerchant(
-        `/transactions?page=${page}&pageSize=${pageSize}`,
-        merchantId,
-      ),
+      `/transactions?limit=${limit}&offset=${offset}${merchantId ? `&merchant_id=${encodeURIComponent(merchantId)}` : ""}`,
     ),
-  otpRequest: (phone: string) =>
-    api<any>("/otp-request", { method: "POST", body: { phone } }),
+  // Transaksi per-merchant
+  merchantTransactions: (merchantId: string, limit = 50, offset = 0) =>
+    api<any>(`/merchants/${merchantId}/transactions?limit=${limit}&offset=${offset}`),
+
+  // GoBiz (customer routes, path `/merchants/:id/*`)
+  otpRequest: (merchantId: string, phone: string) =>
+    api<any>(`/merchants/${merchantId}/otp-request`, {
+      method: "POST",
+      body: { phone },
+    }),
   otpVerify: (
+    merchantId: string,
     phone: string,
     otp: string,
     otp_token: string,
-    unique_id: string | undefined,
-    merchantId?: string | null,
+    unique_id?: string,
   ) =>
-    api<any>(withMerchant("/otp-verify", merchantId), {
+    api<any>(`/merchants/${merchantId}/otp-verify`, {
       method: "POST",
       body: { phone, otp, otp_token, unique_id },
     }),
-  refreshSession: (merchantId?: string | null) =>
-    api<any>(withMerchant("/refresh-session", merchantId), {
+  refreshSession: (merchantId: string) =>
+    api<any>(`/merchants/${merchantId}/refresh`, { method: "POST" }),
+  deleteGoBizSession: (merchantId: string) =>
+    api<any>(`/merchants/${merchantId}/clean`, { method: "DELETE" }),
+  parseQrisImage: (image: string, merchantId: string) =>
+    api<any>(`/merchants/${merchantId}/qris-parse`, {
       method: "POST",
-    }),
-  deleteGoBizSession: (merchantId?: string | null) =>
-    api<any>(withMerchant("/gobiz-session", merchantId), {
-      method: "DELETE",
-    }),
-  parseQrisImage: (image: string) =>
-    api<any>("/qris-parse", { method: "POST", body: { image } }),
-  saveQrisStatic: (code: string, merchantId?: string | null) =>
-    api<any>(withMerchant("/qris-static", merchantId), {
-      method: "POST",
-      body: { code },
-    }),
-  saveMerchantId: (merchant_id: string, merchantId?: string | null) =>
-    api<any>(withMerchant("/merchant-id", merchantId), {
-      method: "POST",
-      body: { merchant_id },
+      body: { image },
     }),
 
   // Settings + API keys (customer routes)

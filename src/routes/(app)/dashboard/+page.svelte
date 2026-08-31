@@ -134,8 +134,8 @@
       class="bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl px-4 py-3 text-xs font-semibold text-amber-700 dark:text-amber-300"
     >
       ⚠️ Sesi GoBiz belum ada. Login OTP lewat <a
-        href="/settings"
-        class="underline">Settings</a
+        href="/merchants"
+        class="underline">halaman Merchant</a
       >.
     </div>
   {/if}

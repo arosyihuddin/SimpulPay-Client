@@ -7,7 +7,7 @@ export interface Merchant {
   type: 'gopay' | 'shopeepay';
   name: string;
   status: string;
-  gopay_merchant_id: string | null;
+  merchant_id: string | null;
   qris_static_set: boolean;
   created_at: number;
   updated_at: number;

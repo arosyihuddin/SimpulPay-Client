@@ -1,14 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import { admin } from '$lib/api';
   import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
   import { addToast } from '$lib/toast.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+  import GoBizConfigModal from '$lib/components/GoBizConfigModal.svelte';
+  import QrisModal from '$lib/components/QrisModal.svelte';
 
-  const TYPE_META: Record<string, { label: string; icon: string; cls: string }> = {
-    gopay: { label: 'GoPay', icon: 'fa-solid fa-mobile-screen', cls: 'text-emerald-600 dark:text-emerald-400' },
-    shopeepay: { label: 'ShopeePay', icon: 'fa-solid fa-bag-shopping', cls: 'text-orange-500' },
+  const TYPE_META: Record<string, { label: string; img: string }> = {
+    gopay: { label: 'GoPay', img: '/gopay.webp' },
+    shopeepay: { label: 'ShopeePay', img: '/shopeepay.webp' },
   };
   const typeMeta = (t: string) => TYPE_META[t] || TYPE_META.gopay;
 
@@ -22,6 +25,13 @@
 
   let delTarget = $state<any | null>(null);
   let deleting = $state(false);
+
+  let configTarget = $state<any | null>(null);
+  let qrisTarget = $state<any | null>(null);
+  let menuFor = $state<string | null>(null);
+
+  // Konfigurasi lengkap = punya merchant ID GoBiz + QRIS static terpasang.
+  const isConfigured = (m: any) => !!m.merchant_id && m.qris_static_set;
 
   onMount(() => { loadMerchants(); });
 
@@ -42,11 +52,19 @@
     catch (e: any) { err = e.message; delTarget = null; }
     finally { deleting = false; }
   }
+  async function refreshSession(m: any) {
+    err = '';
+    try {
+      await admin.refreshSession(m.id);
+      await loadMerchants();
+      addToast('success', `Sesi GoBiz "${m.name}" di-refresh.`);
+    } catch (e: any) { err = e.message; }
+  }
 
   // ---- Tambah Merchant ----
   const PROVIDERS = [
-    { key: 'gopay', name: 'GoPay', icon: 'fa-solid fa-mobile-screen', cls: 'text-emerald-600 dark:text-emerald-400', desc: 'Instant QR & Wallet API' },
-    { key: 'shopeepay', name: 'ShopeePay', icon: 'fa-solid fa-bag-shopping', cls: 'text-orange-500', desc: 'Segera hadir' },
+    { key: 'gopay', name: 'GoPay', img: '/gopay.webp', icon: 'fa-solid fa-mobile-screen', cls: '', desc: 'Instant QR & Wallet API' },
+    { key: 'shopeepay', name: 'ShopeePay', img: '/shopeepay.webp', icon: 'fa-solid fa-bag-shopping', cls: '', desc: 'Segera hadir' },
   ];
   let modalOpen = $state(false);
   let provider = $state('');
@@ -75,9 +93,14 @@
   {#if err}<p class="text-xs font-semibold text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30 rounded-2xl px-4 py-3"><i class="fa-solid fa-circle-exclamation mr-2"></i>{err}</p>{/if}
 
   <div class="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-4">
-    <button onclick={openAdd} class="tactile-btn px-5 py-2.5 font-bold text-[var(--accent)] flex items-center gap-2">
-      <i class="fa-solid fa-plus"></i> Tambah Merchant
-    </button>
+    <div class="flex gap-2">
+      <button onclick={loadMerchants} title="Refresh daftar merchant" aria-label="Refresh" class="tactile-btn px-4 py-2.5 font-bold text-[var(--text-muted)] flex items-center gap-2">
+        <i class="fa-solid fa-rotate"></i>
+      </button>
+      <button onclick={openAdd} class="tactile-btn px-5 py-2.5 font-bold text-[var(--accent)] flex items-center gap-2">
+        <i class="fa-solid fa-plus"></i> Tambah Merchant
+      </button>
+    </div>
   </div>
 
   {#if merchants.loading && merchants.list.length === 0}
@@ -115,15 +138,31 @@
           <div>
             <div class="flex items-center justify-between mb-3">
               <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider {statusCls(m.status)}">{m.status}</span>
-              {#if m.id === merchants.active?.id}
-                <span class="text-[10px] font-bold text-[var(--accent)]"><i class="fa-solid fa-circle-check mr-1"></i>Aktif</span>
-              {:else}
-                <span class="text-xs text-[var(--text-muted)] font-bold font-mono">{m.id}</span>
-              {/if}
+              <div class="relative">
+                <button onclick={() => (menuFor = menuFor === m.id ? null : m.id)} aria-label="Menu merchant" class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]">
+                  <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+                {#if menuFor === m.id}
+                  <button type="button" aria-label="Tutup menu" class="fixed inset-0 z-40 cursor-default" onclick={() => (menuFor = null)}></button>
+                  <div class="absolute right-0 mt-2 w-48 rounded-xl tactile-box p-2 z-50 text-xs space-y-1">
+                    <button onclick={() => { toggleStatus(m); menuFor = null; }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold {m.status === 'active' ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}">
+                      <i class="fa-solid fa-power-off w-4"></i> {m.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
+                    </button>
+                    {#if !!m.merchant_id}
+                      <button onclick={() => { refreshSession(m); menuFor = null; }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]">
+                        <i class="fa-solid fa-rotate w-4"></i> Refresh
+                      </button>
+                    {/if}
+                    <button onclick={() => { configTarget = m; menuFor = null; }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]">
+                      <i class="fa-solid fa-gear w-4"></i> Reconfigure
+                    </button>
+                  </div>
+                {/if}
+              </div>
             </div>
             <div class="flex items-center space-x-3 mb-4">
               <div class="w-12 h-12 rounded-2xl bg-emerald-100/70 dark:bg-emerald-900/40 flex items-center justify-center tactile-inset">
-                <i class="{typeMeta(m.type).icon} {typeMeta(m.type).cls} text-lg"></i>
+                <img src={typeMeta(m.type).img} alt={typeMeta(m.type).label} class="w-7 h-7 object-contain" />
               </div>
               <div>
                 <h4 class="font-bold">{m.name}</h4>
@@ -133,7 +172,7 @@
             <div class="space-y-2 text-xs">
               <div class="flex justify-between py-1 border-b border-[var(--border-subtle)]">
                 <span class="text-[var(--text-muted)] font-bold">Merchant ID</span>
-                <span class="font-mono font-bold">{m.gopay_merchant_id || '—'}</span>
+                <span class="font-mono font-bold">{m.merchant_id || '—'}</span>
               </div>
               <div class="flex justify-between py-1 border-b border-[var(--border-subtle)]">
                 <span class="text-[var(--text-muted)] font-bold">QRIS Static</span>
@@ -145,20 +184,22 @@
               </div>
             </div>
           </div>
-          <div class="space-y-2 mt-4">
-            {#if m.id !== merchants.active?.id && m.status === 'active'}
-              <button onclick={() => setActiveMerchant(m.id)} class="tactile-btn w-full py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-circle-check"></i> Jadikan Aktif
+          <div class="flex gap-2 mt-4">
+            {#if isConfigured(m)}
+              <button onclick={() => { setActiveMerchant(m.id); goto(`/merchants/transaction?merchant_id=${m.id}`); }} class="tactile-btn flex-1 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-receipt"></i> Transaksi
+              </button>
+            {:else}
+              <button onclick={() => (configTarget = m)} class="tactile-btn flex-1 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-gear"></i> Konfigurasi
               </button>
             {/if}
-            <div class="flex gap-2">
-              <button onclick={() => toggleStatus(m)} class="tactile-btn flex-1 py-2.5 text-[var(--text-muted)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
-                <i class="fa-solid {m.status === 'active' ? 'fa-pause' : 'fa-play'}"></i> {m.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
-              </button>
-              <button onclick={() => (delTarget = m)} aria-label="Hapus {m.name}" class="tactile-btn px-3.5 py-2.5 text-red-500 font-bold text-xs rounded-xl flex items-center justify-center">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-            </div>
+            <button onclick={() => (m.qris_static_set ? (qrisTarget = m) : (configTarget = m))} class="tactile-btn flex-1 py-2.5 text-[var(--text-muted)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-qrcode"></i> Buat QRIS
+            </button>
+            <button onclick={() => (delTarget = m)} aria-label="Hapus {m.name}" class="tactile-btn px-3.5 py-2.5 text-red-500 font-bold text-xs rounded-xl flex items-center justify-center">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
           </div>
         </div>
       {/each}
@@ -187,7 +228,7 @@
                 onclick={() => { provider = p.key; modalErr = ''; }}
                 class="tactile-box p-4 text-center cursor-pointer flex flex-col items-center justify-center space-y-2"
               >
-                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center {p.cls}"><i class="{p.icon} text-lg"></i></div>
+                <div class="w-12 h-12 rounded-[1.25rem] bg-emerald-500/10 flex items-center justify-center {p.cls}"><i class="{p.icon} text-lg"></i></div>
                 <span class="font-bold text-sm">{p.name} Merchant</span>
                 <span class="text-[10px] text-[var(--text-muted)] font-bold">{p.desc}</span>
               </button>
@@ -221,3 +262,23 @@
 >
   <p class="text-sm text-[var(--text-muted)] leading-relaxed">Hapus merchant <span class="font-bold text-[var(--text-main)]">"{delTarget?.name}"</span>? Sesi GoBiz ikut terhapus.</p>
 </ConfirmModal>
+
+<!-- Konfigurasi lanjutan merchant -->
+{#if configTarget}
+  <GoBizConfigModal
+    merchantId={configTarget.id}
+    merchantName={configTarget.name}
+    hasLogin={!!configTarget.merchant_id}
+    onClose={() => (configTarget = null)}
+    onDone={() => loadMerchants()}
+  />
+{/if}
+
+<!-- Buat QRIS dinamis -->
+{#if qrisTarget}
+  <QrisModal
+    merchant={qrisTarget}
+    onClose={() => (qrisTarget = null)}
+    onDone={() => loadMerchants()}
+  />
+{/if}

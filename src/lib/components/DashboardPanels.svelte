@@ -82,7 +82,7 @@
   ];
 
   $effect(() => {
-    admin.transactions(1, 5, merchants.active?.id).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
+    admin.transactions(5, 0, merchants.active?.id).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
   });
 </script>
 
@@ -147,10 +147,10 @@
                   <i class="fa-solid fa-arrow-down-left text-emerald-500 mt-0.5"></i>
                   <div class="min-w-0">
                     <p class="font-bold truncate">{fmtIDR(t.amount)}</p>
-                    <p class="text-[var(--text-muted)] font-medium truncate">{t.issuer}</p>
+                    <p class="text-[var(--text-muted)] font-medium truncate">{t.merchant_id?.slice(0, 12) || '—'}</p>
                   </div>
                 </div>
-                <span class="text-[10px] text-[var(--text-muted)] whitespace-nowrap font-bold">{fmtTime(t.time)}</span>
+                <span class="text-[10px] text-[var(--text-muted)] whitespace-nowrap font-bold">{fmtTime(t.created_at)}</span>
               </div>
             {/each}
           {/if}
@@ -185,7 +185,7 @@
           {/each}
         </div>
       </div>
-      <button class="tactile-btn w-full mt-4 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5" onclick={() => goto('/transactions')}>
+      <button class="tactile-btn w-full mt-4 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5" onclick={() => goto('/merchants')}>
         <i class="fa-solid fa-gear"></i> Kelola Payout
       </button>
     </div>
@@ -211,7 +211,7 @@
           {/each}
         </div>
       </div>
-      <a href="/settings" class="tactile-btn w-full mt-4 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
+      <a href="/merchants" class="tactile-btn w-full mt-4 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
         <i class="fa-solid fa-users"></i> Semua Merchant
       </a>
     </div>
