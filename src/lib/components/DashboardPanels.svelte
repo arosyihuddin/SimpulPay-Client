@@ -103,6 +103,14 @@
         </select>
       </div>
       <div class="relative w-full h-64 sm:h-72">
+        {#if volume === null}
+          <div class="absolute inset-0 flex flex-col justify-center gap-3 px-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-5/6" />
+            <Skeleton className="h-3 w-2/3" />
+          </div>
+        {/if}
         <canvas bind:this={canvasRef}></canvas>
       </div>
     </div>
