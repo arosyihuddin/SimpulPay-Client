@@ -3,6 +3,7 @@
   import { admin } from '$lib/api';
   import { merchants, loadMerchants, setActiveMerchant } from '$lib/merchant.svelte';
   import { addToast } from '$lib/toast.svelte';
+  import Skeleton from '$lib/components/Skeleton.svelte';
 
   const TYPE_META: Record<string, { label: string; icon: string; cls: string }> = {
     gopay: { label: 'GoPay', icon: 'fa-solid fa-mobile-screen', cls: 'text-emerald-600 dark:text-emerald-400' },
@@ -73,7 +74,29 @@
   </div>
 
   {#if merchants.loading && merchants.list.length === 0}
-    <p class="text-xs text-[var(--text-muted)]">Memuat merchant...</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {#each Array.from({ length: 3 }) as _, i}
+        <div class="tactile-box p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-4 w-12" />
+          </div>
+          <div class="flex items-center space-x-3">
+            <Skeleton className="w-12 h-12 rounded-2xl" />
+            <div class="space-y-2 flex-1">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+          <div class="space-y-2">
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-3/4" />
+          </div>
+          <Skeleton className="h-9 w-full rounded-xl" />
+        </div>
+      {/each}
+    </div>
   {:else if merchants.list.length === 0}
     <div class="tactile-box p-10 text-center text-sm text-[var(--text-muted)]">
       Belum ada merchant. Klik <span class="font-bold text-[var(--accent)]">Tambah Merchant</span> untuk mulai.

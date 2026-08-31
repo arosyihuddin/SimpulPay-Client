@@ -67,9 +67,8 @@
   }
 
   async function load() {
-    if (!merchants.active) return;
     admin
-      .dashboard(merchants.active.id)
+      .dashboard(merchants.active?.id)
       .then((d) => (data = d.data))
       .catch((e) => (err = e.message));
   }
@@ -192,12 +191,12 @@
       <Stat
         icon="fa-solid fa-chart-line"
         label="Bulan Ini"
-        value={s?.month_income == null ? "—" : fmtIDR(s.month_income)}
+        value={fmtIDR(s?.month_income)}
       />
       <Stat
         icon="fa-solid fa-receipt"
         label="Transaksi"
-        value={String(s?.total_transactions ?? "—")}
+        value={String(s?.total_transactions ?? 0)}
       />
       <Stat
         icon="fa-solid fa-qrcode"

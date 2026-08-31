@@ -1,6 +1,3 @@
-// fetch wrapper — cookie httpOnly admin session, JSON.
-// VITE_API_BASE: base URL backend. Kosong => same-origin (dev via proxy / deploy gabung).
-// Deploy terpisah: isi mis. https://api.gomerch.com
 export const API_BASE =
   (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ||
   "";
@@ -77,9 +74,7 @@ export const admin = {
       body: { amount },
     }),
   listQris: (limit = 50, offset = 0, merchantId?: string | null) =>
-    api<any>(
-      withMerchant(`/qris?limit=${limit}&offset=${offset}`, merchantId),
-    ),
+    api<any>(withMerchant(`/qris?limit=${limit}&offset=${offset}`, merchantId)),
   transactions: (page = 1, pageSize = 20, merchantId?: string | null) =>
     api<any>(
       withMerchant(
