@@ -48,7 +48,6 @@
     modalErr = '';
   }
   async function submit() {
-    if (!merchantId) { modalErr = 'Pilih merchant dulu.'; return; }
     saving = true; modalErr = '';
     try {
       const res = await admin.createApiKey(label.trim() || undefined, merchantId);
@@ -153,13 +152,14 @@
           <input id="key-label" bind:value={label} placeholder="Contoh: Production Gateway" class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
         </div>
         <div>
-          <label for="key-merchant" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Merchant</label>
+          <label for="key-merchant" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Merchant (opsional)</label>
           <select id="key-merchant" bind:value={merchantId} class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer">
+            <option value="">Random / belum di-binding</option>
             {#each merchants.list as m (m.id)}
               <option value={m.id}>{m.name}</option>
             {/each}
           </select>
-          <p class="text-[10px] text-[var(--text-muted)] mt-1">API key terikat ke satu merchant — dipakai sebagai Bearer token di API v1.</p>
+          <p class="text-[10px] text-[var(--text-muted)] mt-1">Kosongkan untuk random merchant per generate — dipakai sebagai Bearer token di API v1.</p>
         </div>
         <div class="flex gap-2 pt-2">
           <button disabled={saving} onclick={submit} class="tactile-btn flex-1 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
