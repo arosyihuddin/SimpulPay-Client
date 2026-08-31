@@ -146,11 +146,15 @@
               <td class="px-4 py-3 text-xs">{fmtTime(r.created_at)}</td>
               <td class="px-4 py-3 text-xs">{fmtTime(r.expires_at)}</td>
               <td class="px-4 py-3 text-right">
+                {#if r.status === "PENDING"}
                 <button
                   onclick={() => openQr(r)}
                   disabled={qrBusyId === r.id}
                   class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
                 ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
+                {:else}
+                <span class="text-xs text-[var(--text-muted)]">—</span>
+                {/if}
               </td>
             </tr>
           {/each}
@@ -206,11 +210,13 @@
               >Kadaluwarsa: {fmtTime(r.expires_at)}</span
             >
           </div>
+          {#if r.status === "PENDING"}
           <button
             onclick={() => openQr(r)}
             disabled={qrBusyId === r.id}
             class="tactile-btn w-full py-2 text-xs font-bold text-[var(--accent)]"
           ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
+          {/if}
         </div>
       {/each}
     {/if}
