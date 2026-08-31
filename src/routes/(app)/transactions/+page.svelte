@@ -8,6 +8,7 @@
     id: string;
     trx_id: string;
     merchant_id: string;
+    merchant_name?: string;
     amount: number;
     base_amount: number;
     unique_code: number;
@@ -91,8 +92,8 @@
           {#each rows as r (r.id)}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               <td class="px-4 py-3 font-mono text-xs">{r.trx_id}</td>
-              <td class="px-4 py-3 font-mono text-xs text-[var(--text-muted)]"
-                >{r.merchant_id}</td
+              <td class="px-4 py-3 font-semibold"
+                >{r.merchant_name || r.merchant_id}</td
               >
               <td class="px-4 py-3 font-semibold">
                 {fmtIDR(r.amount)}
@@ -158,8 +159,8 @@
                 >= {fmtIDR(r.base_amount || r.amount - r.unique_code)} + {r.unique_code}</span
               >{/if}
           </div>
-          <p class="text-xs font-mono text-[var(--text-muted)]">
-            {r.merchant_id}
+          <p class="text-xs font-semibold text-[var(--text-main)]">
+            {r.merchant_name || r.merchant_id}
           </p>
           <div class="text-xs text-[var(--text-muted)] flex justify-between">
             <span>Dibuat: {fmtTime(r.created_at)}</span><span

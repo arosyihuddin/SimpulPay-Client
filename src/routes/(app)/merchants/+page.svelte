@@ -28,6 +28,10 @@
 
   let configTarget = $state<any | null>(null);
   let qrisTarget = $state<any | null>(null);
+  let editTarget = $state<any | null>(null);
+  let editName = $state('');
+  let editSaving = $state(false);
+  let editErr = $state('');
   let menuFor = $state<string | null>(null);
 
   // Konfigurasi lengkap = punya merchant ID GoBiz + QRIS static terpasang.
@@ -86,6 +90,19 @@
       addToast('success', 'Merchant ditambahkan.');
     } catch (e: any) { modalErr = e.message; }
     finally { saving = false; }
+  }
+
+  async function saveEdit() {
+    const t = editTarget;
+    if (!t) return;
+    const nm = editName.trim();
+    if (nm.length < 2) { editErr = 'Nama merchant minimal 2 karakter.'; return; }
+    editSaving = true; editErr = '';
+    try {
+      await admin.updateMerchant(t.id, { name: nm });
+      editTarget = null; await loadMerchants(); addToast('success', 'Nama merchant diubah.');
+    } catch (e: any) { editErr = e.message; }
+    finally { editSaving = false; }
   }
 </script>
 
@@ -155,6 +172,9 @@
                     {/if}
                     <button onclick={() => { configTarget = m; menuFor = null; }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]">
                       <i class="fa-solid fa-gear w-4"></i> Reconfigure
+                    </button>
+                    <button onclick={() => { editTarget = m; editName = m.name; editErr = ''; menuFor = null; }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]">
+                      <i class="fa-solid fa-pen w-4"></i> Edit
                     </button>
                   </div>
                 {/if}
@@ -281,4 +301,27 @@
     onClose={() => (qrisTarget = null)}
     onDone={() => loadMerchants()}
   />
+{/if}
+
+<!-- Edit merchant -->
+{#if editTarget}
+  <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (editTarget = null)}></button>
+    <div class="tactile-modal w-full max-w-md p-6 relative z-50">
+      <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
+        <h3 class="text-lg font-bold">Edit Merchant</h3>
+        <button type="button" aria-label="Tutup" onclick={() => (editTarget = null)} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      {#if editErr}<p class="text-xs font-semibold text-red-500 mb-3">{editErr}</p>{/if}
+      <div class="space-y-4">
+        <div>
+          <label for="edit-name" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Nama Merchant ({typeMeta(editTarget.type).label})</label>
+          <input id="edit-name" bind:value={editName} placeholder="Nama merchant" class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
+        </div>
+        <button onclick={saveEdit} disabled={editSaving} class="tactile-btn w-full py-3 font-bold text-[var(--accent)]">
+          <i class="fa-solid fa-floppy-disk mr-1"></i> {editSaving ? 'Menyimpan...' : 'Simpan'}
+        </button>
+      </div>
+    </div>
+  </div>
 {/if}

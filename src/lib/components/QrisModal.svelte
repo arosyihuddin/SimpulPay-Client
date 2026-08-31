@@ -38,13 +38,15 @@
         ⚠️ QRIS static belum diatur untuk merchant ini. Konfigurasi dulu lewat tombol Konfigurasi (login GoBiz + scan QRIS static) sebelum buat QR dinamis.
       </p>
     {:else if created}
-      <div class="bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-2xl p-4 space-y-2 text-sm">
+      <div class="bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-2xl p-4 space-y-3 text-sm">
         <p class="text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2"><i class="fa-solid fa-circle-check"></i> QRIS dibuat!</p>
         <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">TRX-ID</span><span class="font-mono text-xs break-all text-right">{created.trx_id}</span></p>
         <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">Nominal</span><span class="font-bold">{fmtIDR(created.amount)}</span></p>
-        <div class="flex items-center justify-between gap-3">
-          <span class="text-[var(--text-muted)] shrink-0">Halaman</span>
-          <a href={created.qris_url} target="_blank" rel="noreferrer" class="text-xs text-[var(--accent)] underline whitespace-nowrap"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>buka</a>
+        <div class="flex justify-center">
+          <img src={`${API_BASE}/qr/${created.id}`} alt="QRIS" class="w-48 h-48 rounded-xl tactile-inset" />
+        </div>
+        <div class="flex items-center justify-center gap-2">
+          <a href={`${API_BASE}/qr/${created.id}`} target="_blank" rel="noreferrer" class="text-xs text-[var(--accent)] underline whitespace-nowrap"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>buka</a>
         </div>
         <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
       </div>

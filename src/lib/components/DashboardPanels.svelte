@@ -147,7 +147,7 @@
                   <i class="fa-solid fa-arrow-down-left text-emerald-500 mt-0.5"></i>
                   <div class="min-w-0">
                     <p class="font-bold truncate">{fmtIDR(t.amount)}</p>
-                    <p class="text-[var(--text-muted)] font-medium truncate">{t.merchant_id?.slice(0, 12) || '—'}</p>
+                    <p class="text-[var(--text-muted)] font-medium truncate">{t.merchant_name || t.merchant_id || '—'}</p>
                   </div>
                 </div>
                 <span class="text-[10px] text-[var(--text-muted)] whitespace-nowrap font-bold">{fmtTime(t.created_at)}</span>

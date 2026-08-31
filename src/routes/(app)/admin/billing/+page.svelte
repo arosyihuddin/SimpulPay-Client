@@ -4,6 +4,7 @@
   import { admin } from '$lib/api';
   import { addToast } from '$lib/toast.svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+  import Skeleton from '$lib/components/Skeleton.svelte';
 
   interface Plan {
     id: string; name: string; type: 'free' | 'paid'; price: number; max_merchants: number;
@@ -152,7 +153,16 @@
       </button>
     </div>
     {#if loading}
-      <p class="text-xs text-[var(--text-muted)]">Memuat...</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {#each Array.from({ length: 3 }) as _, i}
+          <div class="tactile-inset p-4 space-y-3">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-3/4" />
+          </div>
+        {/each}
+      </div>
     {:else if plans.length === 0}
       <p class="text-xs text-[var(--text-muted)]">Belum ada paket. Tambah paket pertama.</p>
     {:else}
@@ -212,7 +222,15 @@
         </tr>
       </thead>
       <tbody>
-        {#if subs.length === 0}
+        {#if loading}
+          {#each Array.from({ length: 3 }) as _, i}
+            <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
+              {#each Array.from({ length: 6 }) as _, j}
+                <td class="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+              {/each}
+            </tr>
+          {/each}
+        {:else if subs.length === 0}
           <tr>
             <td colspan={6} class="px-4 py-8 text-center text-[var(--text-muted)]">Belum ada langganan</td>
           </tr>
@@ -243,7 +261,13 @@
 
   <!-- Mobile cards -->
   <div class="md:hidden space-y-3">
-    {#if subs.length === 0}
+    {#if loading}
+      {#each Array.from({ length: 3 }) as _, i}
+        <div class="tactile-box p-4 space-y-2">
+          <Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-24" />
+        </div>
+      {/each}
+    {:else if subs.length === 0}
       <p class="text-center text-[var(--text-muted)] py-8 text-sm">Belum ada langganan</p>
     {:else}
       {#each subs as s (s.id)}

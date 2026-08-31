@@ -4,6 +4,7 @@
   import { admin } from '$lib/api';
   import { addToast } from '$lib/toast.svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+  import Skeleton from '$lib/components/Skeleton.svelte';
 
   interface Announcement {
     id: number;
@@ -113,7 +114,32 @@
   </div>
 
   {#if loading}
-    <p class="text-xs text-[var(--text-muted)]">Memuat...</p>
+    <div class="hidden md:block tactile-box overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-[var(--text-muted)] border-b border-[var(--border-subtle)]">
+            <th class="px-4 py-3 font-medium">Judul</th><th class="px-4 py-3 font-medium">Tipe</th>
+            <th class="px-4 py-3 font-medium">Status</th><th class="px-4 py-3 font-medium">Dibuat</th><th class="px-4 py-3 font-medium text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each Array.from({ length: 3 }) as _, i}
+            <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
+              {#each Array.from({ length: 5 }) as _, j}
+                <td class="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+              {/each}
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+    <div class="md:hidden space-y-3">
+      {#each Array.from({ length: 3 }) as _, i}
+        <div class="tactile-box p-4 space-y-2">
+          <Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-24" />
+        </div>
+      {/each}
+    </div>
   {:else if items.length === 0}
     <div class="tactile-box p-10 text-center text-sm text-[var(--text-muted)]">
       Belum ada pengumuman. Klik <span class="font-bold text-[var(--accent)]">Buat Pengumuman</span> untuk broadcast ke semua user.
