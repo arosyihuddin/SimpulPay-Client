@@ -125,22 +125,31 @@
 
   <!-- Ringkasan -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Total Langganan</p>
-      <p class="text-xl font-extrabold">{subs.length}</p>
-    </div>
-    <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Aktif</p>
-      <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{active}</p>
-    </div>
-    <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Dibatalkan</p>
-      <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{cancelled}</p>
-    </div>
-    <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Kedaluwarsa</p>
-      <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{expired}</p>
-    </div>
+    {#if loading}
+      {#each Array.from({ length: 4 }) as _, i}
+        <div class="tactile-box p-4 space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-6 w-16" />
+        </div>
+      {/each}
+    {:else}
+      <div class="tactile-box p-4">
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Total Langganan</p>
+        <p class="text-xl font-extrabold">{subs.length}</p>
+      </div>
+      <div class="tactile-box p-4">
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Aktif</p>
+        <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{active}</p>
+      </div>
+      <div class="tactile-box p-4">
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Dibatalkan</p>
+        <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{cancelled}</p>
+      </div>
+      <div class="tactile-box p-4">
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Kedaluwarsa</p>
+        <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{expired}</p>
+      </div>
+    {/if}
   </div>
 
   <!-- Paket Langganan (CRUD) -->

@@ -1,5 +1,6 @@
 <script lang="ts">
   import Pagination from '$lib/components/Pagination.svelte';
+  import Skeleton from '$lib/components/Skeleton.svelte';
   import { admin } from '$lib/api';
   import { addToast } from '$lib/toast.svelte';
 
@@ -195,22 +196,31 @@
 <div class="space-y-6">
   <!-- Ringkasan -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Total User</p>
-      <p class="text-xl font-extrabold">{users.length}</p>
-    </div>
-    <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Aktif</p>
-      <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{active}</p>
-    </div>
-    <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Suspended</p>
-      <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{suspended}</p>
-    </div>
-    <div class="tactile-box p-4">
-      <p class="text-[11px] text-[var(--text-muted)] font-medium">Banned</p>
-      <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{banned}</p>
-    </div>
+    {#if loading}
+      {#each Array.from({ length: 4 }) as _, i}
+        <div class="tactile-box p-4 space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-6 w-16" />
+        </div>
+      {/each}
+    {:else}
+      <div class="tactile-box p-4">
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Total User</p>
+        <p class="text-xl font-extrabold">{users.length}</p>
+      </div>
+      <div class="tactile-box p-4">
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Aktif</p>
+        <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{active}</p>
+      </div>
+      <div class="tactile-box p-4">
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Suspended</p>
+        <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{suspended}</p>
+      </div>
+      <div class="tactile-box p-4">
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Banned</p>
+        <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{banned}</p>
+      </div>
+    {/if}
   </div>
 
   <!-- Cari + Tambah -->
