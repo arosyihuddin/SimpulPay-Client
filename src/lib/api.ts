@@ -73,6 +73,8 @@ export const admin = {
       method: "POST",
       body: { amount },
     }),
+  getTransactionCode: (id: string) =>
+    api<{ data: { code: string } }>(`/transactions/${id}/code`),
 
   // Semua transaksi — semua merchant user, filter lewat query
   transactions: (limit = 50, offset = 0, merchantId?: string | null) =>

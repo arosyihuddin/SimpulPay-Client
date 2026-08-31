@@ -3,6 +3,7 @@
   import { useWs } from "$lib/useWs";
   import Pagination from "$lib/components/Pagination.svelte";
   import Skeleton from "$lib/components/Skeleton.svelte";
+  import QrCodeModal from "$lib/components/QrCodeModal.svelte";
 
   interface TxRow {
     id: string;
@@ -31,6 +32,21 @@
   let curPage = $state(1);
   let err = $state("");
   let loading = $state(true);
+  let qrCode = $state("");
+  let qrAmount = $state(0);
+  let qrBusyId = $state<string | null>(null);
+
+  async function openQr(tx: TxRow) {
+    qrBusyId = tx.id;
+    try {
+      const res = await admin.getTransactionCode(tx.id);
+      qrCode = res.data.code;
+      qrAmount = tx.amount;
+    } catch {
+      qrCode = "";
+    }
+    qrBusyId = null;
+  }
 
   async function load() {
     loading = true;
@@ -77,6 +93,7 @@
           <th class="px-4 py-3 font-medium">Dibuat</th><th
             class="px-4 py-3 font-medium">Kadaluwarsa</th
           >
+          <th class="px-4 py-3 font-medium text-right">Aksi</th>
         </tr>
       </thead>
       <tbody>
@@ -113,13 +130,20 @@
               >
               <td class="px-4 py-3 text-xs">{fmtTime(r.created_at)}</td>
               <td class="px-4 py-3 text-xs">{fmtTime(r.expires_at)}</td>
+              <td class="px-4 py-3 text-right">
+                <button
+                  onclick={() => openQr(r)}
+                  disabled={qrBusyId === r.id}
+                  class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
+                ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
+              </td>
             </tr>
           {/each}
         {/if}
         {#if !loading && rows.length === 0}
           <tr
             ><td
-              colspan={6}
+              colspan={7}
               class="px-4 py-8 text-center text-[var(--text-muted)]"
               >Belum ada transaksi</td
             ></tr
@@ -167,6 +191,11 @@
               >Kadaluwarsa: {fmtTime(r.expires_at)}</span
             >
           </div>
+          <button
+            onclick={() => openQr(r)}
+            disabled={qrBusyId === r.id}
+            class="tactile-btn w-full py-2 text-xs font-bold text-[var(--accent)]"
+          ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
         </div>
       {/each}
     {/if}
@@ -188,3 +217,7 @@
     />
   {/if}
 </div>
+
+{#if qrCode}
+  <QrCodeModal code={qrCode} {qrAmount} onClose={() => (qrCode = "")} />
+{/if}

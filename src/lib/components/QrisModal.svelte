@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { admin, fmtIDR, API_BASE } from '$lib/api';
+  import { admin, fmtIDR } from '$lib/api';
   import { addToast } from '$lib/toast.svelte';
+  import { onMount } from 'svelte';
+  import { qrDataUrl } from '$lib/qrcode';
 
   let { merchant, onClose, onDone } = $props();
 
@@ -8,16 +10,18 @@
   let err = $state('');
   let busy = $state(false);
   let created = $state<any | null>(null);
+  let qrSrc = $state('');
 
   async function create(e: SubmitEvent) {
     e.preventDefault();
-    busy = true; err = ''; created = null;
+    busy = true; err = ''; created = null; qrSrc = '';
     try {
       const a = parseInt(amount, 10);
       if (!a || a <= 0) throw new Error('Nominal tidak valid');
       const res = await admin.createQris(a, merchant.id);
       created = res.data; amount = ''; onDone?.();
       addToast('success', 'QRIS dinamis dibuat.');
+      qrDataUrl(created.qris_code).then((d) => (qrSrc = d));
     } catch (e: any) { err = e.message; }
     finally { busy = false; }
   }
@@ -43,10 +47,11 @@
         <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">TRX-ID</span><span class="font-mono text-xs break-all text-right">{created.trx_id}</span></p>
         <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">Nominal</span><span class="font-bold">{fmtIDR(created.amount)}</span></p>
         <div class="flex justify-center">
-          <img src={`${API_BASE}/qr/${created.id}`} alt="QRIS" class="w-48 h-48 rounded-xl tactile-inset" />
-        </div>
-        <div class="flex items-center justify-center gap-2">
-          <a href={`${API_BASE}/qr/${created.id}`} target="_blank" rel="noreferrer" class="text-xs text-[var(--accent)] underline whitespace-nowrap"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>buka</a>
+          {#if !qrSrc}
+            <div class="w-10 h-10 border-2 border-[var(--accent)]/30 border-t-[var(--accent)] rounded-full animate-spin"></div>
+          {:else}
+            <img src={qrSrc} alt="QRIS" class="w-48 h-48 rounded-xl tactile-inset" />
+          {/if}
         </div>
         <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
       </div>
