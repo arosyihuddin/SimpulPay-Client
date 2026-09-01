@@ -127,7 +127,7 @@
         <p class="text-[11px] text-[var(--text-muted)] font-medium mb-1">Plan Aktif</p>
         <div class="flex items-center gap-3">
           <h2 class="text-2xl font-extrabold">{sub.plan_name}</h2>
-          <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(sub.status)}">{sub.status === 'active' ? 'Aktif' : sub.status}</span>
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(sub.status)}">{sub.status === 'active' ? 'Aktif' : sub.status.toUpperCase()}</span>
         </div>
       </div>
       <div class="text-sm space-y-1.5 sm:text-right">
@@ -217,7 +217,7 @@
               <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{fmtDate(i.period_start)} — {fmtDate(i.period_end)}</td>
               <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{i.paid_at ? fmtDate(i.paid_at) : '—'}</td>
               <td class="px-4 py-3">
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(i.status)}">{i.status}</span>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(i.status)}">{i.status.toUpperCase()}</span>
                 {#if i.status === 'pending' && i.qris_code}
                   <button onclick={() => (pay = { code: i.qris_code, amount: i.amount_to_pay || i.amount, baseAmount: i.amount, uniqueCode: i.unique_code || 0 })} title="Bayar invoice" class="tactile-btn ml-2 px-3 py-1 text-xs font-bold text-[var(--accent)]"><i class="fa-solid fa-qrcode"></i> Bayar</button>
                 {/if}
@@ -234,7 +234,7 @@
         <div class="tactile-box p-4 space-y-2">
           <div class="flex items-center justify-between">
             <p class="font-bold">{fmtIDR(i.amount)}</p>
-            <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(i.status)}">{i.status}</span>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(i.status)}">{i.status.toUpperCase()}</span>
           </div>
           <p class="text-xs font-mono text-[var(--text-muted)]">{i.id}</p>
           <div class="text-xs text-[var(--text-muted)] flex justify-between">

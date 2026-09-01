@@ -178,7 +178,7 @@
                 ><span
                   class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(
                     s.status,
-                  )}">{s.status}</span
+                  )}">{s.status.toUpperCase()}</span
                 ></td
               >
               <td class="px-4 py-3 text-xs">{fmtDate(s.starts_at)}</td>
@@ -224,7 +224,7 @@
             <span
               class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(
                 s.status,
-              )}">{s.status}</span
+              )}">{s.status.toUpperCase()}</span
             >
           </div>
           <p class="text-xs text-[var(--text-muted)]">

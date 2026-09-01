@@ -150,7 +150,7 @@
                 ><span
                   class="text-xs font-semibold px-2.5 py-1 rounded-full {invStatusCls(
                     iv.status,
-                  )}">{iv.status}</span
+                  )}">{iv.status.toUpperCase()}</span
                 ></td
               >
               {#if hasAction}
@@ -207,7 +207,7 @@
             <span
               class="text-xs font-semibold px-2.5 py-1 rounded-full {invStatusCls(
                 iv.status,
-              )}">{iv.status}</span
+              )}">{iv.status.toUpperCase()}</span
             >
           </div>
           <p class="font-bold">{fmtIDR(iv.amount)}</p>

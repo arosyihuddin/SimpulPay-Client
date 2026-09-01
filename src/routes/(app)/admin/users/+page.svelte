@@ -74,7 +74,7 @@
   const defaultPlan = $derived(PLAN_OPTS[0]?.id || '');
   $effect(() => { if (defaultPlan && !PLAN_OPTS.some((p) => p.id === form.plan)) form.plan = defaultPlan; });
 
-  const roleLabel = (r: string) => (r === 'admin' ? 'admin' : 'customer');
+  const roleLabel = (r: string) => (r === 'admin' ? 'ADMIN' : 'CUSTOMER');
   const roleCls = (r: string) =>
     r === 'admin'
       ? 'bg-violet-100/70 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-500/30'
@@ -283,7 +283,7 @@
               <td class="px-4 py-3 font-semibold">{u.plan?.name || '—'}</td>
               <td class="px-4 py-3">
                 {#if u.status}
-                  <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(u.status)}">{u.status}</span>
+                  <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(u.status)}">{u.status.toUpperCase()}</span>
                 {:else}
                   <span class="text-xs text-[var(--text-muted)]">—</span>
                 {/if}
@@ -324,7 +324,7 @@
           </div>
           <div class="flex items-center gap-2">
             {#if u.status}
-              <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(u.status)}">{u.status}</span>
+              <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(u.status)}">{u.status.toUpperCase()}</span>
             {/if}
             <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--border-subtle)]/50 text-[var(--text-muted)]">{u.plan?.name || '—'}</span>
             <span class="text-xs font-mono text-[var(--text-muted)] ml-auto">{u.id}</span>
@@ -388,7 +388,7 @@
         <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
           <span class="text-[var(--text-muted)]">Status</span>
           {#if sel.status}
-            <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(sel.status)}">{sel.status}</span>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(sel.status)}">{sel.status.toUpperCase()}</span>
           {:else}
             <span class="text-[var(--text-muted)]">—</span>
           {/if}

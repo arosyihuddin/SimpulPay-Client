@@ -21,16 +21,16 @@
   }
 
   const statusBadge = (st: string) =>
-    st === "PAID" || st === "settlement" || st === "capture"
+    st === "paid" || st === "settlement" || st === "capture"
       ? "text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30"
-      : st === "EXPIRED" || st === "expired"
+      : st === "expired"
         ? "text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30"
         : "text-amber-700 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30";
 
   const PAGE_SIZE = 20;
 
   let rows = $state<TxRow[]>([]);
-  const hasPending = $derived(rows.some((r) => r.status === "PENDING"));
+  const hasPending = $derived(rows.some((r) => r.status === "pending"));
   let total = $state(0);
   let curPage = $state(1);
   let err = $state("");
@@ -147,14 +147,14 @@
                 ><span
                   class="text-xs font-semibold px-2.5 py-1 rounded-full {statusBadge(
                     r.status,
-                  )}">{r.status}</span
+                  )}">{r.status.toUpperCase()}</span
                 ></td
               >
               <td class="px-4 py-3 text-xs">{fmtTime(r.created_at)}</td>
               <td class="px-4 py-3 text-xs">{fmtTime(r.expires_at)}</td>
               {#if hasPending}
                 <td class="px-4 py-3 text-right">
-                  {#if r.status === "PENDING"}
+                  {#if r.status === "pending"}
                   <button
                     onclick={() => openQr(r)}
                     disabled={qrBusyId === r.id}
@@ -201,7 +201,7 @@
             <span
               class="text-xs font-semibold px-2.5 py-1 rounded-full {statusBadge(
                 r.status,
-              )}">{r.status}</span
+              )}">{r.status.toUpperCase()}</span
             >
           </div>
           <div class="flex items-center justify-between">
@@ -219,7 +219,7 @@
               >Kadaluwarsa: {fmtTime(r.expires_at)}</span
             >
           </div>
-          {#if r.status === "PENDING"}
+          {#if r.status === "pending"}
           <button
             onclick={() => openQr(r)}
             disabled={qrBusyId === r.id}
