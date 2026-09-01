@@ -56,9 +56,21 @@
     try {
       const res = await admin.createApiKey(label.trim() || undefined, merchantId);
       freshKey = res.data;
+      // Local push — backend balikin id + masked, sisanya default.
+      keys = [
+        ...keys,
+        {
+          id: res.data.id,
+          label: label.trim() || null,
+          key_masked: res.data.api_key_masked,
+          merchant_id: merchantId || null,
+          status: 'active',
+          last_used_at: null,
+          created_at: Date.now(),
+        },
+      ];
       copied = false;
       modal = false;
-      load();
     } catch (e: any) { modalErr = e.message; }
     finally { saving = false; }
   }

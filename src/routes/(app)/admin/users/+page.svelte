@@ -149,10 +149,15 @@
         const patch: any = { email, role: form.role, ...extra };
         if (form.password) patch.password = form.password;
         await admin.updateUser(editing.id, patch);
+        users = users.map((u) =>
+          u.id === editing!.id
+            ? { ...u, email, role: form.role, status: form.status, plan: { id: form.plan, name: plans.find((p) => p.id === form.plan)?.name || '', type: 'paid', price: 0, max_merchants: 0, daily_paid_limit: null } }
+            : u,
+        );
       } else {
-        await admin.createUser(email, form.password, form.role, extra);
+        const r = await admin.createUser(email, form.password, form.role, extra);
+        users = [...users, { id: r.data.id, email, role: form.role, status: form.status, created_at: Date.now(), updated_at: Date.now(), plan: form.plan ? { id: form.plan, name: plans.find((p) => p.id === form.plan)?.name || '', type: 'paid', price: 0, max_merchants: 0, daily_paid_limit: null } : null, latest_invoice: null }];
       }
-      await load();
       editOpen = false;
       addToast('success', editing ? 'User diperbarui.' : 'User ditambahkan.');
     } catch (e: any) {

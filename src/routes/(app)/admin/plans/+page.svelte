@@ -102,11 +102,33 @@
       features_json: planForm.features.map((f) => f.trim()).filter(Boolean),
       active: true,
     };
+    // Bangun objek plan lokal dari form — backend cuma balikin {id}.
+    const makePlan = (id: string): Plan => ({
+      id,
+      name: planForm.name,
+      type: planForm.type as Plan["type"],
+      price: parseInt(planForm.price || "0", 10),
+      max_merchants: parseInt(planForm.max_merchants || "1", 10),
+      daily_paid_limit:
+        planForm.daily_paid_limit === ""
+          ? null
+          : parseInt(planForm.daily_paid_limit, 10),
+      features_json: JSON.stringify(
+        planForm.features.map((f) => f.trim()).filter(Boolean),
+      ),
+      active: true,
+    });
     try {
-      if (editingPlan) await admin.updatePlan(editingPlan.id, body);
-      else await admin.createPlan(body);
+      if (editingPlan) {
+        await admin.updatePlan(editingPlan.id, body);
+        plans = plans.map((p) =>
+          p.id === editingPlan!.id ? makePlan(editingPlan!.id) : p,
+        );
+      } else {
+        const r = await admin.createPlan(body);
+        plans = [...plans, makePlan(r.data.id)];
+      }
       planModal = false;
-      load();
       addToast(
         "success",
         editingPlan ? "Paket diperbarui." : "Paket ditambahkan.",
@@ -122,8 +144,8 @@
     err = "";
     try {
       await admin.deletePlan(target.id);
+      plans = plans.filter((p) => p.id !== target.id);
       delPlanTarget = null;
-      load();
       addToast("success", "Paket dihapus.");
     } catch (e: any) {
       err = e.message;

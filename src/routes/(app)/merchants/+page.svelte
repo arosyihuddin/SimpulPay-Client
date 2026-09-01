@@ -43,7 +43,7 @@
     err = '';
     try {
       await admin.updateMerchant(m.id, { status: m.status === 'active' ? 'inactive' : 'active' });
-      await loadMerchants();
+      merchants.list = merchants.list.map((x) => (x.id === m.id ? { ...x, status: x.status === 'active' ? 'inactive' : 'active' } : x));
       addToast('success', `Merchant "${m.name}" ${m.status === 'active' ? 'dinonaktifkan' : 'diaktifkan'}.`);
     } catch (e: any) { err = e.message; }
   }
@@ -52,7 +52,7 @@
     if (!target) return;
     deleting = true;
     err = '';
-    try { await admin.deleteMerchant(target.id); delTarget = null; await loadMerchants(); addToast('success', `Merchant "${target.name}" dihapus.`); }
+    try { await admin.deleteMerchant(target.id); merchants.list = merchants.list.filter((x) => x.id !== target.id); delTarget = null; addToast('success', `Merchant "${target.name}" dihapus.`); }
     catch (e: any) { err = e.message; delTarget = null; }
     finally { deleting = false; }
   }
@@ -60,7 +60,6 @@
     err = '';
     try {
       await admin.refreshSession(m.id);
-      await loadMerchants();
       addToast('success', `Sesi GoBiz "${m.name}" di-refresh.`);
     } catch (e: any) { err = e.message; }
   }
@@ -89,11 +88,16 @@
       const u = r.data?.usage;
       sub = s;
       usage = u;
-      const max = s?.max_merchant ?? 1;
-      const used = u?.merchants_used ?? merchants.list.length;
-      if (used >= max) {
-        upgradeOpen = true;
-        return;
+      // Admin role — tanpa limit merchant
+      if (s?.plan_id === 'plan_admin') {
+        /* skip limit check */
+      } else {
+        const max = s?.max_merchant ?? 1;
+        const used = u?.merchants_used ?? merchants.list.length;
+        if (used >= max) {
+          upgradeOpen = true;
+          return;
+        }
       }
     } catch {
       /* gagal cek limit → biarkan buka form */
@@ -107,7 +111,8 @@
     if (nm.length < 2) { modalErr = 'Nama merchant minimal 2 karakter.'; return; }
     saving = true; modalErr = '';
     try {
-      await admin.createMerchant(nm, provider);
+      const r = await admin.createMerchant(nm, provider);
+      // Backend cuma balikin {id} — reload full list biar dapet data lengkap
       await loadMerchants();
       modalOpen = false;
       addToast('success', 'Merchant ditambahkan.');
@@ -123,7 +128,8 @@
     editSaving = true; editErr = '';
     try {
       await admin.updateMerchant(t.id, { name: nm });
-      editTarget = null; await loadMerchants(); addToast('success', 'Nama merchant diubah.');
+      merchants.list = merchants.list.map((x) => (x.id === t.id ? { ...x, name: nm } : x));
+      editTarget = null; addToast('success', 'Nama merchant diubah.');
     } catch (e: any) { editErr = e.message; }
     finally { editSaving = false; }
   }

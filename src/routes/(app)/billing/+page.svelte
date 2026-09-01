@@ -67,8 +67,9 @@
   };
   const fmtPrice = (p: number) => p <= 0 ? 'Gratis' : fmtIDR(p) + ' / bln';
 
-  async function load() {
-    loading = true; err = '';
+  async function load(silent = false) {
+    if (!silent) loading = true;
+    err = '';
     try {
       const [sRes, iRes, pRes] = await Promise.all([admin.mySubscription(), admin.myInvoices(), admin.listPlans()]);
       const s = sRes.data?.subscription;
@@ -96,7 +97,7 @@
         pay = { code: d.qris_code, amount: d.amount_to_pay, baseAmount: d.amount, uniqueCode: d.unique_code || 0 };
       } else {
         addToast('success', 'Langganan ' + p.name + ' aktif.');
-        load();
+        load(true);
       }
     } catch (e: any) { err = e.message; addToast('error', e.message); }
     finally { subscribing = ''; }

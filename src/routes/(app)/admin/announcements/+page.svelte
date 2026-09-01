@@ -71,10 +71,18 @@
     saving = true;
     try {
       const body = { title, message, type: form.type, active: form.active };
-      if (editing) await admin.updateAnnouncement(editing.id, body);
-      else await admin.createAnnouncement(body);
+      // Backend cuma balikin success — update list lokal biar no reload.
+      if (editing) {
+        await admin.updateAnnouncement(editing.id, body);
+        items = items.map((x) =>
+          x.id === editing!.id ? { ...x, title, message, type: form.type as Announcement['type'], active: form.active } : x,
+        );
+      } else {
+        await admin.createAnnouncement(body);
+        items = [{ title, message, type: form.type as Announcement['type'], active: form.active, id: Date.now(), created_at: Date.now() }, ...items];
+        total++;
+      }
       modal = false;
-      load();
       addToast('success', editing ? 'Pengumuman diperbarui.' : 'Pengumuman dikirim.');
     } catch (e: any) { formErr = e.message; }
     finally { saving = false; }

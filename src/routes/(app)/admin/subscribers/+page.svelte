@@ -54,8 +54,10 @@
     err = "";
     try {
       await admin.cancelSubscription(target.id);
+      subs = subs.map((s) =>
+        s.id === target.id ? { ...s, status: "cancelled" as const } : s,
+      );
       cancelSub = null;
-      load();
       addToast("success", "Langganan dibatalkan.");
     } catch (e: any) {
       err = e.message;

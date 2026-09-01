@@ -70,9 +70,11 @@
     try {
       if (action === "paid") await admin.markInvoicePaid(target.id);
       else await admin.rejectInvoice(target.id);
+      // Update local state langsung — no skeleton flash
+      const idx = invoices.findIndex((iv) => iv.id === target.id);
+      if (idx !== -1) invoices[idx] = { ...invoices[idx], status: action === "paid" ? "paid" : "failed" };
       invTarget = null;
       invAction = null;
-      load();
       addToast(
         "success",
         action === "paid" ? "Invoice ditandai lunas." : "Invoice ditolak.",
