@@ -23,6 +23,8 @@
     id: string;
     amount: number;
     status: string;
+    qris_code: string | null;
+    transaction_id: string | null;
     period_start: number;
     period_end: number;
     paid_at: number | null;
@@ -159,7 +161,12 @@
               <td class="px-4 py-3 font-semibold">{fmtIDR(i.amount)}</td>
               <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{fmtDate(i.period_start)} — {fmtDate(i.period_end)}</td>
               <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{i.paid_at ? fmtDate(i.paid_at) : '—'}</td>
-              <td class="px-4 py-3"><span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(i.status)}">{i.status}</span></td>
+              <td class="px-4 py-3">
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(i.status)}">{i.status}</span>
+                {#if i.status === 'pending' && i.qris_code}
+                  <button onclick={() => (pay = { code: i.qris_code, amount: i.amount })} title="Bayar invoice" class="tactile-btn ml-2 px-3 py-1 text-xs font-bold text-[var(--accent)]"><i class="fa-solid fa-qrcode"></i> Bayar</button>
+                {/if}
+              </td>
             </tr>
           {/each}
         </tbody>

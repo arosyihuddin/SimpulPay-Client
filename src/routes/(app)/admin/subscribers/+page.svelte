@@ -13,6 +13,8 @@
     starts_at: number;
     ends_at: number | null;
     plan_name?: string;
+    user_name?: string | null;
+    user_email?: string | null;
   }
 
   let subs = $state<Subscription[]>([]);
@@ -162,8 +164,8 @@
           {#each subs as s (s.id)}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               <td class="px-4 py-3">
-                <p class="font-bold">{s.user_id || "—"}</p>
-                <p class="text-xs font-mono text-[var(--text-muted)]">{s.id}</p>
+                <p class="font-bold">{s.user_name || s.user_email || s.user_id || "—"}</p>
+                <p class="text-xs text-[var(--text-muted)]">{s.user_email || s.user_id}</p>
               </td>
               <td class="px-4 py-3 font-semibold">{s.plan_name || s.plan_id}</td
               >
@@ -211,15 +213,15 @@
       {#each subs as s (s.id)}
         <div class="tactile-box p-4 space-y-2">
           <div class="flex items-center justify-between">
-            <p class="font-bold">{s.user_id || "—"}</p>
+            <p class="font-bold">{s.user_name || s.user_email || s.user_id || "—"}</p>
             <span
               class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(
                 s.status,
               )}">{s.status}</span
             >
           </div>
-          <p class="text-xs font-mono text-[var(--text-muted)]">
-            {s.id} · {s.plan_name || s.plan_id}
+          <p class="text-xs text-[var(--text-muted)]">
+            {s.user_email || s.user_id} · {s.plan_name || s.plan_id}
           </p>
           <div class="text-xs text-[var(--text-muted)] flex justify-between">
             <span>Mulai: {fmtDate(s.starts_at)}</span>

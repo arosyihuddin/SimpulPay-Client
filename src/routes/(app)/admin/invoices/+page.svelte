@@ -9,7 +9,8 @@
   interface Invoice {
     id: string;
     user_id: string;
-    subscription_id: string;
+    user_name?: string | null;
+    user_email?: string | null;
     amount: number;
     status: "pending" | "paid" | "overdue" | "failed";
     period_start: number;
@@ -99,6 +100,7 @@
           class="text-left text-[var(--text-muted)] border-b border-[var(--border-subtle)]"
         >
           <th class="px-4 py-3 font-medium">Invoice</th>
+          <th class="px-4 py-3 font-medium">Subscriber</th>
           <th class="px-4 py-3 font-medium">Jumlah</th>
           <th class="px-4 py-3 font-medium">Periode</th>
           <th class="px-4 py-3 font-medium">Status</th>
@@ -109,7 +111,7 @@
         {#if loading}
           {#each Array.from({ length: 3 }) as _, i}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
-              {#each Array.from({ length: 5 }) as _, j}
+              {#each Array.from({ length: 6 }) as _, j}
                 <td class="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
               {/each}
             </tr>
@@ -125,10 +127,11 @@
         {:else}
           {#each invoices as iv (iv.id)}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
+              <td class="px-4 py-3 font-mono text-xs font-bold">{iv.id}</td>
               <td class="px-4 py-3">
-                <p class="font-mono text-xs font-bold">{iv.id}</p>
+                <p class="font-bold">{iv.user_name || iv.user_email || iv.user_id || "—"}</p>
                 <p class="text-xs text-[var(--text-muted)]">
-                  {iv.subscription_id}
+                  {iv.user_email || iv.user_id}
                 </p>
               </td>
               <td class="px-4 py-3 font-semibold">{fmtIDR(iv.amount)}</td>
