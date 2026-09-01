@@ -34,10 +34,10 @@
     },
     {
       to: "/billing",
-      label: "Billing",
+      label: "Billing & Usage",
       icon: "fa-solid fa-credit-card",
-      title: "Billing",
-      subtitle: "Langganan & tagihan saya",
+      title: "Billing & Usage",
+      subtitle: "Langganan, tagihan & pemakaian",
     },
     {
       to: "/logs",
