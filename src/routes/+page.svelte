@@ -2,6 +2,7 @@
   import { auth } from '$lib/auth.svelte';
   import { goto } from '$app/navigation';
   import Login from '$lib/components/Login.svelte';
+  import Maintenance from '$lib/components/Maintenance.svelte';
 
   $effect(() => {
     if (!auth.ready) return;
@@ -9,6 +10,10 @@
   });
 </script>
 
-{#if auth.ready && !auth.authed}
-  <Login />
+{#if auth.ready}
+  {#if auth.maintenance}
+    <Maintenance />
+  {:else if !auth.authed}
+    <Login />
+  {/if}
 {/if}

@@ -23,6 +23,7 @@ async function api<T = any>(
   if (!res.ok) {
     const err: any = new Error(data?.message || `HTTP ${res.status}`);
     err.status = res.status;
+    if (data?.maintenance_mode) err.maintenance_mode = true;
     throw err;
   }
   return data as T;
