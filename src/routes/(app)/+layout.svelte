@@ -234,23 +234,23 @@
     <aside
       class="hidden lg:flex fixed inset-y-0 left-0 z-50 w-72 p-6 flex-col justify-between bg-[var(--bg-base)] border-r border-slate-300/40 dark:border-slate-800/40"
     >
-      <div>
-        <div class="flex items-center gap-3 mb-8">
-          <div
-            class="tactile-btn w-12 h-12 flex items-center justify-center text-[var(--accent)] text-xl"
-          >
-            <span class="text-[var(--accent)]"><Logo /></span>
-          </div>
-          <div>
-            <h1 class="text-xl font-bold tracking-wide">
-              GoMerch<span class="text-[var(--accent)]"> API</span>
-            </h1>
-            <p class="text-xs text-[var(--text-muted)] font-medium">
-              Merchant Gateway
-            </p>
-          </div>
+      <div class="flex items-center gap-3 mb-8">
+        <div
+          class="tactile-btn w-12 h-12 flex items-center justify-center text-[var(--accent)] text-xl"
+        >
+          <span class="text-[var(--accent)]"><Logo /></span>
         </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-wide">
+            GoMerch<span class="text-[var(--accent)]"> API</span>
+          </h1>
+          <p class="text-xs text-[var(--text-muted)] font-medium">
+            Merchant Gateway
+          </p>
+        </div>
+      </div>
 
+      <div class="flex-1 min-h-0 overflow-y-auto -mr-2 pr-2 no-scrollbar">
         <nav class="space-y-3">
           {#each USER_LINKS as l (l.to)}
             <a
