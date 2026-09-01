@@ -63,7 +63,7 @@
     const p = (curPage - 1) * PAGE_SIZE;
     const req = mid
       ? admin.merchantTransactions(mid, PAGE_SIZE, p)
-      : admin.transactions(PAGE_SIZE, p);
+      : admin.transactions({ limit: PAGE_SIZE, offset: p });
     req
       .then((d) => {
         rows = d.data?.transactions || [];

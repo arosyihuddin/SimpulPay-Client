@@ -21,22 +21,20 @@
 
   let users = $state<User[]>([]);
   let plans = $state<Plan[]>([]);
-  let loading = $state(true);
+  let loadedOnce = $state(false);
   let loadErr = $state('');
 
   async function load() {
-    loading = true;
     loadErr = '';
     try {
-      const u = await admin.listUsers();
-      users = u.data.users;
+      const u = await admin.listUsers({ q: q.trim() || undefined, limit: 100 });
+      users = u.data.users || [];
     } catch (e: any) {
       loadErr = e.message;
     } finally {
-      loading = false;
+      loadedOnce = true;
     }
   }
-  $effect(() => { load(); });
 
   let planLoading = $state(false);
   let planErr = $state('');
@@ -56,12 +54,15 @@
   let q = $state('');
   const PAGE_SIZE = 5;
   let page = $state(1);
-  const filtered = $derived(users.filter((u) =>
-    u.email.toLowerCase().includes(q.toLowerCase()) ||
-    u.role.toLowerCase().includes(q.toLowerCase())));
-  const pageItems = $derived(filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
+  const pageItems = $derived(users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
   function setPage(p: number) { page = p; }
-  $effect(() => { if (page > Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))) page = 1; });
+  $effect(() => { if (page > Math.max(1, Math.ceil(users.length / PAGE_SIZE))) page = 1; });
+  // Reload tiap q berubah (debounce 300ms)
+  $effect(() => {
+    void q; void page;
+    const t = setTimeout(load, 300);
+    return () => clearTimeout(t);
+  });
 
   const active = $derived(users.filter((u) => u.status === 'active').length);
   const suspended = $derived(users.filter((u) => u.status === 'suspended').length);
@@ -192,7 +193,7 @@
 <div class="space-y-6">
   <!-- Ringkasan -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    {#if loading}
+    {#if !loadedOnce}
       {#each Array.from({ length: 4 }) as _, i}
         <div class="tactile-box p-4 space-y-2">
           <Skeleton className="h-3 w-20" />
@@ -240,7 +241,7 @@
       <span>{loadErr}</span>
       <button onclick={load} class="text-[var(--accent)] font-bold">Coba lagi</button>
     </p>
-  {:else if loading}
+  {:else if !loadedOnce}
     <div class="tactile-box divide-y divide-[var(--border-subtle)]/50">
       {#each Array(5) as _}
         <div class="p-4 flex items-center gap-3">
@@ -301,10 +302,10 @@
           {/each}
         </tbody>
       </table>
-      {#if filtered.length === 0}
+      {#if users.length === 0}
         <p class="text-center text-sm text-[var(--text-muted)] py-8 font-semibold">Tidak ada user cocok dengan pencarian.</p>
       {:else}
-        <Pagination {page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
+        <Pagination {page} total={users.length} pageSize={PAGE_SIZE} onChange={setPage} />
       {/if}
     </div>
 
@@ -339,10 +340,10 @@
           </div>
         </div>
       {/each}
-      {#if filtered.length === 0}
+      {#if users.length === 0}
         <p class="text-center text-sm text-[var(--text-muted)] py-8 font-semibold">Tidak ada user cocok dengan pencarian.</p>
       {:else}
-        <Pagination {page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
+        <Pagination {page} total={users.length} pageSize={PAGE_SIZE} onChange={setPage} />
       {/if}
     </div>
   {/if}

@@ -30,14 +30,42 @@
   let rows = $state<TxRow[]>([]);
   const hasPending = $derived(rows.some((r) => r.status === "pending"));
   let total = $state(0);
+  let pendingCount = $state(0);
+  let paidCount = $state(0);
+  let expiredCount = $state(0);
   let curPage = $state(1);
   let err = $state("");
-  let loading = $state(true);
+  let loadedOnce = $state(false);
   let qrCode = $state("");
   let qrAmount = $state(0);
   let qrBase = $state(0);
   let qrUnique = $state(0);
   let qrBusyId = $state<string | null>(null);
+
+  // Filter & search (dikirim ke backend via query params)
+  let fStatus = $state("");
+  let fQ = $state("");
+  let fCreatedFrom = $state("");
+  let fCreatedTo = $state("");
+  let fExpiresFrom = $state("");
+  let fExpiresTo = $state("");
+
+  const dayFrom = (d: string) => (d ? new Date(d + "T00:00:00").getTime() : undefined);
+  const dayTo = (d: string) => (d ? new Date(d + "T23:59:59").getTime() : undefined);
+
+  const hasFilter = $derived(!!(fStatus || fQ || fCreatedFrom || fCreatedTo || fExpiresFrom || fExpiresTo));
+  // Pagination total: kalau filter aktif pakai jumlah baris hasil filter, selain itu global.
+  const pagerTotal = $derived(hasFilter ? rows.length : total);
+
+  // Klik card ringkasan → set filter status otomatis (klik lagi → reset)
+  const setStatus = (st: string) => {
+    fStatus = fStatus === st ? "" : st;
+  };
+  const cardCls = (st: string) =>
+    `cursor-pointer transition ${fStatus === st ? "ring-2 ring-[var(--accent)]" : ""}`;
+  const resetFilter = () => {
+    fStatus = ""; fQ = ""; fCreatedFrom = ""; fCreatedTo = ""; fExpiresFrom = ""; fExpiresTo = "";
+  };
 
   async function openQr(tx: TxRow) {
     qrBusyId = tx.id;
@@ -54,18 +82,34 @@
   }
 
   async function load() {
-    loading = true;
-    admin
-      .transactions(PAGE_SIZE, (curPage - 1) * PAGE_SIZE)
-      .then((d) => {
-        rows = d.data?.transactions || [];
-        total = d.data?.total || 0;
-      })
-      .catch((e) => (err = e.message))
-      .finally(() => (loading = false));
+    const params = {
+      limit: PAGE_SIZE,
+      offset: (curPage - 1) * PAGE_SIZE,
+      ...(fStatus ? { status: fStatus } : {}),
+      ...(fQ ? { q: fQ } : {}),
+      created_from: dayFrom(fCreatedFrom),
+      created_to: dayTo(fCreatedTo),
+      expires_from: dayFrom(fExpiresFrom),
+      expires_to: dayTo(fExpiresTo),
+    };
+    try {
+      const d = await admin.transactions(params);
+      rows = d.data?.transactions || [];
+      total = d.data?.total || 0;
+      pendingCount = d.data?.pending_count ?? 0;
+      paidCount = d.data?.paid_count ?? 0;
+      expiredCount = d.data?.expired_count ?? 0;
+    } catch (e: any) {
+      err = e.message;
+    } finally {
+      loadedOnce = true;
+    }
   }
+  // Reload tiap filter berubah (debounce 300ms).
   $effect(() => {
-    load();
+    void fStatus; void fQ; void fCreatedFrom; void fCreatedTo; void fExpiresFrom; void fExpiresTo; void curPage;
+    const t = setTimeout(load, 300);
+    return () => clearTimeout(t);
   });
 
   useWs((m) => {
@@ -81,6 +125,53 @@
       <i class="fa-solid fa-triangle-exclamation mr-2"></i>{err}
     </p>
   {/if}
+
+  <!-- Ringkasan count -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <button class="tactile-box p-4 text-left w-full" onclick={() => setStatus("")}>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Total Transaksi</p>
+      <p class="text-xl font-extrabold">{total}</p>
+    </button>
+    <button class="tactile-box p-4 text-left w-full {cardCls('pending')}" onclick={() => setStatus('pending')}>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Pending</p>
+      <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{pendingCount}</p>
+    </button>
+    <button class="tactile-box p-4 text-left w-full {cardCls('paid')}" onclick={() => setStatus('paid')}>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Dibayar</p>
+      <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{paidCount}</p>
+    </button>
+    <button class="tactile-box p-4 text-left w-full {cardCls('expired')}" onclick={() => setStatus('expired')}>
+      <p class="text-[11px] text-[var(--text-muted)] font-medium">Kedaluwarsa</p>
+      <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{expiredCount}</p>
+    </button>
+  </div>
+
+  <!-- Filter & search -->
+  <div class="tactile-box p-3 space-y-2">
+    <div class="flex flex-wrap gap-2 items-center">
+      <div class="input-well px-3 py-1.5 flex items-center gap-2 flex-1 min-w-[160px]">
+        <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-xs"></i>
+        <input type="text" bind:value={fQ} placeholder="Cari trx-id/merchant..." class="bg-transparent w-full text-xs focus:outline-none placeholder:text-[var(--text-muted)]" />
+      </div>
+      <select bind:value={fStatus} class="tactile-inset px-3 py-1.5 text-xs focus:outline-none cursor-pointer">
+        <option value="">Semua</option>
+        <option value="pending">Pending</option>
+        <option value="paid">Dibayar</option>
+        <option value="expired">Kedaluwarsa</option>
+      </select>
+      {#if hasFilter}
+        <button onclick={resetFilter} class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]"><i class="fa-solid fa-xmark mr-1"></i>Reset</button>
+      {/if}
+    </div>
+    <div class="flex flex-wrap gap-2 items-center text-xs">
+      <span class="text-[var(--text-muted)] font-medium">Dibuat</span>
+      <input type="date" bind:value={fCreatedFrom} class="tactile-inset px-2 py-1 text-xs focus:outline-none" title="Dibuat dari" />
+      <input type="date" bind:value={fCreatedTo} class="tactile-inset px-2 py-1 text-xs focus:outline-none" title="Dibuat sampai" />
+      <span class="text-[var(--text-muted)] font-medium ml-2">Kadaluwarsa</span>
+      <input type="date" bind:value={fExpiresFrom} class="tactile-inset px-2 py-1 text-xs focus:outline-none" title="Kadaluwarsa dari" />
+      <input type="date" bind:value={fExpiresTo} class="tactile-inset px-2 py-1 text-xs focus:outline-none" title="Kadaluwarsa sampai" />
+    </div>
+  </div>
 
   <!-- Desktop table -->
   <div class="hidden md:block tactile-box overflow-x-auto">
@@ -104,7 +195,7 @@
         </tr>
       </thead>
       <tbody>
-        {#if loading}
+        {#if !loadedOnce}
           {#each Array.from({ length: 5 }) as _, i}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               {#each Array.from({ length: 6 }) as _, j}
@@ -112,6 +203,14 @@
               {/each}
             </tr>
           {/each}
+        {:else if rows.length === 0}
+          <tr
+            ><td
+              colspan={hasPending ? 7 : 6}
+              class="px-4 py-8 text-center text-[var(--text-muted)]"
+              >{hasFilter ? "Tidak ada hasil filter" : "Belum ada transaksi"}</td
+            ></tr
+          >
         {:else}
           {#each rows as r (r.id)}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
@@ -156,22 +255,13 @@
             </tr>
           {/each}
         {/if}
-        {#if !loading && rows.length === 0}
-          <tr
-            ><td
-              colspan={hasPending ? 7 : 6}
-              class="px-4 py-8 text-center text-[var(--text-muted)]"
-              >Belum ada transaksi</td
-            ></tr
-          >
-        {/if}
       </tbody>
     </table>
   </div>
 
   <!-- Mobile cards -->
   <div class="md:hidden space-y-3">
-    {#if loading}
+    {#if !loadedOnce}
       {#each Array.from({ length: 3 }) as _, i}
         <div class="tactile-box p-4 space-y-2">
           <Skeleton className="h-4 w-24" /><Skeleton
@@ -179,6 +269,10 @@
           /><Skeleton className="h-3 w-40" />
         </div>
       {/each}
+    {:else if rows.length === 0}
+      <p class="text-center text-[var(--text-muted)] py-8 text-sm">
+        {hasFilter ? "Tidak ada hasil filter" : "Belum ada transaksi"}
+      </p>
     {:else}
       {#each rows as r (r.id)}
         <div class="tactile-box p-4 space-y-2">
@@ -224,17 +318,12 @@
         </div>
       {/each}
     {/if}
-    {#if !loading && rows.length === 0}<p
-        class="text-center text-[var(--text-muted)] py-8"
-      >
-        Belum ada transaksi
-      </p>{/if}
   </div>
 
-  {#if total > PAGE_SIZE}
+  {#if pagerTotal > PAGE_SIZE}
     <Pagination
       page={curPage}
-      {total}
+      total={pagerTotal}
       pageSize={PAGE_SIZE}
       onChange={(p) => {
         curPage = p;

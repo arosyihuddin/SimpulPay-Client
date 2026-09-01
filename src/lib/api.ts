@@ -68,10 +68,24 @@ export const admin = {
     api<{ data: { code: string } }>(`/transactions/${id}/code`),
 
   // Semua transaksi — semua merchant user, filter lewat query
-  transactions: (limit = 50, offset = 0, merchantId?: string | null) =>
-    api<any>(
-      `/transactions?limit=${limit}&offset=${offset}${merchantId ? `&merchant_id=${encodeURIComponent(merchantId)}` : ""}`,
-    ),
+  transactions: (params?: {
+    limit?: number;
+    offset?: number;
+    merchant_id?: string;
+    status?: string;
+    q?: string;
+    created_from?: number;
+    created_to?: number;
+    expires_from?: number;
+    expires_to?: number;
+  }) => {
+    const clean = Object.fromEntries(
+      Object.entries((params as Record<string, unknown>) || {}).filter(
+        ([, v]) => v !== undefined && v !== null && v !== "",
+      ),
+    );
+    return api<any>(`/transactions?${new URLSearchParams(clean as any).toString()}`);
+  },
   // Transaksi per-merchant
   merchantTransactions: (merchantId: string, limit = 50, offset = 0) =>
     api<any>(`/merchants/${merchantId}/transactions?limit=${limit}&offset=${offset}`),
@@ -167,8 +181,14 @@ export const admin = {
   getMaintenance: () => api<any>("/admin/maintenance"),
   setMaintenance: (on: boolean) =>
     api<any>("/admin/maintenance", { method: "POST", body: { maintenance: on } }),
-  listUsers: (limit = 50, offset = 0) =>
-    api<any>(`/admin/users?limit=${limit}&offset=${offset}`),
+  listUsers: (params?: { q?: string; limit?: number; offset?: number }) => {
+    const clean = Object.fromEntries(
+      Object.entries((params as Record<string, unknown>) || {}).filter(
+        ([, v]) => v !== undefined && v !== null && v !== "",
+      ),
+    );
+    return api<any>(`/admin/users?${new URLSearchParams(clean as any).toString()}`);
+  },
   createUser: (
     email: string,
     password: string,
