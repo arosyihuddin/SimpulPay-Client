@@ -62,7 +62,7 @@
 
   // ---- Ringkasan merchant (real backend: /merchants/summary, diisi store) ----
 
-  // ---- Data contoh panel lain (Payout/Top/Infra — sample) ----
+  // ---- Data contoh panel lain (Payout/Top — sample) ----
   const PAYOUT = { batch: '#9420', amount: 340_500_000, pct: 82 };
   const TOP = [
     { icon: 'fa-solid fa-bag-shopping', cls: 'text-emerald-600 dark:text-emerald-300', name: 'PT Toko Digital', vol: 'Rp 1.2B / bln', tier: 'Tier 1', tierCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
@@ -70,14 +70,9 @@
     { icon: 'fa-solid fa-mobile-screen', cls: 'text-amber-600 dark:text-amber-300', name: 'Gadget Online', vol: 'Rp 620M / bln', tier: 'Tier 2', tierCls: 'bg-blue-100/70 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/30' },
     { icon: 'fa-solid fa-mug-hot', cls: 'text-emerald-600 dark:text-emerald-300', name: 'Kopi Nusantara', vol: 'Rp 340M / bln', tier: 'Tier 2', tierCls: 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' },
   ];
-  const INFRA = [
-    { name: 'API Gateway Core', ok: true },
-    { name: 'Payment Switcher', ok: true },
-    { name: 'Webhook Dispatcher', ok: true },
-    { name: 'Fraud Engine (AI)', ok: true },
-    { name: 'Settlement DB', ok: false, label: 'Syncing' },
-    { name: 'SSL / TLS Shield', ok: true, label: 'Secure' },
-  ];
+
+  // ---- Konfigurasi Gateway (real endpoint /settings) ----
+  let gtwSettings = $state<Record<string, string> | null>(null);
 
   const statusCls = (st: string) =>
     st === 'active'
@@ -87,6 +82,7 @@
   $effect(() => {
     admin.recentTransactions(5).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
     admin.transactionVolume(range).then((d) => (volume = d.data)).catch(() => (volume = null));
+    admin.settings().then((d) => (gtwSettings = d.data?.settings || null)).catch(() => (gtwSettings = null));
   });
 </script>
 
@@ -228,26 +224,51 @@
       </a>
     </div>
 
-    <!-- Infrastructure (sample) -->
+    <!-- Konfigurasi Gateway (real endpoint /settings) -->
     <div class="tactile-box p-5 flex flex-col justify-between">
       <div>
-        <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-[var(--accent)]"></i> Infrastructure</h3>
-        <div class="space-y-3 text-xs">
-          {#each INFRA as s (s.name)}
+        <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-sliders text-[var(--accent)]"></i> Konfigurasi Gateway</h3>
+        {#if gtwSettings === null}
+          <div class="space-y-3">
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-2/3" />
+            <Skeleton className="h-3 w-5/6" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        {:else}
+          <div class="space-y-2 text-xs">
             <div class="flex items-center justify-between p-2 rounded-xl tactile-inset">
-              <span class="font-bold">{s.name}</span>
-              <span class="px-2 py-0.5 font-bold rounded text-[10px] {s.ok
-                ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
-                : 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'}">
-                {s.label || 'Operational'}
+              <span class="font-bold">Mata Uang</span>
+              <span class="font-mono">{gtwSettings.default_currency || '—'}</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl tactile-inset">
+              <span class="font-bold">QRIS Expiry</span>
+              <span class="font-mono">{gtwSettings.qris_expiry_minutes || '—'} mnt</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl tactile-inset">
+              <span class="font-bold">Min Amount</span>
+              <span class="font-mono">{fmtIDR(Number(gtwSettings.min_amount))}</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl tactile-inset">
+              <span class="font-bold">Max Amount</span>
+              <span class="font-mono">{fmtIDR(Number(gtwSettings.max_amount))}</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl tactile-inset">
+              <span class="font-bold">Fee</span>
+              <span class="font-mono">{gtwSettings.fee_percent || '0'}%</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl tactile-inset">
+              <span class="font-bold">Webhook</span>
+              <span class="px-2 py-0.5 font-bold rounded text-[10px] {statusCls(gtwSettings.webhook_enabled === 'true' ? 'active' : 'inactive')}">
+                {gtwSettings.webhook_enabled === 'true' ? 'Aktif' : 'Nonaktif'}
               </span>
             </div>
-          {/each}
-        </div>
+          </div>
+        {/if}
       </div>
-      <button class="tactile-btn w-full mt-4 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5" onclick={() => goto('/logs')}>
-        <i class="fa-solid fa-server"></i> Detail Server
-      </button>
+      <a href="/settings" class="tactile-btn w-full mt-4 py-2.5 text-[var(--accent)] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-gear"></i> Kelola Konfigurasi
+      </a>
     </div>
   </div>
 </div>
