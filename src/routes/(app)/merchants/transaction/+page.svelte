@@ -30,6 +30,7 @@
   const PAGE_SIZE = 20;
 
   let rows = $state<TxRow[]>([]);
+  const hasPending = $derived(rows.some((r) => r.status === "PENDING"));
   let total = $state(0);
   let curPage = $state(1);
   let err = $state("");
@@ -112,7 +113,9 @@
           <th class="px-4 py-3 font-medium">Dibuat</th><th
             class="px-4 py-3 font-medium">Kadaluwarsa</th
           >
-          <th class="px-4 py-3 font-medium text-right">Aksi</th>
+          {#if hasPending}
+            <th class="px-4 py-3 font-medium text-right">Aksi</th>
+          {/if}
         </tr>
       </thead>
       <tbody>
@@ -149,24 +152,26 @@
               >
               <td class="px-4 py-3 text-xs">{fmtTime(r.created_at)}</td>
               <td class="px-4 py-3 text-xs">{fmtTime(r.expires_at)}</td>
-              <td class="px-4 py-3 text-right">
-                {#if r.status === "PENDING"}
-                <button
-                  onclick={() => openQr(r)}
-                  disabled={qrBusyId === r.id}
-                  class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
-                ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
-                {:else}
-                <span class="text-xs text-[var(--text-muted)]">—</span>
-                {/if}
-              </td>
+              {#if hasPending}
+                <td class="px-4 py-3 text-right">
+                  {#if r.status === "PENDING"}
+                  <button
+                    onclick={() => openQr(r)}
+                    disabled={qrBusyId === r.id}
+                    class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
+                  ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
+                  {:else}
+                  <span class="text-xs text-[var(--text-muted)]">—</span>
+                  {/if}
+                </td>
+              {/if}
             </tr>
           {/each}
         {/if}
         {#if !loading && rows.length === 0}
           <tr
             ><td
-              colspan={7}
+              colspan={hasPending ? 7 : 6}
               class="px-4 py-8 text-center text-[var(--text-muted)]"
               >Belum ada transaksi</td
             ></tr

@@ -36,6 +36,10 @@
         })
       : "-";
 
+  const hasAction = $derived(
+    invoices.some((iv) => iv.status === "pending" || iv.status === "overdue"),
+  );
+
   const invStatusCls = (st: string) =>
     st === "paid"
       ? "bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30"
@@ -104,7 +108,9 @@
           <th class="px-4 py-3 font-medium">Jumlah</th>
           <th class="px-4 py-3 font-medium">Periode</th>
           <th class="px-4 py-3 font-medium">Status</th>
-          <th class="px-4 py-3 font-medium text-right">Aksi</th>
+          {#if hasAction}
+            <th class="px-4 py-3 font-medium text-right">Aksi</th>
+          {/if}
         </tr>
       </thead>
       <tbody>
@@ -119,7 +125,7 @@
         {:else if invoices.length === 0}
           <tr>
             <td
-              colspan={5}
+              colspan={hasAction ? 6 : 5}
               class="px-4 py-8 text-center text-[var(--text-muted)]"
               >Belum ada invoice</td
             >
@@ -145,26 +151,28 @@
                   )}">{iv.status}</span
                 ></td
               >
-              <td class="px-4 py-3 text-right">
-                {#if iv.status === "pending" || iv.status === "overdue"}
-                  <button
-                    class="tactile-btn px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400"
-                    onclick={() => {
-                      invTarget = iv;
-                      invAction = "paid";
-                    }}>Lunas</button
-                  >
-                  <button
-                    class="tactile-btn px-3 py-1.5 text-xs font-bold text-red-500 ml-1"
-                    onclick={() => {
-                      invTarget = iv;
-                      invAction = "reject";
-                    }}>Tolak</button
-                  >
-                {:else}
-                  <span class="text-xs text-[var(--text-muted)]">—</span>
-                {/if}
-              </td>
+              {#if hasAction}
+                <td class="px-4 py-3 text-right">
+                  {#if iv.status === "pending" || iv.status === "overdue"}
+                    <button
+                      class="tactile-btn px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400"
+                      onclick={() => {
+                        invTarget = iv;
+                        invAction = "paid";
+                      }}>Lunas</button
+                    >
+                    <button
+                      class="tactile-btn px-3 py-1.5 text-xs font-bold text-red-500 ml-1"
+                      onclick={() => {
+                        invTarget = iv;
+                        invAction = "reject";
+                      }}>Tolak</button
+                    >
+                  {:else}
+                    <span class="text-xs text-[var(--text-muted)]">—</span>
+                  {/if}
+                </td>
+              {/if}
             </tr>
           {/each}
         {/if}

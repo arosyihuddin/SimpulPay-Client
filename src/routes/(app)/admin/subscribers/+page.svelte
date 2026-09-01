@@ -65,6 +65,7 @@
   }
 
   const active = $derived(subs.filter((s) => s.status === "active").length);
+  const hasAction = $derived(subs.some((s) => s.status === "active"));
   const cancelled = $derived(
     subs.filter((s) => s.status === "cancelled").length,
   );
@@ -140,7 +141,9 @@
           <th class="px-4 py-3 font-medium">Status</th>
           <th class="px-4 py-3 font-medium">Mulai</th>
           <th class="px-4 py-3 font-medium">Berakhir</th>
-          <th class="px-4 py-3 font-medium text-right">Aksi</th>
+          {#if hasAction}
+            <th class="px-4 py-3 font-medium text-right">Aksi</th>
+          {/if}
         </tr>
       </thead>
       <tbody>
@@ -155,7 +158,7 @@
         {:else if subs.length === 0}
           <tr>
             <td
-              colspan={6}
+              colspan={hasAction ? 6 : 5}
               class="px-4 py-8 text-center text-[var(--text-muted)]"
               >Belum ada langganan</td
             >
@@ -178,16 +181,18 @@
               >
               <td class="px-4 py-3 text-xs">{fmtDate(s.starts_at)}</td>
               <td class="px-4 py-3 text-xs">{fmtDate(s.ends_at)}</td>
-              <td class="px-4 py-3 text-right">
-                {#if s.status === "active"}
-                  <button
-                    class="tactile-btn px-3 py-1.5 text-xs font-bold text-red-500"
-                    onclick={() => (cancelSub = s)}>Batalkan</button
-                  >
-                {:else}
-                  <span class="text-xs text-[var(--text-muted)]">—</span>
-                {/if}
-              </td>
+              {#if hasAction}
+                <td class="px-4 py-3 text-right">
+                  {#if s.status === "active"}
+                    <button
+                      class="tactile-btn px-3 py-1.5 text-xs font-bold text-red-500"
+                      onclick={() => (cancelSub = s)}>Batalkan</button
+                    >
+                  {:else}
+                    <span class="text-xs text-[var(--text-muted)]">—</span>
+                  {/if}
+                </td>
+              {/if}
             </tr>
           {/each}
         {/if}
