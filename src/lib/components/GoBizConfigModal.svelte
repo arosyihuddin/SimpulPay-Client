@@ -16,6 +16,56 @@
   let uniqueId = $state('');
   let otp = $state('');
   let otpBusy = $state(false);
+  let resendTimer = $state(0);
+  let resendInterval: ReturnType<typeof setInterval> | undefined;
+  // Input OTP 4 kotak terpisah — tiap kotak 1 digit.
+  let otpRefs = $state<(HTMLInputElement | null)[]>([]);
+
+  function startResendTimer() {
+    resendTimer = 30;
+    clearInterval(resendInterval);
+    resendInterval = setInterval(() => {
+      resendTimer--;
+      if (resendTimer <= 0) {
+        clearInterval(resendInterval);
+        resendInterval = undefined;
+      }
+    }, 1000);
+  }
+  $effect(() => {
+    if (step !== 'otp') {
+      clearInterval(resendInterval);
+      resendInterval = undefined;
+      return;
+    }
+    startResendTimer();
+    return () => clearInterval(resendInterval);
+  });
+
+  function onOtpInput(i: number, e: Event) {
+    const el = e.target as HTMLInputElement;
+    el.value = el.value.replace(/\D/g, '').slice(0, 1);
+    otp = otpRefs.map((r) => r?.value || '').join('');
+    // Pindah fokus ke kotak berikutnya; kalau digit 4 terisi → auto verify.
+    if (el.value && i < 3) otpRefs[i + 1]?.focus();
+    else if (otp.length === 4) verifyOtp();
+  }
+  function onOtpKeydown(i: number, e: KeyboardEvent) {
+    if (e.key === 'Backspace' && !otpRefs[i]?.value && i > 0) otpRefs[i - 1]?.focus();
+  }
+  async function resendOtp() {
+    if (resendTimer > 0 || otpBusy) return;
+    otpBusy = true; err = '';
+    try {
+      const res = await admin.otpRequest(merchantId, phone);
+      otpToken = res.data.otp_token; uniqueId = res.data.unique_id;
+      otp = ''; otpRefs.forEach((r) => { if (r) r.value = ''; });
+      otpRefs[0]?.focus();
+      startResendTimer();
+      addToast('info', `OTP dikirim ulang ke ${phone}`);
+    } catch (e: any) { err = e.message; }
+    finally { otpBusy = false; }
+  }
 
   // Konfigurasi QRIS static
   let qrisImg = $state<string | null>(null);
@@ -31,8 +81,8 @@
     finally { otpBusy = false; }
   }
 
-  async function verifyOtp(e: SubmitEvent) {
-    e.preventDefault(); otpBusy = true; err = '';
+  async function verifyOtp(e?: SubmitEvent) {
+    e?.preventDefault(); otpBusy = true; err = '';
     try {
       const res = await admin.otpVerify(merchantId, phone, otp, otpToken, uniqueId);
       addToast('success', `Login GoBiz sukses: ${res.data.outlet_name} (${res.data.phone_number})`);
@@ -113,7 +163,7 @@
           <form onsubmit={requestOtp} class="space-y-3">
             <div class="input-well px-4 py-3 flex items-center">
               <i class="fa-solid fa-phone text-[var(--text-muted)] mr-3"></i>
-              <input type="text" bind:value={phone} placeholder="Nomor HP (contoh: 085119772671)" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+              <input type="tel" inputmode="numeric" oninput={(e) => (phone = (e.currentTarget.value).replace(/\D/g, ''))} value={phone} placeholder="Nomor HP (contoh: 085119772671)" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
             </div>
             <button disabled={otpBusy} class="tactile-btn w-full py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
               <i class="fa-solid fa-paper-plane"></i> {otpBusy ? 'Mengirim...' : 'Kirim OTP'}
@@ -122,16 +172,34 @@
         {:else}
           <form onsubmit={verifyOtp} class="space-y-3">
             <p class="text-sm text-[var(--text-main)]">OTP dikirim ke {phone}</p>
-            <div class="input-well px-4 py-3 flex items-center">
-              <i class="fa-solid fa-key text-[var(--text-muted)] mr-3"></i>
-              <input type="text" bind:value={otp} placeholder="Kode OTP (4 digit)" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+            <button type="button" onclick={() => { step = 'phone'; otp = ''; }} class="text-[11px] text-[var(--text-muted)] underline hover:text-[var(--accent)] cursor-pointer">Bukan nomor ini? Ganti nomor</button>
+            <!-- 4 kotak OTP — auto-submit saat 4 digit terisi -->
+            <div class="flex gap-2 justify-center">
+              {#each Array.from({ length: 4 }) as _, i}
+                <input
+                  bind:this={otpRefs[i]}
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="1"
+                  autocomplete="one-time-code"
+                  oninput={(e) => onOtpInput(i, e)}
+                  onkeydown={(e) => onOtpKeydown(i, e)}
+                  class="w-12 h-14 text-center text-xl font-extrabold tactile-inset focus:outline-none"
+                />
+              {/each}
             </div>
-            <div class="flex gap-2">
-              <button disabled={otpBusy} class="tactile-btn flex-1 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
-                <i class="fa-solid fa-check"></i> {otpBusy ? 'Verifikasi...' : 'Verifikasi OTP'}
-              </button>
-              <button onclick={() => { step = 'phone'; otp = ''; }} class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Batal</button>
+            <div class="flex gap-2 items-center justify-center text-xs">
+              {#if resendTimer > 0}
+                <span class="text-[var(--text-muted)] font-semibold">Kirim ulang dalam {resendTimer}s</span>
+              {:else}
+                <button type="button" onclick={resendOtp} disabled={otpBusy} class="text-[var(--accent)] font-bold flex items-center gap-1">
+                  <i class="fa-solid fa-rotate"></i> Kirim Ulang OTP
+                </button>
+              {/if}
             </div>
+            <button type="submit" disabled={otpBusy || otp.length !== 4} class="tactile-btn w-full py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
+              <i class="fa-solid fa-check"></i> {otpBusy ? 'Verifikasi...' : 'Verifikasi OTP'}
+            </button>
           </form>
         {/if}
       </div>
