@@ -190,7 +190,26 @@ export const admin = {
     api<any>(`/admin/plans/${id}`, { method: "PATCH", body: patch }),
   deletePlan: (id: string) =>
     api<any>(`/admin/plans/${id}`, { method: "DELETE" }),
-  listSubscriptions: () => api<any>("/admin/subscribers"),
+  listSubscriptions: (params?: {
+    user_id?: string;
+    status?: string;
+    start_from?: number;
+    start_to?: number;
+    end_from?: number;
+    end_to?: number;
+    include_free?: boolean;
+    q?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    // Buang key kosong/undefined — jangan serialize jadi "undefined" di URL.
+    const clean = Object.fromEntries(
+      Object.entries((params as Record<string, unknown>) || {}).filter(
+        ([, v]) => v !== undefined && v !== null && v !== "",
+      ),
+    );
+    return api<any>(`/admin/subscribers?${new URLSearchParams(clean as any).toString()}`);
+  },
   cancelSubscription: (id: string) =>
     api<any>(`/admin/subscribers/${id}/cancel`, { method: "POST" }),
 

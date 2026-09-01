@@ -19,10 +19,27 @@
 
   let subs = $state<Subscription[]>([]);
   let err = $state("");
-  let loading = $state(true);
+  let loadedOnce = $state(false);
+  let totalCount = $state(0);
+  let activeCount = $state(0);
+  let cancelledCount = $state(0);
+  let expiredCount = $state(0);
 
   let cancelSub = $state<Subscription | null>(null);
   let cancelBusy = $state(false);
+
+  // Filter & search (dikirim ke backend via query params)
+  let fStatus = $state("active");
+  let fStartFrom = $state("");
+  let fStartTo = $state("");
+  let fEndFrom = $state("");
+  let fEndTo = $state("");
+  let q = $state("");
+
+  const dayFrom = (d: string) => (d ? new Date(d + "T00:00:00").getTime() : undefined);
+  const dayTo = (d: string) => (d ? new Date(d + "T23:59:59").getTime() : undefined);
+
+  const hasFilter = $derived(!!(fStatus || q || fStartFrom || fStartTo || fEndFrom || fEndTo));
 
   const fmtDate = (n: number | null) =>
     n
@@ -34,18 +51,35 @@
       : "-";
 
   async function load() {
-    loading = true;
     err = "";
     try {
-      const s = await admin.listSubscriptions();
-      subs = s.data.subscriptions;
+      const params = {
+        ...(fStatus ? { status: fStatus } : {}),
+        ...(q ? { q } : {}),
+        start_from: dayFrom(fStartFrom),
+        start_to: dayTo(fStartTo),
+        end_from: dayFrom(fEndFrom),
+        end_to: dayTo(fEndTo),
+        limit: 100,
+      };
+      const s = await admin.listSubscriptions(params);
+      subs = s.data.subscriptions || [];
+      totalCount = s.data.total ?? subs.length;
+      activeCount = s.data.active_count ?? 0;
+      cancelledCount = s.data.cancelled_count ?? 0;
+      expiredCount = s.data.expired_count ?? 0;
     } catch (e: any) {
       err = e.message;
     } finally {
-      loading = false;
+      loadedOnce = true;
     }
   }
-  onMount(load);
+  // Reload tiap filter berubah (debounce 300ms biar gak spam backend pas ngetik).
+  $effect(() => {
+    void fStatus; void q; void fStartFrom; void fStartTo; void fEndFrom; void fEndTo;
+    const t = setTimeout(load, 300);
+    return () => clearTimeout(t);
+  });
 
   async function doCancel() {
     const target = cancelSub;
@@ -66,12 +100,11 @@
     }
   }
 
-  const active = $derived(subs.filter((s) => s.status === "active").length);
+  // Ringkasan card — dari count backend (global, gak terpengaruh filter).
+  const active = $derived(activeCount);
   const hasAction = $derived(subs.some((s) => s.status === "active"));
-  const cancelled = $derived(
-    subs.filter((s) => s.status === "cancelled").length,
-  );
-  const expired = $derived(subs.filter((s) => s.status === "expired").length);
+  const cancelled = $derived(cancelledCount);
+  const expired = $derived(expiredCount);
 
   const statusCls = (st: string) =>
     st === "active"
@@ -79,6 +112,13 @@
       : st === "cancelled"
         ? "bg-red-100/70 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-500/30"
         : "bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30";
+
+  // Klik card ringkasan → set filter status otomatis (klik lagi → reset)
+  const setStatus = (st: string) => {
+    fStatus = fStatus === st ? "" : st;
+  };
+  const cardCls = (st: string) =>
+    `cursor-pointer transition ${fStatus === st ? "ring-2 ring-[var(--accent)]" : ""}`;
 </script>
 
 <div class="space-y-6">
@@ -90,7 +130,7 @@
 
   <!-- Ringkasan -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    {#if loading}
+    {#if !loadedOnce}
       {#each Array.from({ length: 4 }) as _, i}
         <div class="tactile-box p-4 space-y-2">
           <Skeleton className="h-3 w-20" />
@@ -98,37 +138,64 @@
         </div>
       {/each}
     {:else}
-      <div class="tactile-box p-4">
+      <button class="tactile-box p-4 text-left w-full" onclick={() => setStatus("")}>
         <p class="text-[11px] text-[var(--text-muted)] font-medium">
           Total Langganan
         </p>
-        <p class="text-xl font-extrabold">{subs.length}</p>
-      </div>
-      <div class="tactile-box p-4">
+        <p class="text-xl font-extrabold">{totalCount}</p>
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('active')}" onclick={() => setStatus('active')}>
         <p class="text-[11px] text-[var(--text-muted)] font-medium">Aktif</p>
         <p
           class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400"
         >
           {active}
         </p>
-      </div>
-      <div class="tactile-box p-4">
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('cancelled')}" onclick={() => setStatus('cancelled')}>
         <p class="text-[11px] text-[var(--text-muted)] font-medium">
           Dibatalkan
         </p>
         <p class="text-xl font-extrabold text-red-600 dark:text-red-400">
           {cancelled}
         </p>
-      </div>
-      <div class="tactile-box p-4">
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('expired')}" onclick={() => setStatus('expired')}>
         <p class="text-[11px] text-[var(--text-muted)] font-medium">
           Kedaluwarsa
         </p>
         <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">
           {expired}
         </p>
-      </div>
+      </button>
     {/if}
+  </div>
+
+  <!-- Filter & search -->
+  <div class="tactile-box p-3 space-y-2">
+    <div class="flex flex-wrap gap-2 items-center">
+      <div class="input-well px-3 py-1.5 flex items-center gap-2 flex-1 min-w-[160px]">
+        <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-xs"></i>
+        <input type="text" bind:value={q} placeholder="Cari subscriber/plan..." class="bg-transparent w-full text-xs focus:outline-none placeholder:text-[var(--text-muted)]" />
+      </div>
+      <select bind:value={fStatus} class="tactile-inset px-3 py-1.5 text-xs focus:outline-none cursor-pointer">
+        <option value="">Semua</option>
+        <option value="active">Aktif</option>
+        <option value="cancelled">Dibatalkan</option>
+        <option value="expired">Kedaluwarsa</option>
+      </select>
+      {#if hasFilter}
+        <button onclick={() => { fStatus = "active"; q = ""; fStartFrom = ""; fStartTo = ""; fEndFrom = ""; fEndTo = ""; }} class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]"><i class="fa-solid fa-xmark mr-1"></i>Reset</button>
+      {/if}
+    </div>
+    <div class="flex flex-wrap gap-2 items-center text-xs">
+      <span class="text-[var(--text-muted)] font-medium">Mulai</span>
+      <input type="date" bind:value={fStartFrom} class="tactile-inset px-2 py-1 text-xs focus:outline-none" title="Mulai dari" />
+      <input type="date" bind:value={fStartTo} class="tactile-inset px-2 py-1 text-xs focus:outline-none" title="Mulai sampai" />
+      <span class="text-[var(--text-muted)] font-medium ml-2">Berakhir</span>
+      <input type="date" bind:value={fEndFrom} class="tactile-inset px-2 py-1 text-xs focus:outline-none" title="Berakhir dari" />
+      <input type="date" bind:value={fEndTo} class="tactile-inset px-2 py-1 text-xs focus:outline-none" title="Berakhir sampai" />
+    </div>
   </div>
 
   <!-- Daftar langganan subscriber -->
@@ -149,7 +216,7 @@
         </tr>
       </thead>
       <tbody>
-        {#if loading}
+        {#if !loadedOnce}
           {#each Array.from({ length: 3 }) as _, i}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               {#each Array.from({ length: 6 }) as _, j}
@@ -162,7 +229,7 @@
             <td
               colspan={hasAction ? 6 : 5}
               class="px-4 py-8 text-center text-[var(--text-muted)]"
-              >Belum ada langganan</td
+              >{hasFilter ? "Tidak ada hasil filter" : "Belum ada langganan"}</td
             >
           </tr>
         {:else}
@@ -204,7 +271,7 @@
 
   <!-- Mobile cards -->
   <div class="md:hidden space-y-3">
-    {#if loading}
+    {#if !loadedOnce}
       {#each Array.from({ length: 3 }) as _, i}
         <div class="tactile-box p-4 space-y-2">
           <Skeleton className="h-4 w-32" /><Skeleton
@@ -214,7 +281,7 @@
       {/each}
     {:else if subs.length === 0}
       <p class="text-center text-[var(--text-muted)] py-8 text-sm">
-        Belum ada langganan
+        {hasFilter ? "Tidak ada hasil filter" : "Belum ada langganan"}
       </p>
     {:else}
       {#each subs as s (s.id)}
