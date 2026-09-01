@@ -133,16 +133,25 @@
     {:else if webhook}
       <div>
         <label for="webhook-url" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Webhook URL</label>
-        <input
-          id="webhook-url"
-          type="url"
-          placeholder="https://example.com/webhook"
-          value={webhook.webhook_url}
-          oninput={(e) => (webhook!.webhook_url = e.currentTarget.value)}
-          onblur={saveUrl}
-          class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none"
-        />
-        <p class="text-[10px] text-[var(--text-muted)] mt-1">Simpan otomatis saat field ditinggalkan. URL kosong = webhook nonaktif.</p>
+        <div class="flex gap-2">
+          <input
+            id="webhook-url"
+            type="url"
+            placeholder="https://example.com/webhook"
+            value={webhook.webhook_url}
+            oninput={(e) => (webhook!.webhook_url = e.currentTarget.value)}
+            class="flex-1 min-w-0 tactile-inset px-4 py-2.5 text-sm focus:outline-none"
+          />
+          <button
+            onclick={saveUrl}
+            disabled={saving}
+            class="tactile-btn px-4 py-2.5 font-bold text-[var(--accent)] text-sm flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i class="fa-solid {saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}"></i>
+            Simpan
+          </button>
+        </div>
+        <p class="text-[10px] text-[var(--text-muted)] mt-1">URL kosong = webhook nonaktif.</p>
       </div>
 
       <div class="space-y-2">
