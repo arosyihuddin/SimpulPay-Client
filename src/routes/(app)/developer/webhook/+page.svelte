@@ -12,13 +12,14 @@
 
   let webhook = $state<WebhookInfo | null>(null);
   let loading = $state(true);
-  let saving = $state(false);
+  let urlSaving = $state(false);
+  let toggling = $state(false);
   let whBusy = $state(false);
   let showSecret = $state(false);
   let err = $state('');
 
-  async function load() {
-    loading = true;
+  async function load(silent = false) {
+    if (!silent) loading = true;
     err = '';
     try {
       const r = await admin.webhookInfo();
@@ -29,29 +30,35 @@
       loading = false;
     }
   }
-  onMount(load);
+  onMount(() => load());
+
+  const URL_RE = /^https?:\/\/.+/i;
 
   async function saveUrl() {
     if (!webhook) return;
     err = '';
-    saving = true;
+    const url = webhook.webhook_url.trim();
+    if (url && !URL_RE.test(url)) {
+      err = 'Webhook URL harus diawali http:// atau https://';
+      return;
+    }
+    urlSaving = true;
     try {
-      const res = await admin.updateSettings({ webhook_url: webhook.webhook_url });
-      webhook = res.data?.settings as unknown as WebhookInfo;
-      // Backend auto-generate secret saat URL pertama kali di-set → refresh.
-      await load();
+      await admin.updateSettings({ webhook_url: webhook.webhook_url });
+      // Refresh diam-diam — backend bisa generate secret saat URL pertama kali di-set.
+      await load(true);
       addToast('success', 'Webhook URL disimpan.');
     } catch (e: any) {
       err = e.message;
     } finally {
-      saving = false;
+      urlSaving = false;
     }
   }
 
   async function toggleEnabled() {
     if (!webhook) return;
     err = '';
-    saving = true;
+    toggling = true;
     try {
       const next = webhook.webhook_enabled === 'true' ? 'false' : 'true';
       await admin.updateSettings({ webhook_enabled: next });
@@ -60,7 +67,7 @@
     } catch (e: any) {
       err = e.message;
     } finally {
-      saving = false;
+      toggling = false;
     }
   }
 
@@ -69,7 +76,7 @@
     err = '';
     try {
       await admin.updateSettings({ webhook_secret: 'regenerate' });
-      await load();
+      await load(true);
       addToast('success', 'Webhook secret diganti.');
     } catch (e: any) {
       err = e.message;
@@ -106,7 +113,7 @@
       {#if webhook}
         <div class="flex items-center gap-2 shrink-0">
           <span class="text-xs font-bold {webhook.webhook_enabled === 'true' ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}">
-            {saving ? 'Menyimpan...' : (webhook.webhook_enabled === 'true' ? 'Aktif' : 'Nonaktif')}
+            {toggling ? 'Menyimpan...' : (webhook.webhook_enabled === 'true' ? 'Aktif' : 'Nonaktif')}
           </span>
           <button
             type="button"
@@ -114,7 +121,7 @@
             aria-checked={webhook.webhook_enabled === 'true'}
             aria-label="Toggle webhook"
             onclick={toggleEnabled}
-            disabled={saving}
+            disabled={toggling}
             class="relative w-14 h-8 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed {webhook.webhook_enabled === 'true' ? 'tactile-btn bg-emerald-500/20 shadow-[3px_3px_6px_var(--inset-dark),-3px_-3px_6px_var(--inset-light)]' : 'tactile-inset bg-[var(--bg-base)]'}"
           >
             <span
@@ -144,11 +151,11 @@
           />
           <button
             onclick={saveUrl}
-            disabled={saving}
+            disabled={urlSaving}
             class="tactile-btn px-4 py-2.5 font-bold text-[var(--accent)] text-sm flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i class="fa-solid {saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}"></i>
-            Simpan
+            <i class="fa-solid {urlSaving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}"></i>
+            {urlSaving ? 'Menyimpan...' : 'Simpan'}
           </button>
         </div>
         <p class="text-[10px] text-[var(--text-muted)] mt-1">URL kosong = webhook nonaktif.</p>
