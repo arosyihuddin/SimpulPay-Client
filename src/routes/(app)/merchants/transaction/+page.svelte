@@ -40,6 +40,14 @@
   let qrBase = $state(0);
   let qrUnique = $state(0);
   let qrBusyId = $state<string | null>(null);
+  let copiedId = $state("");
+
+  const copyTrx = (id: string) => {
+    navigator.clipboard.writeText(id).then(() => {
+      copiedId = id;
+      setTimeout(() => (copiedId = ""), 2000);
+    }).catch(() => {});
+  };
 
   async function openQr(tx: TxRow) {
     qrBusyId = tx.id;
@@ -130,7 +138,12 @@
         {:else}
           {#each rows as r (r.id)}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
-              <td class="px-4 py-3 font-mono text-xs">{r.trx_id}</td>
+              <td class="px-4 py-3">
+                <button onclick={() => copyTrx(r.trx_id)} title="Salin trx-id" class="font-mono text-xs flex items-center gap-1.5 hover:text-[var(--accent)] transition group">
+                  <span>{r.trx_id}</span>
+                  <i class="fa-solid {copiedId === r.id ? 'fa-check text-emerald-500 pop' : 'fa-copy opacity-0 group-hover:opacity-100'} text-[10px]"></i>
+                </button>
+              </td>
               <td class="px-4 py-3 font-semibold"
                 >{r.merchant_name || r.merchant_id}</td
               >
@@ -195,9 +208,10 @@
       {#each rows as r (r.id)}
         <div class="tactile-box p-4 space-y-2">
           <div class="flex items-center justify-between">
-            <span class="font-mono text-[var(--accent)] text-xs"
-              >{r.trx_id}</span
-            >
+            <button onclick={() => copyTrx(r.trx_id)} title="Salin trx-id" class="font-mono text-[var(--accent)] text-xs flex items-center gap-1.5 hover:opacity-80 transition">
+              <span>{r.trx_id}</span>
+              <i class="fa-solid {copiedId === r.id ? 'fa-check pop' : 'fa-copy'} text-[10px]"></i>
+            </button>
             <span
               class="text-xs font-semibold px-2.5 py-1 rounded-full {statusBadge(
                 r.status,

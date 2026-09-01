@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
   import { admin } from "$lib/api";
   import { auth, checkAuth } from "$lib/auth.svelte";
   import { theme, toggleTheme } from "$lib/theme.svelte";
@@ -202,6 +203,10 @@
       notifLoading = false;
     }
   }
+  // Fetch notifikasi sekali saat layout dipasang, gak perlu nunggu klik bell.
+  onMount(() => {
+    loadNotifs();
+  });
   const notifCount = $derived(unread);
   const notifMeta = (type: string) =>
     type === "payout" || type === "settlement"
@@ -266,7 +271,7 @@
         </div>
       </div>
 
-      <div class="flex-1 min-h-0 overflow-y-auto -mr-2 pr-2 no-scrollbar">
+      <div class="flex-1 min-h-0 overflow-y-auto -mr-2 pr-2 pb-4 no-scrollbar">
         <nav class="space-y-3">
           {#each USER_LINKS as l (l.to)}
             <a
