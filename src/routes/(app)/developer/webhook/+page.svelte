@@ -104,20 +104,24 @@
         <p class="text-xs text-[var(--text-muted)]">Notifikasi transaksi dikirim ke URL ini</p>
       </div>
       {#if webhook}
-        <button
-          onclick={toggleEnabled}
-          disabled={saving}
-          class="tactile-btn px-3 py-1.5 text-xs font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed {webhook.webhook_enabled === 'true'
-            ? 'text-emerald-600 dark:text-emerald-400'
-            : 'text-[var(--text-muted)]'}"
-        >
-          {#if saving}
-            <i class="fa-solid fa-spinner fa-spin"></i>
-          {:else}
-            <i class="fa-solid {webhook.webhook_enabled === 'true' ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
-          {/if}
-          {webhook.webhook_enabled === 'true' ? 'Aktif' : 'Nonaktif'}
-        </button>
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="text-xs font-bold {webhook.webhook_enabled === 'true' ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--text-muted)]'}">
+            {saving ? 'Menyimpan...' : (webhook.webhook_enabled === 'true' ? 'Aktif' : 'Nonaktif')}
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={webhook.webhook_enabled === 'true'}
+            aria-label="Toggle webhook"
+            onclick={toggleEnabled}
+            disabled={saving}
+            class="relative w-14 h-8 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed {webhook.webhook_enabled === 'true' ? 'tactile-btn bg-emerald-500/20 shadow-[3px_3px_6px_var(--inset-dark),-3px_-3px_6px_var(--inset-light)]' : 'tactile-inset bg-[var(--bg-base)]'}"
+          >
+            <span
+              class="absolute top-1.5 left-1.5 w-5 h-5 rounded-full transition-all duration-200 {webhook.webhook_enabled === 'true' ? 'translate-x-6 bg-emerald-500 tactile-btn' : 'bg-[var(--text-muted)] tactile-inset'}"
+            ></span>
+          </button>
+        </div>
       {/if}
     </div>
 

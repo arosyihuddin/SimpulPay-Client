@@ -145,7 +145,14 @@
           : (auth.email || '?').slice(0, 2).toUpperCase()}
       </div>
       <div class="min-w-0 flex-1">
-        <p class="font-bold text-lg truncate">{auth.name || '—'}</p>
+        <div class="flex items-center gap-2">
+          <p class="font-bold text-lg truncate">{auth.name || '—'}</p>
+          <span
+            class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 {auth.status === 'active'
+              ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
+              : 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'}"
+          >{auth.status || '—'}</span>
+        </div>
         <p class="text-xs text-[var(--text-muted)] truncate">{auth.email || '—'}</p>
       </div>
       <button
@@ -158,8 +165,6 @@
     </div>
 
     <Row label="Telepon" val={auth.phone || '—'} />
-    <Row label="Role" val={auth.role} />
-    <Row label="Status" val={auth.status || '—'} />
 
     <a
       href="/settings/password"
