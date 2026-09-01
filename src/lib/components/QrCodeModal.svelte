@@ -3,7 +3,19 @@
   import { qrDataUrl } from "$lib/qrcode";
   import { fmtIDR } from "$lib/api";
 
-  let { code, qrAmount, onClose } = $props();
+  let {
+    code,
+    qrAmount,
+    baseAmount,
+    uniqueCode,
+    onClose,
+  }: {
+    code: string;
+    qrAmount: number;
+    baseAmount?: number;
+    uniqueCode?: number;
+    onClose: () => void;
+  } = $props();
   let src = $state("");
   let err = $state("");
 
@@ -32,7 +44,22 @@
         </div>
       {/if}
       {#if qrAmount}
-        <p class="text-center text-sm"><span class="text-[var(--text-muted)]">Nominal</span><span class="font-bold text-[var(--accent)] ml-2">{fmtIDR(qrAmount)}</span></p>
+        <div class="tactile-inset p-4 space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-[var(--text-muted)]">Biaya Layanan</span>
+            <span class="font-semibold">{fmtIDR(uniqueCode ?? 0)}</span>
+          </div>
+          {#if baseAmount}
+            <div class="flex justify-between">
+              <span class="text-[var(--text-muted)]">Harga Paket</span>
+              <span class="font-semibold">{fmtIDR(baseAmount)}</span>
+            </div>
+          {/if}
+          <div class="flex justify-between pt-2 border-t border-[var(--border-subtle)]">
+            <span class="font-bold">Total Dibayar</span>
+            <span class="font-bold text-[var(--accent)]">{fmtIDR(qrAmount)}</span>
+          </div>
+        </div>
       {/if}
       <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
     </div>

@@ -26,6 +26,8 @@
     amount: number;
     status: string;
     qris_code: string | null;
+    unique_code: number | null;
+    amount_to_pay: number | null;
     transaction_id: string | null;
     period_start: number;
     period_end: number;
@@ -91,7 +93,7 @@
       closePlans();
       const d = res.data || {};
       if (d.qris_code) {
-        pay = { code: d.qris_code, amount: d.amount_to_pay || d.amount, trx_id: d.trx_id || '' };
+        pay = { code: d.qris_code, amount: d.amount_to_pay, baseAmount: d.amount, uniqueCode: d.unique_code || 0 };
       } else {
         addToast('success', 'Langganan ' + p.name + ' aktif.');
         load();
@@ -216,7 +218,7 @@
               <td class="px-4 py-3">
                 <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(i.status)}">{i.status}</span>
                 {#if i.status === 'pending' && i.qris_code}
-                  <button onclick={() => (pay = { code: i.qris_code, amount: i.amount })} title="Bayar invoice" class="tactile-btn ml-2 px-3 py-1 text-xs font-bold text-[var(--accent)]"><i class="fa-solid fa-qrcode"></i> Bayar</button>
+                  <button onclick={() => (pay = { code: i.qris_code, amount: i.amount_to_pay || i.amount, baseAmount: i.amount, uniqueCode: i.unique_code || 0 })} title="Bayar invoice" class="tactile-btn ml-2 px-3 py-1 text-xs font-bold text-[var(--accent)]"><i class="fa-solid fa-qrcode"></i> Bayar</button>
                 {/if}
               </td>
             </tr>
@@ -303,5 +305,11 @@
 
 <!-- QRIS pembayaran langganan -->
 {#if pay}
-  <QrCodeModal code={pay.code} qrAmount={pay.amount} onClose={() => (pay = null)} />
+  <QrCodeModal
+    code={pay.code}
+    qrAmount={pay.amount}
+    baseAmount={pay.baseAmount}
+    uniqueCode={pay.uniqueCode}
+    onClose={() => (pay = null)}
+  />
 {/if}
