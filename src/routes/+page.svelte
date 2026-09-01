@@ -6,10 +6,9 @@
   $effect(() => {
     if (!auth.ready) return;
     if (auth.authed) goto('/dashboard');
-    else if (auth.needsSetup) goto('/setup');
   });
 </script>
 
-{#if auth.ready && !auth.authed && !auth.needsSetup}
+{#if auth.ready && !auth.authed}
   <Login />
 {/if}

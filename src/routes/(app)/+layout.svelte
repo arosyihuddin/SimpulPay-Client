@@ -138,7 +138,6 @@
 
   $effect(() => {
     if (auth.ready && !auth.authed) goto("/");
-    // guard admin: role != admin dilarang buka halaman admin-only
     else if (
       auth.ready &&
       auth.authed &&

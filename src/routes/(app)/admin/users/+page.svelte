@@ -41,7 +41,6 @@
   }
   $effect(() => { load(); });
 
-  // Ambil plan real dari DB (dipanggil pas buka modal add/edit).
   let planLoading = $state(false);
   let planErr = $state('');
   async function loadPlans() {

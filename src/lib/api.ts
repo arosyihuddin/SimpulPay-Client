@@ -28,19 +28,12 @@ async function api<T = any>(
   return data as T;
 }
 
-// Tambah merchant_id (query param) ke path kalau ada.
 const withMerchant = (path: string, merchantId?: string | null) =>
   merchantId
     ? `${path}${path.includes("?") ? "&" : "?"}merchant_id=${encodeURIComponent(merchantId)}`
     : path;
 
 export const admin = {
-  // Setup bootstrap — public, tanpa prefix.
-  setupStatus: () =>
-    api<{ needsSetup: boolean; configDone: boolean }>("/admin/setup-status"),
-  setup: (username: string, password: string) =>
-    api("/admin/setup", { method: "POST", body: { username, password } }),
-
   // Auth — public login/logout, /me pakai cookie session (customer guard).
   login: (username: string, password: string) =>
     api("/login", { method: "POST", body: { username, password } }),
