@@ -34,8 +34,10 @@
     type: string;
     active: boolean;
     created_at: number;
+    read?: boolean;
   }
   let announcements = $state<Announcement[]>([]);
+  const activeAnno = $derived(announcements.filter((a) => !a.read));
   const ANNO_TYPE_CLS: Record<string, string> = {
     info: "bg-blue-100/70 dark:bg-blue-500/10 border-blue-200/60 dark:border-blue-500/30 text-blue-700 dark:text-blue-300",
     warning:
@@ -55,6 +57,12 @@
     } catch {
       /* non-kritis */
     }
+  }
+  function dismissAnno(a: Announcement) {
+    announcements = announcements.map((x) =>
+      x.id === a.id ? { ...x, read: true } : x,
+    );
+    admin.markAnnouncementRead(a.id).catch(() => {});
   }
 
   async function load() {
@@ -81,21 +89,40 @@
 </script>
 
 <div class="space-y-6">
-  
-  <!-- Announcements aktif — broadcast admin ke user -->
-  {#if announcements.length > 0}
-    <div class="space-y-3">
-      {#each announcements as a (a.id)}
-        <div
-          class="rounded-2xl border px-4 py-3 text-sm {ANNO_TYPE_CLS[a.type] ||
-            ANNO_TYPE_CLS.info}"
-        >
-          <p class="font-bold flex items-center gap-2">
+
+  <!-- Announcement popup — modal, tampil sekali per announcement -->
+  {#if activeAnno.length > 0}
+    {@const a = activeAnno[0]}
+    <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="Tutup"
+        class="fixed inset-0 z-40 cursor-default"
+        onclick={() => dismissAnno(a)}
+      ></button>
+      <div
+        class="tactile-modal w-full max-w-sm p-6 relative z-50 {ANNO_TYPE_CLS[a.type] ||
+          ANNO_TYPE_CLS.info}"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <p class="font-bold flex items-center gap-2 text-base">
             <i class={ANNO_ICON[a.type] || ANNO_ICON.info}></i>{a.title}
           </p>
-          {#if a.message}<p class="text-xs mt-1 opacity-90">{a.message}</p>{/if}
+          <button
+            type="button"
+            aria-label="Tutup pengumuman"
+            onclick={() => dismissAnno(a)}
+            class="tactile-btn w-8 h-8 flex items-center justify-center shrink-0"
+          ><i class="fa-solid fa-xmark"></i></button>
         </div>
-      {/each}
+        {#if a.message}<p class="text-sm mt-3 opacity-90 leading-relaxed">{a.message}</p>{/if}
+        <div class="flex gap-2 pt-5">
+          <button
+            onclick={() => dismissAnno(a)}
+            class="tactile-btn flex-1 py-2.5 text-sm font-bold flex items-center justify-center gap-2"
+          ><i class="fa-solid fa-check"></i> Oke</button>
+        </div>
+      </div>
     </div>
   {/if}
 

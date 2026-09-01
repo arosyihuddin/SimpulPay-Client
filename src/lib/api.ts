@@ -147,6 +147,8 @@ export const admin = {
         ...(opts.active ? { active: "1" } : {}),
       })}`,
     ),
+  markAnnouncementRead: (id: number) =>
+    api<any>(`/announcements/${id}/read`, { method: "POST" }),
   createAnnouncement: (body: {
     title: string;
     message: string;
