@@ -132,14 +132,6 @@
 
   <!-- USER & KEAMANAN -->
   <section class="tactile-box p-5 space-y-4">
-    <div class="flex items-center gap-2 mb-2">
-      <i class="fa-solid fa-user-shield text-[var(--accent)]"></i>
-      <div>
-        <h2 class="font-semibold">User & Keamanan</h2>
-        <p class="text-xs text-[var(--text-muted)]">Kredensial & keamanan akun</p>
-      </div>
-    </div>
-
     <div class="flex items-center gap-4">
       <div class="tactile-btn w-16 h-16 rounded-full flex items-center justify-center text-xl font-extrabold text-[var(--accent)] shrink-0">
         {auth.name
