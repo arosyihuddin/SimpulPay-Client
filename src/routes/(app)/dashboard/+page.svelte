@@ -39,11 +39,9 @@
   let announcements = $state<Announcement[]>([]);
   const activeAnno = $derived(announcements.filter((a) => !a.read));
   const ANNO_TYPE_CLS: Record<string, string> = {
-    info: "bg-blue-100/70 dark:bg-blue-500/10 border-blue-200/60 dark:border-blue-500/30 text-blue-700 dark:text-blue-300",
-    warning:
-      "bg-amber-100/70 dark:bg-amber-500/10 border-amber-200/60 dark:border-amber-500/30 text-amber-700 dark:text-amber-300",
-    important:
-      "bg-red-100/70 dark:bg-red-500/10 border-red-200/60 dark:border-red-500/30 text-red-700 dark:text-red-300",
+    info: "tactile-pill pill-blue",
+    warning: "tactile-pill pill-amber",
+    important: "tactile-pill pill-red",
   };
   const ANNO_ICON: Record<string, string> = {
     info: "fa-solid fa-circle-info",

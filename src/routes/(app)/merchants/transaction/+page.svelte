@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { admin, fmtIDR, fmtTime } from "$lib/api";
+  import { addToast } from "$lib/toast.svelte";
   import { useWs } from "$lib/useWs";
   import Pagination from "$lib/components/Pagination.svelte";
   import Skeleton from "$lib/components/Skeleton.svelte";
@@ -9,23 +10,21 @@
 
   interface TxRow {
     id: string;
-    trx_id: string;
-    merchant_id: string;
-    merchant_name?: string;
+    order_id: string;
     amount: number;
     base_amount: number;
     unique_code: number;
     status: string;
+    issuer?: string;
     created_at: number;
-    expires_at: number;
   }
 
   const statusBadge = (st: string) =>
     st === "paid" || st === "settlement" || st === "capture"
-      ? "text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30"
+      ? "tactile-pill pill-green"
       : st === "expired"
-        ? "text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30"
-        : "text-amber-700 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30";
+        ? "tactile-pill pill-red"
+        : "tactile-pill pill-amber";
 
   const PAGE_SIZE = 20;
 
@@ -42,9 +41,10 @@
   let qrBusyId = $state<string | null>(null);
   let copiedId = $state("");
 
-  const copyTrx = (id: string) => {
+  const copyOrder = (id: string) => {
     navigator.clipboard.writeText(id).then(() => {
       copiedId = id;
+      addToast('success', 'Order ID disalin!');
       setTimeout(() => (copiedId = ""), 2000);
     }).catch(() => {});
   };
@@ -69,16 +69,28 @@
   async function load() {
     loading = true;
     const p = (curPage - 1) * PAGE_SIZE;
-    const req = mid
-      ? admin.merchantTransactions(mid, PAGE_SIZE, p)
-      : admin.transactions({ limit: PAGE_SIZE, offset: p });
-    req
-      .then((d) => {
-        rows = d.data?.transactions || [];
-        total = d.data?.total || 0;
-      })
-      .catch((e) => (err = e.message))
-      .finally(() => (loading = false));
+    try {
+      const d = mid
+        ? await admin.merchantTransactions(mid, PAGE_SIZE, p)
+        : await admin.transactions({ limit: PAGE_SIZE, offset: p });
+      const raw = d.data?.transactions || [];
+      // Endpoint merchant (GoBiz) return shape beda: order_id/transaction_id/time.
+      rows = raw.map((r: any) => ({
+        id: r.transaction_id || r.id,
+        order_id: r.order_id || r.trx_id,
+        amount: r.amount,
+        base_amount: r.base_amount ?? r.amount,
+        unique_code: r.unique_code ?? 0,
+        status: r.status,
+        issuer: r.issuer,
+        created_at: r.time ? new Date(r.time).getTime() : r.created_at,
+      }));
+      total = d.data?.total || 0;
+    } catch (e: any) {
+      err = e.message;
+    } finally {
+      loading = false;
+    }
   }
   $effect(() => {
     load();
@@ -112,15 +124,11 @@
         <tr
           class="text-left text-[var(--text-muted)] border-b border-[var(--border-subtle)]"
         >
-          <th class="px-4 py-3 font-medium">TRX-ID</th><th
-            class="px-4 py-3 font-medium">Merchant</th
-          >
-          <th class="px-4 py-3 font-medium">Nominal</th><th
-            class="px-4 py-3 font-medium">Status</th
-          >
-          <th class="px-4 py-3 font-medium">Dibuat</th><th
-            class="px-4 py-3 font-medium">Kadaluwarsa</th
-          >
+          <th class="px-4 py-3 font-medium">ORDER-ID</th>
+          <th class="px-4 py-3 font-medium">Nominal</th>
+          <th class="px-4 py-3 font-medium">Status</th>
+          <th class="px-4 py-3 font-medium">Issuer</th>
+          <th class="px-4 py-3 font-medium">Waktu</th>
           {#if hasPending}
             <th class="px-4 py-3 font-medium text-right">Aksi</th>
           {/if}
@@ -139,23 +147,12 @@
           {#each rows as r (r.id)}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               <td class="px-4 py-3">
-                <button onclick={() => copyTrx(r.trx_id)} title="Salin trx-id" class="font-mono text-xs flex items-center gap-1.5 hover:text-[var(--accent)] transition group">
-                  <span>{r.trx_id}</span>
-                  <i class="fa-solid {copiedId === r.id ? 'fa-check text-emerald-500 pop' : 'fa-copy opacity-0 group-hover:opacity-100'} text-[10px]"></i>
+                <button onclick={() => copyOrder(r.order_id)} title="Salin order-id" class="font-mono text-xs flex items-center gap-1.5 hover:text-[var(--accent)] transition group">
+                  <span>{r.order_id}</span>
+                  <i class="fa-solid {copiedId === r.order_id ? 'fa-check text-emerald-500 pop' : 'fa-copy opacity-0 group-hover:opacity-100'} text-[10px]"></i>
                 </button>
               </td>
-              <td class="px-4 py-3 font-semibold"
-                >{r.merchant_name || r.merchant_id}</td
-              >
-              <td class="px-4 py-3 font-semibold">
-                {fmtIDR(r.amount)}
-                {#if r.unique_code > 0}
-                  <span
-                    class="block text-[10px] text-[var(--text-muted)] font-normal"
-                    >= {fmtIDR(r.base_amount || r.amount - r.unique_code)} + {r.unique_code}</span
-                  >
-                {/if}
-              </td>
+              <td class="px-4 py-3 font-semibold">{fmtIDR(r.amount)}</td>
               <td class="px-4 py-3"
                 ><span
                   class="text-xs font-semibold px-2.5 py-1 rounded-full {statusBadge(
@@ -163,8 +160,8 @@
                   )}">{r.status.toUpperCase()}</span
                 ></td
               >
+              <td class="px-4 py-3 text-xs font-semibold">{r.issuer || '—'}</td>
               <td class="px-4 py-3 text-xs">{fmtTime(r.created_at)}</td>
-              <td class="px-4 py-3 text-xs">{fmtTime(r.expires_at)}</td>
               {#if hasPending}
                 <td class="px-4 py-3 text-right">
                   {#if r.status === "pending"}
@@ -208,30 +205,27 @@
       {#each rows as r (r.id)}
         <div class="tactile-box p-4 space-y-2">
           <div class="flex items-center justify-between">
-            <button onclick={() => copyTrx(r.trx_id)} title="Salin trx-id" class="font-mono text-[var(--accent)] text-xs flex items-center gap-1.5 hover:opacity-80 transition">
-              <span>{r.trx_id}</span>
-              <i class="fa-solid {copiedId === r.id ? 'fa-check pop' : 'fa-copy'} text-[10px]"></i>
+            <button onclick={() => copyOrder(r.order_id)} title="Salin order-id" class="font-mono text-[var(--accent)] text-xs flex items-center gap-1.5 hover:opacity-80 transition">
+              <span>{r.order_id}</span>
+              <i class="fa-solid {copiedId === r.order_id ? 'fa-check text-emerald-500 pop' : 'fa-copy'} text-[10px]"></i>
             </button>
+            <span class="text-base font-bold">{fmtIDR(r.amount)}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span
+              class="text-xs font-semibold px-2.5 py-1 rounded-full {statusBadge(
+                r.status,
+              )}">{r.status.toUpperCase()}</span
+            >
             <span
               class="text-xs font-semibold px-2.5 py-1 rounded-full {statusBadge(
                 r.status,
               )}">{r.status.toUpperCase()}</span
             >
           </div>
-          <div class="flex items-center justify-between">
-            <span class="text-base font-bold">{fmtIDR(r.amount)}</span>
-            {#if r.unique_code > 0}<span
-                class="text-[10px] text-[var(--text-muted)]"
-                >= {fmtIDR(r.base_amount || r.amount - r.unique_code)} + {r.unique_code}</span
-              >{/if}
-          </div>
-          <p class="text-xs font-semibold text-[var(--text-main)]">
-            {r.merchant_name || r.merchant_id}
-          </p>
           <div class="text-xs text-[var(--text-muted)] flex justify-between">
-            <span>Dibuat: {fmtTime(r.created_at)}</span><span
-              >Kadaluwarsa: {fmtTime(r.expires_at)}</span
-            >
+            <span>Issuer: {r.issuer || '—'}</span>
+            <span>{fmtTime(r.created_at)}</span>
           </div>
           {#if r.status === "pending"}
           <button

@@ -16,9 +16,7 @@
   const typeMeta = (t: string) => TYPE_META[t] || TYPE_META.gopay;
 
   const statusCls = (st: string) =>
-    st === 'active'
-      ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
-      : 'bg-slate-200/60 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300 border border-slate-300/50 dark:border-slate-600/40';
+    st === 'active' ? 'tactile-pill pill-green' : 'tactile-pill pill-gray';
 
   let err = $state('');
   const fmtDate = (n: number) => new Date(n).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -178,7 +176,7 @@
         <div class="tactile-box p-5 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-3">
-              <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider {statusCls(m.status)}">{m.status}</span>
+              <span class="tactile-pill px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider {statusCls(m.status)}">{m.status}</span>
               <div class="relative">
                 <button onclick={() => (menuFor = menuFor === m.id ? null : m.id)} aria-label="Menu merchant" class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]">
                   <i class="fa-solid fa-ellipsis-vertical"></i>

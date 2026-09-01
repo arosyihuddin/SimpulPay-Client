@@ -77,13 +77,11 @@
 
   const roleLabel = (r: string) => (r === 'admin' ? 'ADMIN' : 'CUSTOMER');
   const roleCls = (r: string) =>
-    r === 'admin'
-      ? 'bg-violet-100/70 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-500/30'
-      : 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30';
+    r === 'admin' ? 'tactile-pill pill-violet' : 'tactile-pill pill-green';
   const statusCls = (st: string | undefined) =>
-    st === 'active' ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
-    : st === 'suspended' ? 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'
-    : 'bg-red-100/70 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-500/30';
+    st === 'active' ? 'tactile-pill pill-green'
+    : st === 'suspended' ? 'tactile-pill pill-amber'
+    : 'tactile-pill pill-red';
 
   const displayName = (u: User) => u.email;
   const initials = (u: User) => displayName(u).split('@')[0].slice(0, 2).toUpperCase();
@@ -94,6 +92,36 @@
     u.status === 'active' ? 'text-emerald-600 dark:text-emerald-300'
     : u.status === 'suspended' ? 'text-amber-600 dark:text-amber-300'
     : 'text-red-600 dark:text-red-300';
+
+  // ---- Menu titik tiga per baris ----
+  let menuFor = $state<string | null>(null);
+  let menuPos = $state<{ top: number; left: number } | null>(null);
+  const menuUser = $derived(users.find((u) => u.id === menuFor) || null);
+
+  // Buka menu — posisi fixed (koordinat tombol) biar tidak ke-clip container (overflow table).
+  function toggleMenu(u: User, e: Event) {
+    if (menuFor === u.id) { menuFor = null; menuPos = null; return; }
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const W = 192;
+    menuPos = {
+      top: r.bottom + 6,
+      left: Math.max(8, Math.min(r.right - W, window.innerWidth - W - 8)),
+    };
+    menuFor = u.id;
+  }
+  const closeMenu = () => { menuFor = null; menuPos = null; };
+
+  // Ubah status user (active/suspended/banned) lewat API updateUser.
+  async function setUserStatus(u: User, st: string) {
+    if (u.status === st) return;
+    try {
+      await admin.updateUser(u.id, { status: st });
+      users = users.map((x) => (x.id === u.id ? { ...x, status: st } : x));
+      addToast('success', `Status "${u.email}" diubah ke ${st}.`);
+    } catch (e: any) {
+      loadErr = e.message;
+    }
+  }
 
   // ---- Detail user modal ----
   let detailOpen = $state(false);
@@ -292,11 +320,9 @@
               <td class="px-4 py-3"><span class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(u.role)}">{roleLabel(u.role)}</span></td>
               <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{fmtDate(u.latest_invoice?.period_end)}</td>
               <td class="px-4 py-3 text-right">
-                <div class="flex items-center justify-end gap-2">
-                  <button class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]" onclick={() => openDetail(u)}>Lihat</button>
-                  <button aria-label="Edit {u.email}" class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]" onclick={() => openEdit(u)}><i class="fa-solid fa-pen"></i></button>
-                  <button aria-label="Hapus {u.email}" class="tactile-btn px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => (delTarget = u)}><i class="fa-solid fa-trash-can"></i></button>
-                </div>
+                <button onclick={(e) => toggleMenu(u, e)} aria-label="Menu user" class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]">
+                  <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
               </td>
             </tr>
           {/each}
@@ -333,10 +359,10 @@
           <div class="text-xs text-[var(--text-muted)] flex justify-between">
             <span>Tagihan: {fmtDate(u.latest_invoice?.period_end)}</span>
           </div>
-          <div class="flex gap-2">
-            <button class="tactile-btn flex-1 py-2 text-xs font-bold text-[var(--accent)]" onclick={() => openDetail(u)}>Lihat</button>
-            <button aria-label="Edit {u.email}" class="tactile-btn px-3 py-2 text-xs font-bold text-[var(--text-muted)]" onclick={() => openEdit(u)}><i class="fa-solid fa-pen"></i></button>
-            <button aria-label="Hapus {u.email}" class="tactile-btn px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => (delTarget = u)}><i class="fa-solid fa-trash-can"></i></button>
+          <div class="flex justify-end">
+            <button onclick={(e) => toggleMenu(u, e)} aria-label="Menu user" class="tactile-btn w-9 h-9 flex items-center justify-center text-[var(--text-muted)]">
+              <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
           </div>
         </div>
       {/each}
@@ -348,6 +374,42 @@
     </div>
   {/if}
 </div>
+
+<!-- Menu titik tiga (fixed, level halaman biar tidak ke-clip overflow tabel) -->
+{#if menuUser && menuPos}
+  <button type="button" aria-label="Tutup menu" class="fixed inset-0 z-40 cursor-default" onclick={closeMenu}></button>
+  <div
+    class="fixed w-48 rounded-xl tactile-box p-2 z-50 text-xs space-y-1"
+    style="top: {menuPos.top}px; left: {menuPos.left}px"
+  >
+    <button onclick={() => { openDetail(menuUser); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]">
+      <i class="fa-solid fa-eye w-4"></i> Lihat
+    </button>
+    <button onclick={() => { openEdit(menuUser); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]">
+      <i class="fa-solid fa-pen w-4"></i> Edit
+    </button>
+    <div class="border-t border-[var(--border-subtle)] my-1"></div>
+    {#if menuUser.status !== 'active'}
+      <button onclick={() => { setUserStatus(menuUser, 'active'); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+        <i class="fa-solid fa-check w-4"></i> Aktifkan
+      </button>
+    {/if}
+    {#if menuUser.status !== 'suspended'}
+      <button onclick={() => { setUserStatus(menuUser, 'suspended'); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-amber-600 dark:text-amber-400">
+        <i class="fa-solid fa-pause w-4"></i> Suspend
+      </button>
+    {/if}
+    {#if menuUser.status !== 'banned'}
+      <button onclick={() => { setUserStatus(menuUser, 'banned'); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-red-500">
+        <i class="fa-solid fa-ban w-4"></i> Banned
+      </button>
+    {/if}
+    <div class="border-t border-[var(--border-subtle)] my-1"></div>
+    <button onclick={() => { delTarget = menuUser; closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-red-500">
+      <i class="fa-solid fa-trash-can w-4"></i> Hapus
+    </button>
+  </div>
+{/if}
 
 <!-- Detail user modal -->
 {#if detailOpen && sel}

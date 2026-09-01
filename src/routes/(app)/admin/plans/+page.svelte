@@ -199,10 +199,7 @@
               <p class="font-bold flex items-center gap-2">
                 {p.name}
                 <span
-                  class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide {p.type ===
-                  'free'
-                    ? 'bg-slate-200/60 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300 border border-slate-300/50 dark:border-slate-600/40'
-                    : 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'}"
+                  class="tactile-pill px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide {p.type === 'free' ? 'pill-gray' : 'pill-green'}"
                   >{p.type}</span
                 >
               </p>

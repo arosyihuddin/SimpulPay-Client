@@ -7,10 +7,10 @@
   interface LogRow { id: number; timestamp: string; type: string; message: string; details_json: string | null; }
 
   const badgeOf = (t: string) =>
-    t === 'ERROR' ? 'text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30'
-    : t === 'WARNING' ? 'text-amber-700 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30'
-    : t === 'SUCCESS' ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30'
-    : 'text-slate-500 bg-slate-200/50 dark:bg-slate-700/30 border border-slate-300/40 dark:border-slate-600/30';
+    t === 'ERROR' ? 'tactile-pill pill-red'
+    : t === 'WARNING' ? 'tactile-pill pill-amber'
+    : t === 'SUCCESS' ? 'tactile-pill pill-green'
+    : 'tactile-pill pill-gray';
 
   const iconOf = (t: string) =>
     t === 'ERROR' ? 'fa-solid fa-circle-exclamation'

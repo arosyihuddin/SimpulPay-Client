@@ -1,5 +1,6 @@
 <script lang="ts">
   import { admin, fmtIDR, fmtTime } from "$lib/api";
+  import { addToast } from "$lib/toast.svelte";
   import { useWs } from "$lib/useWs";
   import Pagination from "$lib/components/Pagination.svelte";
   import Skeleton from "$lib/components/Skeleton.svelte";
@@ -20,10 +21,10 @@
 
   const statusBadge = (st: string) =>
     st === "paid" || st === "settlement" || st === "capture"
-      ? "text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30"
+      ? "tactile-pill pill-green"
       : st === "expired"
-        ? "text-red-700 dark:text-red-300 bg-red-100/70 dark:bg-red-500/10 border border-red-200/60 dark:border-red-500/30"
-        : "text-amber-700 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30";
+        ? "tactile-pill pill-red"
+        : "tactile-pill pill-amber";
 
   const PAGE_SIZE = 20;
 
@@ -46,6 +47,7 @@
   const copyTrx = (id: string) => {
     navigator.clipboard.writeText(id).then(() => {
       copiedId = id;
+      addToast('success', 'TRX ID disalin!');
       setTimeout(() => (copiedId = ""), 2000);
     }).catch(() => {});
   };
@@ -225,7 +227,7 @@
               <td class="px-4 py-3">
                 <button onclick={() => copyTrx(r.trx_id)} title="Salin trx-id" class="font-mono text-xs flex items-center gap-1.5 hover:text-[var(--accent)] transition group">
                   <span>{r.trx_id}</span>
-                  <i class="fa-solid {copiedId === r.id ? 'fa-check text-emerald-500 pop' : 'fa-copy opacity-0 group-hover:opacity-100'} text-[10px]"></i>
+                  <i class="fa-solid {copiedId === r.trx_id ? 'fa-check text-emerald-500 pop' : 'fa-copy opacity-0 group-hover:opacity-100'} text-[10px]"></i>
                 </button>
               </td>
               <td class="px-4 py-3 font-semibold"
@@ -292,7 +294,7 @@
           <div class="flex items-center justify-between">
             <button onclick={() => copyTrx(r.trx_id)} title="Salin trx-id" class="font-mono text-[var(--accent)] text-xs flex items-center gap-1.5 hover:opacity-80 transition">
               <span>{r.trx_id}</span>
-              <i class="fa-solid {copiedId === r.id ? 'fa-check pop' : 'fa-copy'} text-[10px]"></i>
+              <i class="fa-solid {copiedId === r.trx_id ? 'fa-check text-emerald-500 pop' : 'fa-copy'} text-[10px]"></i>
             </button>
             <span
               class="text-xs font-semibold px-2.5 py-1 rounded-full {statusBadge(

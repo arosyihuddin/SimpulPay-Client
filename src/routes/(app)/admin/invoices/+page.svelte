@@ -41,11 +41,9 @@
   );
 
   const invStatusCls = (st: string) =>
-    st === "paid"
-      ? "bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30"
-      : st === "pending"
-        ? "bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30"
-        : "bg-red-100/70 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-500/30";
+    st === "paid" ? "tactile-pill pill-green"
+      : st === "pending" ? "tactile-pill pill-amber"
+        : "tactile-pill pill-red";
 
   async function load() {
     loading = true;

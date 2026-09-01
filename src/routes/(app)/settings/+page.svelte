@@ -148,10 +148,8 @@
         <div class="flex items-center gap-2">
           <p class="font-bold text-lg truncate">{auth.name || '—'}</p>
           <span
-            class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 {auth.status === 'active'
-              ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
-              : 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'}"
-          >{auth.status || '—'}</span>
+            class="tactile-pill px-2 py-0.5 text-[10px] font-bold shrink-0 {auth.status === 'active' ? 'pill-green' : 'pill-amber'}"
+          >{(auth.status || '—').toUpperCase()}</span>
         </div>
       </div>
       <button

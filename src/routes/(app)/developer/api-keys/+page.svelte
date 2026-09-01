@@ -158,7 +158,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-2">
               <p class="text-sm font-bold truncate">{k.label || 'Tanpa label'}</p>
-              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full {k.status === 'active' ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' : 'bg-slate-200/60 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300'}">{k.status}</span>
+              <span class="tactile-pill px-2 py-0.5 text-[10px] font-semibold {k.status === 'active' ? 'pill-green' : 'pill-gray'}">{k.status}</span>
             </div>
             <p class="font-mono text-xs text-[var(--text-muted)] mt-1">{k.key_masked}</p>
             <p class="text-[10px] text-[var(--text-muted)] mt-1">

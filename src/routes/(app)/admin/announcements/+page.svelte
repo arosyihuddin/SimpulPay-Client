@@ -16,9 +16,9 @@
   }
 
   const TYPE_META: Record<string, { label: string; icon: string; cls: string }> = {
-    info: { label: 'Info', icon: 'fa-solid fa-circle-info', cls: 'bg-blue-100/70 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/30' },
-    warning: { label: 'Peringatan', icon: 'fa-solid fa-triangle-exclamation', cls: 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30' },
-    important: { label: 'Penting', icon: 'fa-solid fa-shield-halved', cls: 'bg-red-100/70 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-500/30' },
+    info: { label: 'Info', icon: 'fa-solid fa-circle-info', cls: 'tactile-pill pill-blue' },
+    warning: { label: 'Peringatan', icon: 'fa-solid fa-triangle-exclamation', cls: 'tactile-pill pill-amber' },
+    important: { label: 'Penting', icon: 'fa-solid fa-shield-halved', cls: 'tactile-pill pill-red' },
   };
   const typeMeta = (t: string) => TYPE_META[t] || TYPE_META.info;
 
@@ -173,7 +173,7 @@
               </td>
               <td class="px-4 py-3"><span class="text-xs font-semibold px-2.5 py-1 rounded-full {typeMeta(a.type).cls}">{a.type}</span></td>
               <td class="px-4 py-3">
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full {a.active ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' : 'bg-slate-200/60 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300 border border-slate-300/50 dark:border-slate-600/40'}">{a.active ? 'Aktif' : 'Nonaktif'}</span>
+                <span class="tactile-pill px-2.5 py-1 text-xs font-semibold {a.active ? 'pill-green' : 'pill-gray'}">{a.active ? 'Aktif' : 'Nonaktif'}</span>
               </td>
               <td class="px-4 py-3 text-xs">{fmtDate(a.created_at)}</td>
               <td class="px-4 py-3 text-right">
@@ -196,7 +196,7 @@
             <p class="font-bold flex items-center gap-2">{a.title}
               <span class="text-xs font-semibold px-2 py-0.5 rounded-full {typeMeta(a.type).cls}">{a.type}</span>
             </p>
-            <span class="text-xs font-semibold px-2.5 py-1 rounded-full {a.active ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30' : 'bg-slate-200/60 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300 border border-slate-300/50 dark:border-slate-600/40'}">{a.active ? 'Aktif' : 'Nonaktif'}</span>
+            <span class="tactile-pill px-2.5 py-1 text-xs font-semibold {a.active ? 'pill-green' : 'pill-gray'}">{a.active ? 'Aktif' : 'Nonaktif'}</span>
           </div>
           <p class="text-xs text-[var(--text-muted)]">{a.message}</p>
           <p class="text-[10px] text-[var(--text-muted)]">{fmtTime(a.created_at)}</p>

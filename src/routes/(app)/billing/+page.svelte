@@ -266,7 +266,7 @@
             <div class="flex items-center justify-between">
               <p class="font-bold text-lg">{p.name}</p>
               {#if p.id === sub?.plan_id}
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30">Aktif</span>
+                <span class="tactile-pill px-2 py-0.5 text-[10px] font-bold pill-green">Aktif</span>
               {/if}
             </div>
             <p class="text-2xl font-extrabold text-[var(--accent)]">{fmtPrice(p.price)}</p>
