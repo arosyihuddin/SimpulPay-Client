@@ -9,7 +9,7 @@
   let { children } = $props();
 
   // Grup menu: USER_LINKS untuk semua role, ADMIN_LINKS khusus admin.
-  // Logs/Settings/Developer terbuka juga untuk user; Billing Plans & Users admin-only.
+  // Logs/Settings/Developer terbuka juga untuk user; Plans & Users admin-only.
   const USER_LINKS = [
     {
       to: "/dashboard",

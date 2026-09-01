@@ -2,7 +2,7 @@ export const API_BASE =
   (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ||
   "";
 
-export async function api<T = any>(
+async function api<T = any>(
   path: string,
   opts: { method?: string; body?: unknown } = {},
 ): Promise<T> {
