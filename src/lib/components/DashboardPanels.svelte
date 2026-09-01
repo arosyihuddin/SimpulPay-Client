@@ -257,12 +257,6 @@
               <span class="font-bold">Fee</span>
               <span class="font-mono">{gtwSettings.fee_percent || '0'}%</span>
             </div>
-            <div class="flex items-center justify-between p-2 rounded-xl tactile-inset">
-              <span class="font-bold">Webhook</span>
-              <span class="px-2 py-0.5 font-bold rounded text-[10px] {statusCls(gtwSettings.webhook_enabled === 'true' ? 'active' : 'inactive')}">
-                {gtwSettings.webhook_enabled === 'true' ? 'Aktif' : 'Nonaktif'}
-              </span>
-            </div>
           </div>
         {/if}
       </div>
