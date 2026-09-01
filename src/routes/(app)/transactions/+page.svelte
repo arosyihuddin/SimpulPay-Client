@@ -34,6 +34,8 @@
   let loading = $state(true);
   let qrCode = $state("");
   let qrAmount = $state(0);
+  let qrBase = $state(0);
+  let qrUnique = $state(0);
   let qrBusyId = $state<string | null>(null);
 
   async function openQr(tx: TxRow) {
@@ -42,6 +44,8 @@
       const res = await admin.getTransactionCode(tx.id);
       qrCode = res.data.code;
       qrAmount = tx.amount;
+      qrBase = tx.base_amount;
+      qrUnique = tx.unique_code;
     } catch {
       qrCode = "";
     }
@@ -235,5 +239,5 @@
 </div>
 
 {#if qrCode}
-  <QrCodeModal code={qrCode} {qrAmount} onClose={() => (qrCode = "")} />
+  <QrCodeModal code={qrCode} {qrAmount} baseAmount={qrBase} uniqueCode={qrUnique} onClose={() => (qrCode = "")} />
 {/if}
