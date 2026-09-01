@@ -156,7 +156,9 @@
       goto("/dashboard");
   });
   const isActive = (to: string) =>
-    activePath === to || (to === "/merchants" && activePath.startsWith("/merchants/"));
+    activePath === to || activePath.startsWith(to + "/");
+  // Lainnya ikut aktif kalau halaman sekarang masuk drawer mobile.
+  const moreActive = $derived(MOBILE_MORE.some((l) => isActive(l.to)));
   // Developer collapse — auto-buka kalau route aktif di dalamnya.
   let devOpen = $state(false);
   $effect(() => {
@@ -379,7 +381,9 @@
       {#if MOBILE_MORE.length > 0}
         <button
           onclick={() => (moreOpen = !moreOpen)}
-          class="flex flex-col items-center gap-0.5 flex-1 py-1.5 px-1 rounded-xl text-[10px] font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer"
+          class="flex flex-col items-center gap-0.5 flex-1 py-1.5 px-1 rounded-xl text-[10px] font-semibold {moreActive
+            ? 'active text-[var(--accent)]'
+            : 'text-[var(--text-muted)]'} hover:text-[var(--accent)] cursor-pointer"
           title="Menu lainnya"
           aria-expanded={moreOpen}
         >
