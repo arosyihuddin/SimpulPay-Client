@@ -160,9 +160,12 @@ export const admin = {
   subscribe: (planId: string, amount = 0) =>
     api<any>("/subscriptions", { method: "POST", body: { plan_id: planId, amount } }),
 
-  // Admin-only: logs, users, billing plans write, subscriptions, invoices
+  // Admin-only: logs, users, billing plans write, subscriptions, invoices, maintenance
   logs: (limit = 100, offset = 0) =>
     api<any>(`/logs?limit=${limit}&offset=${offset}`),
+  getMaintenance: () => api<any>("/admin/maintenance"),
+  setMaintenance: (on: boolean) =>
+    api<any>("/admin/maintenance", { method: "POST", body: { maintenance: on } }),
   listUsers: (limit = 50, offset = 0) =>
     api<any>(`/admin/users?limit=${limit}&offset=${offset}`),
   createUser: (

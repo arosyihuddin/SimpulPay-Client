@@ -85,21 +85,21 @@
       subtitle: "Broadcast pengumuman ke semua user",
     },
     {
-      to: "/admin/billing",
+      to: "/admin/plans",
       label: "Plans",
       icon: "fa-solid fa-tags",
       title: "Plans",
       subtitle: "Kelola paket langganan",
     },
     {
-      to: "/admin/billing/subscribers",
+      to: "/admin/subscribers",
       label: "Subscribers",
       icon: "fa-solid fa-user-group",
       title: "Subscribers",
       subtitle: "Kelola langganan semua subscriber",
     },
     {
-      to: "/admin/billing/invoices",
+      to: "/admin/invoices",
       label: "Invoices",
       icon: "fa-solid fa-file-invoice",
       title: "Invoices",
@@ -112,11 +112,18 @@
       title: "Users",
       subtitle: "Kelola akun pengguna sistem",
     },
+    {
+      to: "/admin/maintenance",
+      label: "Maintenance",
+      icon: "fa-solid fa-screwdriver-wrench",
+      title: "Mode Maintenance",
+      subtitle: "Aktifkan/nonaktifkan mode maintenance",
+    },
   ];
   const ALL_LINKS = [...USER_LINKS, ...ADMIN_LINKS];
   const LINKS = $derived(auth.role === "admin" ? ALL_LINKS : USER_LINKS);
   // Halaman yang diblokir untuk non-admin.
-  const ADMIN_ONLY = ["/admin/announcements", "/admin/billing", "/admin/users"];
+  const ADMIN_ONLY = ["/admin/announcements", "/admin/plans", "/admin/subscribers", "/admin/invoices", "/admin/users", "/admin/maintenance"];
 
   const TITLES: Record<string, [string, string]> = Object.fromEntries(
     [...ALL_LINKS, ...DEV_LINKS].map((l) => [l.to, [l.title, l.subtitle]]),

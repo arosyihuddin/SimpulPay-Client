@@ -131,7 +131,7 @@
     {:else}
       <div class="w-full text-center py-6">
         <p class="text-[var(--text-muted)] text-sm">Belum ada langganan aktif.</p>
-        <a href="/admin/billing" class="tactile-btn inline-flex px-4 py-2 text-xs font-bold text-[var(--accent)] mt-3">Lihat Paket</a>
+        <a href="/admin/plans" class="tactile-btn inline-flex px-4 py-2 text-xs font-bold text-[var(--accent)] mt-3">Lihat Paket</a>
       </div>
     {/if}
   </div>
