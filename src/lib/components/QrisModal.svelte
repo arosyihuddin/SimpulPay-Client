@@ -42,21 +42,28 @@
         ⚠️ QRIS static belum diatur untuk merchant ini. Konfigurasi dulu lewat tombol Konfigurasi (login GoBiz + scan QRIS static) sebelum buat QR dinamis.
       </p>
     {:else if created}
-      <div class="bg-emerald-100/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 rounded-2xl p-4 space-y-3 text-sm">
-        <p class="text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2"><i class="fa-solid fa-circle-check"></i> QRIS dibuat!</p>
-        <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">TRX-ID</span><span class="font-mono text-xs break-all text-right">{created.trx_id}</span></p>
-        <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">Nominal</span><span class="font-bold">{fmtIDR(created.amount)}</span></p>
-        {#if created.unique_code > 0}
-          <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">Kode Unik</span><span class="font-bold text-[var(--accent)]">{created.unique_code}</span></p>
-          <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">Total Bayar</span><span class="font-bold text-emerald-600 dark:text-emerald-400">{fmtIDR(created.amount_to_pay)}</span></p>
-          <p class="text-[10px] text-[var(--text-muted)]">= {fmtIDR(created.amount)} + {created.unique_code}</p>
-        {/if}
+      <div class="space-y-4">
         <div class="flex justify-center">
           {#if !qrSrc}
-            <div class="w-10 h-10 border-2 border-[var(--accent)]/30 border-t-[var(--accent)] rounded-full animate-spin"></div>
+            <div class="flex justify-center py-8"><div class="w-8 h-8 border-2 border-[var(--accent)]/30 border-t-[var(--accent)] rounded-full animate-spin"></div></div>
           {:else}
-            <img src={qrSrc} alt="QRIS" class="w-48 h-48 rounded-xl tactile-inset" />
+            <img src={qrSrc} alt="QRIS" class="w-52 h-52 rounded-xl tactile-inset" />
           {/if}
+        </div>
+        <div class="tactile-inset p-4 space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-[var(--text-muted)]">Kode Unik</span>
+            <span class="font-semibold text-[var(--accent)]">{created.unique_code || 0}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[var(--text-muted)]">Nominal</span>
+            <span class="font-semibold">{fmtIDR(created.amount)}</span>
+          </div>
+          <div class="flex justify-between pt-2 border-t border-[var(--border-subtle)]">
+            <span class="font-bold">Total Dibayar</span>
+            <span class="font-bold text-[var(--accent)]">{fmtIDR(created.amount_to_pay)}</span>
+          </div>
+          <p class="text-[10px] text-[var(--text-muted)] font-mono break-all">TRX-ID: {created.trx_id}</p>
         </div>
         <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
       </div>
