@@ -126,18 +126,61 @@ body {
   transform: translateY(1px);
 }
 
-/* Wax Pill / Badge */
+/* Wax Pill / Badge — clay surface, warna status lewat var tint (kelas .pill-* di bawah) */
 @utility tactile-pill {
-  background: var(--card-base);
+  background: var(--pill-bg, var(--card-base));
+  color: var(--pill-text, var(--text-main));
+  border: 1px solid var(--pill-border, var(--border-subtle));
   box-shadow:
     3px 3px 6px var(--shadow-dark),
     -3px -3px 6px var(--shadow-light),
     inset 1px 1px 1px var(--wax-specular);
-  border: 1px solid var(--border-subtle);
   border-radius: 9999px;
   transition:
     background 0.3s ease,
     box-shadow 0.3s ease;
+}
+
+/* Status pill tints — dipasang bareng tactile-pill */
+.pill-green {
+  --pill-bg: rgba(16, 185, 129, 0.15);
+  --pill-text: #047857;
+  --pill-border: rgba(16, 185, 129, 0.4);
+}
+.dark .pill-green {
+  --pill-bg: rgba(16, 185, 129, 0.12);
+  --pill-text: #34d399;
+  --pill-border: rgba(52, 211, 153, 0.35);
+}
+.pill-amber {
+  --pill-bg: rgba(217, 119, 6, 0.15);
+  --pill-text: #b45309;
+  --pill-border: rgba(217, 119, 6, 0.4);
+}
+.dark .pill-amber {
+  --pill-bg: rgba(217, 119, 6, 0.12);
+  --pill-text: #fbbf24;
+  --pill-border: rgba(251, 191, 36, 0.35);
+}
+.pill-red {
+  --pill-bg: rgba(220, 38, 38, 0.12);
+  --pill-text: #b91c1c;
+  --pill-border: rgba(220, 38, 38, 0.4);
+}
+.dark .pill-red {
+  --pill-bg: rgba(220, 38, 38, 0.12);
+  --pill-text: #f87171;
+  --pill-border: rgba(248, 113, 113, 0.35);
+}
+.pill-gray {
+  --pill-bg: rgba(100, 116, 139, 0.15);
+  --pill-text: #475569;
+  --pill-border: rgba(100, 116, 139, 0.35);
+}
+.dark .pill-gray {
+  --pill-bg: rgba(148, 163, 184, 0.1);
+  --pill-text: #94a3b8;
+  --pill-border: rgba(148, 163, 184, 0.3);
 }
 
 /* Modal card — drop shadow only (no clay white glow), ala mockup clay-modal-card */

@@ -8,7 +8,7 @@
 
   let err = $state('');
   let busy = $state(false);
-  let username = $state('');
+  let email = $state('');
   let password = $state('');
   let showPass = $state(false);
 
@@ -19,8 +19,7 @@
     busy = true;
     err = '';
     try {
-      await admin.login(username, password);
-      localStorage.setItem('gomerch_username', username);
+      await admin.login(email, password);
       await checkAuth();
       goto('/dashboard');
     } catch (e: any) {
@@ -54,10 +53,10 @@
     <ErrBox msg={err} />
 
     <div class="space-y-1.5">
-      <label for="login-user" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Username</label>
+      <label for="login-email" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Email</label>
       <div class="input-well px-4 py-3 flex items-center">
-        <i class="fa-regular fa-user text-[var(--text-muted)] mr-3"></i>
-        <input id="login-user" use:autofocus bind:value={username} placeholder="username" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+        <i class="fa-regular fa-envelope text-[var(--text-muted)] mr-3"></i>
+        <input id="login-email" type="email" use:autofocus bind:value={email} placeholder="email" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
       </div>
     </div>
     <div class="space-y-1.5">

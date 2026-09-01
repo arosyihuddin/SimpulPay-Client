@@ -50,8 +50,8 @@
       to: "/settings",
       label: "Settings",
       icon: "fa-solid fa-gear",
-      title: "Pengaturan API",
-      subtitle: "Kunci API, password, dan konfigurasi akun",
+      title: "Pengaturan Akun",
+      subtitle: "Kredensial dan keamanan akun",
     },
   ];
   // Developer = group collapse: Docs + API Key.
@@ -130,12 +130,9 @@
     "Transaksi dari merchant terpilih",
   ];
 
-  let username = $state(
-    typeof localStorage !== "undefined"
-      ? localStorage.getItem("gomerch_username") || "Admin"
-      : "Admin",
-  );
+  const activePath = $derived($page.url.pathname);
 
+  // Auth guard — redirect unauthed, block non-admin from admin pages.
   $effect(() => {
     if (auth.ready && !auth.authed) goto("/");
     else if (
@@ -146,8 +143,6 @@
     )
       goto("/dashboard");
   });
-
-  const activePath = $derived($page.url.pathname);
   const isActive = (to: string) =>
     activePath === to || (to === "/merchants" && activePath.startsWith("/merchants/"));
   // Developer collapse — auto-buka kalau route aktif di dalamnya.
@@ -334,7 +329,7 @@
             <i class="fa-solid fa-user"></i>
           </div>
           <div class="min-w-0">
-            <p class="text-xs font-bold truncate">{username}</p>
+            <p class="text-sm font-bold truncate">{auth.name || auth.email}</p>
             <p class="text-[11px] text-[var(--text-muted)]">
               {auth.role === "admin" ? "Admin" : "User"}
             </p>

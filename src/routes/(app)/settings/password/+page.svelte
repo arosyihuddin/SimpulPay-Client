@@ -1,5 +1,6 @@
 <script lang="ts">
   import { admin } from '$lib/api';
+  import { auth } from '$lib/auth.svelte';
   import { goto } from '$app/navigation';
 
   let oldPw = $state('');
@@ -8,7 +9,6 @@
   let show = $state(false);
   let busy = $state(false);
   let err = $state('');
-  const username = $state(typeof localStorage !== 'undefined' ? localStorage.getItem('gomerch_username') || '' : '');
 
   async function submit(e: SubmitEvent) {
     e.preventDefault();
@@ -16,7 +16,7 @@
     try {
       if (newPw.length < 8) throw new Error('Password baru minimal 8 karakter');
       if (newPw !== confirm) throw new Error('Konfirmasi password tidak cocok');
-      await admin.changePassword(username, oldPw, newPw);
+      await admin.changePassword(auth.email, oldPw, newPw);
       goto('/settings');
     } catch (e: any) { err = e.message; }
     finally { busy = false; }
@@ -35,7 +35,7 @@
       </div>
       <div>
         <h1 class="text-lg font-bold tracking-wide">Ganti Password</h1>
-        <p class="text-xs text-[var(--text-muted)] font-medium">Akun: {username || '—'}</p>
+        <p class="text-xs text-[var(--text-muted)] font-medium">Akun: {auth.email || '—'}</p>
       </div>
     </div>
 

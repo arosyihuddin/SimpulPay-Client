@@ -40,9 +40,13 @@
     n ? new Date(n).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
   const statusCls = (st: string) =>
-    st === 'active' || st === 'PAID' || st === 'Lunas'
-      ? 'bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30'
-      : 'bg-slate-200/60 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300 border border-slate-300/50 dark:border-slate-600/40';
+    st === 'active' || st === 'paid' || st === 'PAID' || st === 'Lunas'
+      ? 'tactile-pill pill-green'
+    : st === 'pending'
+      ? 'tactile-pill pill-amber'
+    : st === 'overdue' || st === 'failed'
+      ? 'tactile-pill pill-red'
+    : 'tactile-pill pill-gray';
 
   const parseFeatures = (j: string | null): string[] => {
     if (!j) return [];

@@ -35,18 +35,20 @@ const withMerchant = (path: string, merchantId?: string | null) =>
 
 export const admin = {
   // Auth — public login/logout, /me pakai cookie session (customer guard).
-  login: (username: string, password: string) =>
-    api("/login", { method: "POST", body: { username, password } }),
+  login: (email: string, password: string) =>
+    api("/login", { method: "POST", body: { email, password } }),
   logout: () => api("/logout", { method: "POST" }),
   me: () => api("/me"),
+  updateProfile: (patch: { name?: string; phone?: string; email?: string }) =>
+    api<any>("/profile", { method: "PATCH", body: patch }),
   changePassword: (
-    username: string,
+    email: string,
     old_password: string,
     new_password: string,
   ) =>
     api<any>("/change-password", {
       method: "POST",
-      body: { username, old_password, new_password },
+      body: { email, old_password, new_password },
     }),
 
   // Merchant CRUD (customer routes, tanpa /admin)
@@ -107,8 +109,12 @@ export const admin = {
       body: { image },
     }),
 
-  // Settings + API keys (customer routes)
+  // Konfigurasi gateway per-user (customer routes)
   settings: () => api<any>("/settings"),
+  updateSettings: (patch: Record<string, unknown>) =>
+    api<any>("/settings", { method: "PATCH", body: patch }),
+
+  // API keys (customer routes)
   createApiKey: (label?: string, merchantId?: string | null) =>
     api<any>("/api-keys", {
       method: "POST",
@@ -160,14 +166,14 @@ export const admin = {
   listUsers: (limit = 50, offset = 0) =>
     api<any>(`/admin/users?limit=${limit}&offset=${offset}`),
   createUser: (
-    username: string,
+    email: string,
     password: string,
     role: string,
     extra?: Record<string, unknown>,
   ) =>
     api<any>("/admin/users", {
       method: "POST",
-      body: { username, password, role, ...extra },
+      body: { email, password, role, ...extra },
     }),
   updateUser: (id: string, patch: Record<string, unknown>) =>
     api<any>(`/admin/users/${id}`, { method: "PATCH", body: patch }),

@@ -5,20 +5,17 @@
   import { addToast } from '$lib/toast.svelte';
 
   // User sistem GoMerch — data dari backend (GET /admin/users).
-  // Field billing (name/email/plan/status/key/next) opsional; terisi setelah backend di-update.
+  // Backend pakai email sebagai identitas (username sudah dihapus).
 
   interface User {
     id: string;
-    username: string;
+    email: string;
     role: string;
+    status: string;
     created_at: number;
     updated_at: number;
-    name?: string;
-    email?: string;
     plan?: { id: string; name: string; type: string; price: number; max_merchants: number; daily_paid_limit: number | null; } | null;
-    status?: string;
-    next?: string;
-    lastActive?: string;
+    latest_invoice?: { id: string; amount: number; status: string; period_end: number; } | null;
   }
   interface Plan { id: string; name: string; type: string; price: number; max_merchants: number; daily_paid_limit: number | null; features_json: string | null; active: boolean; }
 
@@ -60,8 +57,7 @@
   const PAGE_SIZE = 5;
   let page = $state(1);
   const filtered = $derived(users.filter((u) =>
-    (u.name || u.username).toLowerCase().includes(q.toLowerCase()) ||
-    (u.email || '').toLowerCase().includes(q.toLowerCase()) ||
+    u.email.toLowerCase().includes(q.toLowerCase()) ||
     u.role.toLowerCase().includes(q.toLowerCase())));
   const pageItems = $derived(filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
   function setPage(p: number) { page = p; }
@@ -88,8 +84,8 @@
     : st === 'suspended' ? 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'
     : 'bg-red-100/70 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200/60 dark:border-red-500/30';
 
-  const displayName = (u: User) => u.name || u.username;
-  const initials = (u: User) => displayName(u).split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  const displayName = (u: User) => u.email;
+  const initials = (u: User) => displayName(u).split('@')[0].slice(0, 2).toUpperCase();
   const fmtDate = (iso: string | number | undefined) =>
     iso ? new Date(typeof iso === 'number' ? iso : iso + (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? 'T00:00:00' : '')).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
   const fmtTime = (ts: number) => ts ? new Date(ts).toLocaleString('id-ID') : '—';
@@ -106,7 +102,7 @@
   // ---- Form tambah / edit ----
   let editOpen = $state(false);
   let editing = $state<User | null>(null);
-  const emptyForm = () => ({ username: '', password: '', role: 'customer', name: '', email: '', plan: '', status: 'active', next: '' });
+  const emptyForm = () => ({ email: '', password: '', role: 'customer', plan: '', status: 'active' });
   let form = $state(emptyForm());
   let showPass = $state(false);
   let formErr = $state('');
@@ -126,7 +122,7 @@
     showPass = false;
     formErr = '';
     loadPlans();
-    form = { username: u.username, password: '', role: u.role, name: u.name || '', email: u.email || '', plan: u.plan?.id || defaultPlan, status: u.status || 'active', next: u.next || '' };
+    form = { email: u.email, password: '', role: u.role, plan: u.plan?.id || defaultPlan, status: u.status || 'active' };
     editOpen = true;
   }
   function openAdd() {
@@ -141,24 +137,20 @@
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   async function save() {
     formErr = '';
-    const username = form.username.trim();
-    const name = form.name.trim();
-    const email = form.email.trim();
-    if (!name || !email) { formErr = 'Nama dan email wajib diisi.'; return; }
+    const email = form.email.trim().toLowerCase();
     if (!EMAIL_RE.test(email)) { formErr = 'Format email tidak valid.'; return; }
-    if (username.length < 3) { formErr = 'Username minimal 3 karakter.'; return; }
     if (!editing && form.password.length < 8) { formErr = 'Password minimal 8 karakter.'; return; }
     if (editing && form.password && form.password.length < 8) { formErr = 'Password minimal 8 karakter.'; return; }
     if (!ROLES.includes(form.role)) { formErr = 'Role tidak valid.'; return; }
-    const extra = { name, email, plan_id: form.plan, status: form.status, next: form.next };
+    const extra = { plan_id: form.plan, status: form.status };
     saving = true;
     try {
       if (editing) {
-        const patch: any = { username, role: form.role, ...extra };
+        const patch: any = { email, role: form.role, ...extra };
         if (form.password) patch.password = form.password;
         await admin.updateUser(editing.id, patch);
       } else {
-        await admin.createUser(username, form.password, form.role, extra);
+        await admin.createUser(email, form.password, form.role, extra);
       }
       await load();
       editOpen = false;
@@ -292,12 +284,12 @@
                 {/if}
               </td>
               <td class="px-4 py-3"><span class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(u.role)}">{roleLabel(u.role)}</span></td>
-              <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{fmtDate(u.next)}</td>
+              <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{fmtDate(u.latest_invoice?.period_end)}</td>
               <td class="px-4 py-3 text-right">
                 <div class="flex items-center justify-end gap-2">
                   <button class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]" onclick={() => openDetail(u)}>Lihat</button>
-                  <button aria-label="Edit {u.username}" class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]" onclick={() => openEdit(u)}><i class="fa-solid fa-pen"></i></button>
-                  <button aria-label="Hapus {u.username}" class="tactile-btn px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => (delTarget = u)}><i class="fa-solid fa-trash-can"></i></button>
+                  <button aria-label="Edit {u.email}" class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]" onclick={() => openEdit(u)}><i class="fa-solid fa-pen"></i></button>
+                  <button aria-label="Hapus {u.email}" class="tactile-btn px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => (delTarget = u)}><i class="fa-solid fa-trash-can"></i></button>
                 </div>
               </td>
             </tr>
@@ -321,7 +313,7 @@
             </div>
             <div class="min-w-0 flex-1">
               <p class="font-bold truncate">{displayName(u)}</p>
-              <p class="text-xs text-[var(--text-muted)] truncate">{u.email || u.username}</p>
+              <p class="text-xs text-[var(--text-muted)] truncate">{u.plan?.name || '—'}</p>
             </div>
             <span class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(u.role)}">{roleLabel(u.role)}</span>
           </div>
@@ -333,12 +325,12 @@
             <span class="text-xs font-mono text-[var(--text-muted)] ml-auto">{u.id}</span>
           </div>
           <div class="text-xs text-[var(--text-muted)] flex justify-between">
-            <span>Tagihan: {fmtDate(u.next)}</span>
+            <span>Tagihan: {fmtDate(u.latest_invoice?.period_end)}</span>
           </div>
           <div class="flex gap-2">
             <button class="tactile-btn flex-1 py-2 text-xs font-bold text-[var(--accent)]" onclick={() => openDetail(u)}>Lihat</button>
-            <button aria-label="Edit {u.username}" class="tactile-btn px-3 py-2 text-xs font-bold text-[var(--text-muted)]" onclick={() => openEdit(u)}><i class="fa-solid fa-pen"></i></button>
-            <button aria-label="Hapus {u.username}" class="tactile-btn px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => (delTarget = u)}><i class="fa-solid fa-trash-can"></i></button>
+            <button aria-label="Edit {u.email}" class="tactile-btn px-3 py-2 text-xs font-bold text-[var(--text-muted)]" onclick={() => openEdit(u)}><i class="fa-solid fa-pen"></i></button>
+            <button aria-label="Hapus {u.email}" class="tactile-btn px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400" onclick={() => (delTarget = u)}><i class="fa-solid fa-trash-can"></i></button>
           </div>
         </div>
       {/each}
@@ -367,7 +359,7 @@
         </div>
         <div>
           <p class="font-bold">{displayName(sel)}</p>
-          <p class="text-xs text-[var(--text-muted)]">{sel.email || sel.username}</p>
+          <p class="text-xs text-[var(--text-muted)]">{sel.plan?.name || '—'}</p>
         </div>
       </div>
 
@@ -377,8 +369,8 @@
           <span class="font-mono text-xs">{sel.id}</span>
         </div>
         <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
-          <span class="text-[var(--text-muted)]">Username</span>
-          <span class="font-semibold">{sel.username}</span>
+          <span class="text-[var(--text-muted)]">Email</span>
+          <span class="font-semibold break-all">{sel.email}</span>
         </div>
         <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
           <span class="text-[var(--text-muted)]">Role</span>
@@ -398,11 +390,7 @@
         </div>
         <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
           <span class="text-[var(--text-muted)]">Tagihan Berikutnya</span>
-          <span class="font-semibold">{fmtDate(sel.next)}</span>
-        </div>
-        <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
-          <span class="text-[var(--text-muted)]">Aktif Terakhir</span>
-          <span class="font-semibold">{sel.lastActive || '—'}</span>
+          <span class="font-semibold">{fmtDate(sel.latest_invoice?.period_end)}</span>
         </div>
         <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
           <span class="text-[var(--text-muted)]">Dibuat</span>
@@ -438,16 +426,8 @@
           <p class="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{formErr}</p>
         {/if}
         <div>
-          <label for="user-name" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Nama</label>
-          <input id="user-name" bind:value={form.name} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
-        </div>
-        <div>
           <label for="user-email" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Email</label>
           <input id="user-email" type="email" bind:value={form.email} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
-        </div>
-        <div>
-          <label for="user-username" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Username</label>
-          <input id="user-username" bind:value={form.username} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -481,10 +461,6 @@
               {/each}
             </select>
           </div>
-        </div>
-        <div>
-          <label for="user-next" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Tagihan Berikutnya</label>
-          <input id="user-next" type="date" bind:value={form.next} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
         </div>
         <div>
           <div class="flex items-center justify-between mb-1">
@@ -534,7 +510,7 @@
         <button type="button" aria-label="Tutup" onclick={() => (delTarget = null)} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <p class="text-sm text-[var(--text-muted)]">
-        Yakin hapus user <span class="font-bold text-[var(--text)]">'{delTarget.name || delTarget.username}'</span>? Tindakan ini tidak bisa dibatalkan.
+        Yakin hapus user <span class="font-bold text-[var(--text)]">'{delTarget.email}'</span>? Tindakan ini tidak bisa dibatalkan.
       </p>
       {#if delErr}
         <p class="mt-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{delErr}</p>

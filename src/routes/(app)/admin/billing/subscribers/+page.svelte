@@ -13,7 +13,6 @@
     starts_at: number;
     ends_at: number | null;
     plan_name?: string;
-    username?: string;
   }
 
   let subs = $state<Subscription[]>([]);
@@ -163,7 +162,7 @@
           {#each subs as s (s.id)}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               <td class="px-4 py-3">
-                <p class="font-bold">{s.username || "—"}</p>
+                <p class="font-bold">{s.user_id || "—"}</p>
                 <p class="text-xs font-mono text-[var(--text-muted)]">{s.id}</p>
               </td>
               <td class="px-4 py-3 font-semibold">{s.plan_name || s.plan_id}</td
@@ -212,7 +211,7 @@
       {#each subs as s (s.id)}
         <div class="tactile-box p-4 space-y-2">
           <div class="flex items-center justify-between">
-            <p class="font-bold">{s.username || "—"}</p>
+            <p class="font-bold">{s.user_id || "—"}</p>
             <span
               class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(
                 s.status,
@@ -253,7 +252,7 @@
       <h3 class="text-lg font-bold mb-2">Batalkan Langganan</h3>
       <p class="text-sm text-[var(--text-muted)]">
         Batalkan langganan <span class="font-semibold text-[var(--text-main)]"
-          >{cancelSub.username || cancelSub.id}</span
+          >{cancelSub.user_id || cancelSub.id}</span
         >? Aksi tidak bisa dibatalkan.
       </p>
       <div class="flex gap-2 pt-4">
