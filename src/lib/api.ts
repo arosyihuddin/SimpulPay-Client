@@ -29,11 +29,6 @@ async function api<T = any>(
   return data as T;
 }
 
-const withMerchant = (path: string, merchantId?: string | null) =>
-  merchantId
-    ? `${path}${path.includes("?") ? "&" : "?"}merchant_id=${encodeURIComponent(merchantId)}`
-    : path;
-
 export const admin = {
   // Auth — public login/logout, /me pakai cookie session (customer guard).
   login: (email: string, password: string) =>
@@ -64,8 +59,8 @@ export const admin = {
 
   // Per-merchant: dashboard, qris, GoBiz (customer routes)
   dashboard: () => api<any>("/dashboard"),
-  createQris: (amount: number, merchantId?: string | null) =>
-    api<any>(withMerchant("/qris", merchantId), {
+  createQris: (amount: number, merchantId: string) =>
+    api<any>(`/merchants/${merchantId}/qris`, {
       method: "POST",
       body: { amount },
     }),
