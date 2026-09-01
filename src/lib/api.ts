@@ -114,6 +114,7 @@ export const admin = {
   settings: () => api<any>("/settings"),
   updateSettings: (patch: Record<string, unknown>) =>
     api<any>("/settings", { method: "PATCH", body: patch }),
+  webhookInfo: () => api<any>("/settings/webhook"),
 
   // API keys (customer routes)
   createApiKey: (label?: string, merchantId?: string | null) =>

@@ -14,6 +14,7 @@
     fee_percent: string;
     pooling_interval: string;
     webhook_enabled: string;
+    webhook_url: string;
   }
 
   let form = $state<GatewaySettings>({
@@ -24,13 +25,35 @@
     fee_percent: '0',
     pooling_interval: '5000',
     webhook_enabled: 'false',
+    webhook_url: '',
   });
   let loading = $state(true);
-  let saving = $state(false);
   let err = $state('');
+
+  // Save per-field: 1 request per field, bukan 1 request besar.
+  let saving = $state<Record<string, boolean>>({});
+  let saved = $state<Record<string, boolean>>({});
+
+  // Webhook secret — cuma bisa dilihat lewat GET /settings/webhook
+  interface WebhookInfo {
+    webhook_url: string;
+    webhook_enabled: string;
+    webhook_secret: string;
+  }
+  let webhook = $state<WebhookInfo | null>(null);
+  let whLoading = $state(false);
+  let whBusy = $state(false);
+  let showSecret = $state(false);
 
   // ponytail: expand list kalau backend dukung mata uang lain
   const CURRENCIES = ['IDR', 'USD', 'SGD'];
+  const NUM_KEYS = [
+    'min_amount',
+    'max_amount',
+    'fee_percent',
+    'qris_expiry_minutes',
+    'pooling_interval',
+  ];
 
   // ---- Edit profil ----
   let editOpen = $state(false);
@@ -70,12 +93,14 @@
     }
   }
 
+  // ---- Load & per-field save ----
   async function load() {
     loading = true;
     err = '';
     try {
       const r = await admin.settings();
       form = { ...(r.data?.settings as GatewaySettings) };
+      loadWebhook();
     } catch (e: any) {
       err = e.message;
     } finally {
@@ -84,43 +109,78 @@
   }
   onMount(load);
 
-  async function saveSettings() {
-    err = '';
-    const min = Number(form.min_amount);
-    const max = Number(form.max_amount);
-    const nums: [string, number][] = [
-      ['min_amount', min],
-      ['max_amount', max],
-      ['fee_percent', Number(form.fee_percent)],
-      ['qris_expiry_minutes', Number(form.qris_expiry_minutes)],
-      ['pooling_interval', Number(form.pooling_interval)],
-    ];
-    for (const [k, v] of nums) {
-      if (isNaN(v) || v < 0) {
-        err = `${k} harus angka ≥ 0`;
-        return;
-      }
-    }
-    if (max < min) {
-      err = 'Max amount harus ≥ min amount';
-      return;
-    }
-    if (form.webhook_enabled !== 'true' && form.webhook_enabled !== 'false') {
-      err = 'Webhook enabled tidak valid';
-      return;
-    }
-    saving = true;
+  async function loadWebhook() {
+    whLoading = true;
     try {
-      const res = await admin.updateSettings({ ...form });
-      form = { ...(res.data?.settings as GatewaySettings) };
-      addToast('success', 'Konfigurasi gateway disimpan.');
+      const r = await admin.webhookInfo();
+      webhook = r.data as WebhookInfo;
     } catch (e: any) {
       err = e.message;
     } finally {
-      saving = false;
+      whLoading = false;
     }
   }
 
+  /** Simpan satu field — PATCH cuma berisi field itu, sisanya server yang merge. */
+  async function saveField(key: keyof GatewaySettings) {
+    if (NUM_KEYS.includes(key)) {
+      const v = Number(form[key]);
+      if (isNaN(v) || v < 0) {
+        err = `${key} harus angka ≥ 0`;
+        return;
+      }
+      if (key === 'max_amount' && Number(form.max_amount) < Number(form.min_amount)) {
+        err = 'Max amount harus ≥ min amount';
+        return;
+      }
+    }
+    err = '';
+    saved[key] = false;
+    saving[key] = true;
+    try {
+      const res = await admin.updateSettings({ [key]: form[key] });
+      form = { ...(res.data?.settings as GatewaySettings) };
+      saved[key] = true;
+      setTimeout(() => { saved[key] = false; }, 2000);
+      // Pertama kali set webhook_url → backend auto-generate secret, refresh tampilan.
+      if (key === 'webhook_url') loadWebhook();
+    } catch (e: any) {
+      err = e.message;
+    } finally {
+      saving[key] = false;
+    }
+  }
+
+  async function rotateSecret() {
+    whBusy = true;
+    err = '';
+    try {
+      await admin.updateSettings({ webhook_secret: 'regenerate' });
+      await loadWebhook();
+      addToast('success', 'Webhook secret diganti.');
+    } catch (e: any) {
+      err = e.message;
+    } finally {
+      whBusy = false;
+    }
+  }
+
+  async function copySecret() {
+    if (!webhook?.webhook_secret) return;
+    try {
+      await navigator.clipboard.writeText(webhook.webhook_secret);
+      addToast('success', 'Secret disalin.');
+    } catch {
+      addToast('error', 'Gagal menyalin secret.');
+    }
+  }
+
+  // Indikator status per field: spinner saat menyimpan, centang saat tersimpan.
+  const fieldStatus = (key: string) => {
+    if (saving[key]) return `<i class="fa-solid fa-spinner fa-spin text-[var(--text-muted)]"></i>`;
+    if (saved[key]) return `<i class="fa-solid fa-check text-emerald-500"></i>`;
+    return '';
+  };
 </script>
 
 <div class="space-y-6">
@@ -169,7 +229,7 @@
       <i class="fa-solid fa-sliders text-[var(--accent)]"></i>
       <div>
         <h2 class="font-semibold">Konfigurasi Gateway</h2>
-        <p class="text-xs text-[var(--text-muted)]">Default per-user untuk QRIS & transaksi</p>
+        <p class="text-xs text-[var(--text-muted)]">Tiap field tersimpan otomatis saat berubah</p>
       </div>
     </div>
 
@@ -184,91 +244,195 @@
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label for="set-currency" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Mata Uang</label>
-          <select
-            id="set-currency"
-            bind:value={form.default_currency}
-            class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer"
-          >
-            {#each CURRENCIES as c (c)}
-              <option value={c}>{c}</option>
-            {/each}
-          </select>
+          <div class="relative">
+            <select
+              id="set-currency"
+              value={form.default_currency}
+              onchange={(e) => {
+                form.default_currency = e.currentTarget.value;
+                saveField('default_currency');
+              }}
+              class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer appearance-none pr-8"
+            >
+              {#each CURRENCIES as c (c)}
+                <option value={c}>{c}</option>
+              {/each}
+            </select>
+            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('default_currency')}</span>
+          </div>
         </div>
         <div>
           <label for="set-expiry" class="block text-xs font-bold text-[var(--text-muted)] mb-1">QRIS Expiry (menit)</label>
-          <input
-            id="set-expiry"
-            type="number"
-            min="0"
-            bind:value={form.qris_expiry_minutes}
-            class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none"
-          />
+          <div class="relative">
+            <input
+              id="set-expiry"
+              type="number"
+              min="0"
+              value={form.qris_expiry_minutes}
+              oninput={(e) => { form.qris_expiry_minutes = e.currentTarget.value; saved.qris_expiry_minutes = false; }}
+              onblur={() => saveField('qris_expiry_minutes')}
+              class="w-full tactile-inset px-4 py-2.5 pr-8 text-sm focus:outline-none"
+            />
+            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('qris_expiry_minutes')}</span>
+          </div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label for="set-min" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Min Amount</label>
-          <input
-            id="set-min"
-            type="number"
-            min="0"
-            bind:value={form.min_amount}
-            class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none"
-          />
+          <div class="relative">
+            <input
+              id="set-min"
+              type="number"
+              min="0"
+              value={form.min_amount}
+              oninput={(e) => { form.min_amount = e.currentTarget.value; saved.min_amount = false; }}
+              onblur={() => saveField('min_amount')}
+              class="w-full tactile-inset px-4 py-2.5 pr-8 text-sm focus:outline-none"
+            />
+            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('min_amount')}</span>
+          </div>
         </div>
         <div>
           <label for="set-max" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Max Amount</label>
-          <input
-            id="set-max"
-            type="number"
-            min="0"
-            bind:value={form.max_amount}
-            class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none"
-          />
+          <div class="relative">
+            <input
+              id="set-max"
+              type="number"
+              min="0"
+              value={form.max_amount}
+              oninput={(e) => { form.max_amount = e.currentTarget.value; saved.max_amount = false; }}
+              onblur={() => saveField('max_amount')}
+              class="w-full tactile-inset px-4 py-2.5 pr-8 text-sm focus:outline-none"
+            />
+            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('max_amount')}</span>
+          </div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label for="set-fee" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Fee (%)</label>
-          <input
-            id="set-fee"
-            type="number"
-            min="0"
-            step="0.01"
-            bind:value={form.fee_percent}
-            class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none"
-          />
+          <div class="relative">
+            <input
+              id="set-fee"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.fee_percent}
+              oninput={(e) => { form.fee_percent = e.currentTarget.value; saved.fee_percent = false; }}
+              onblur={() => saveField('fee_percent')}
+              class="w-full tactile-inset px-4 py-2.5 pr-8 text-sm focus:outline-none"
+            />
+            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('fee_percent')}</span>
+          </div>
         </div>
         <div>
           <label for="set-pool" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Pooling Interval (ms)</label>
-          <input
-            id="set-pool"
-            type="number"
-            min="0"
-            bind:value={form.pooling_interval}
-            class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none"
-          />
+          <div class="relative">
+            <input
+              id="set-pool"
+              type="number"
+              min="0"
+              value={form.pooling_interval}
+              oninput={(e) => { form.pooling_interval = e.currentTarget.value; saved.pooling_interval = false; }}
+              onblur={() => saveField('pooling_interval')}
+              class="w-full tactile-inset px-4 py-2.5 pr-8 text-sm focus:outline-none"
+            />
+            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('pooling_interval')}</span>
+          </div>
         </div>
       </div>
+    {/if}
+  </section>
 
+  <!-- WEBHOOK -->
+  <section class="tactile-box p-5 space-y-4">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-bolt text-[var(--accent)]"></i>
+      <div class="flex-1">
+        <h2 class="font-semibold">Webhook</h2>
+        <p class="text-xs text-[var(--text-muted)]">Notifikasi transaksi dikirim ke URL ini</p>
+      </div>
       <button
-        onclick={() => (form.webhook_enabled = form.webhook_enabled === 'true' ? 'false' : 'true')}
-        class="tactile-btn w-full py-2.5 text-xs font-bold flex items-center justify-center gap-2 {form.webhook_enabled === 'true'
+        onclick={() => {
+          form.webhook_enabled = form.webhook_enabled === 'true' ? 'false' : 'true';
+          saveField('webhook_enabled');
+        }}
+        class="tactile-btn px-3 py-1.5 text-xs font-bold flex items-center gap-2 {form.webhook_enabled === 'true'
           ? 'text-emerald-600 dark:text-emerald-400'
           : 'text-[var(--text-muted)]'}"
       >
-        <i class="fa-solid {form.webhook_enabled === 'true' ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
-        Webhook {form.webhook_enabled === 'true' ? 'Aktif' : 'Nonaktif'}
+        {#if saving.webhook_enabled}
+          <i class="fa-solid fa-spinner fa-spin"></i>
+        {:else}
+          <i class="fa-solid {form.webhook_enabled === 'true' ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+        {/if}
+        {form.webhook_enabled === 'true' ? 'Aktif' : 'Nonaktif'}
       </button>
+    </div>
 
-      <button
-        onclick={saveSettings}
-        disabled={saving}
-        class="tactile-btn w-full py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <i class="fa-solid fa-floppy-disk"></i>
-        {saving ? 'Menyimpan...' : 'Simpan'}
-      </button>
+    {#if loading}
+      <div class="space-y-3">
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-4 w-40" />
+      </div>
+    {:else}
+      <div>
+        <label for="set-webhook-url" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Webhook URL</label>
+        <div class="relative">
+          <input
+            id="set-webhook-url"
+            type="url"
+            placeholder="https://example.com/webhook"
+            value={form.webhook_url}
+            oninput={(e) => { form.webhook_url = e.currentTarget.value; saved.webhook_url = false; }}
+            onblur={() => saveField('webhook_url')}
+            class="w-full tactile-inset px-4 py-2.5 pr-8 text-sm focus:outline-none"
+          />
+          <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('webhook_url')}</span>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-bold text-[var(--text-muted)]">Webhook Secret</p>
+          <div class="flex gap-2">
+            <button
+              onclick={() => (showSecret = !showSecret)}
+              class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]"
+            >
+              <i class="fa-solid {showSecret ? 'fa-eye-slash' : 'fa-eye'} mr-1"></i>
+              {showSecret ? 'Sembunyikan' : 'Lihat'}
+            </button>
+            <button
+              onclick={copySecret}
+              class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]"
+              title="Salin secret"
+            >
+              <i class="fa-solid fa-copy"></i>
+            </button>
+            <button
+              onclick={rotateSecret}
+              disabled={whBusy}
+              class="tactile-btn px-3 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <i class="fa-solid fa-rotate mr-1"></i>
+              {whBusy ? 'Mengganti...' : 'Ganti'}
+            </button>
+          </div>
+        </div>
+        {#if whLoading}
+          <Skeleton className="h-9 w-full" />
+        {:else if webhook?.webhook_secret}
+          <code
+            class="block w-full tactile-inset px-4 py-2.5 text-xs font-mono break-all {showSecret ? '' : 'select-none'}"
+          >{showSecret ? webhook.webhook_secret : '•'.repeat(Math.min(webhook.webhook_secret.length, 32))}</code>
+        {:else}
+          <p class="text-xs text-[var(--text-muted)]">
+            Belum ada secret. Isi Webhook URL di atas — secret dibuat otomatis.
+          </p>
+        {/if}
+      </div>
     {/if}
   </section>
 </div>

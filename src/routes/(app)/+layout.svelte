@@ -159,10 +159,10 @@
     activePath === to || activePath.startsWith(to + "/");
   // Lainnya ikut aktif kalau halaman sekarang masuk drawer mobile.
   const moreActive = $derived(MOBILE_MORE.some((l) => isActive(l.to)));
-  // Developer collapse — auto-buka kalau route aktif di dalamnya.
+  // Developer collapse — auto-buka/tutup ikut route aktif.
   let devOpen = $state(false);
   $effect(() => {
-    if (activePath.startsWith(DEVELOPER.to)) devOpen = true;
+    devOpen = activePath.startsWith(DEVELOPER.to);
   });
   const meta = $derived.by(() => {
     const [t, s] = TITLES[activePath] || TITLES["/dashboard"];
@@ -297,9 +297,7 @@
                 {#each DEV_LINKS as l (l.to)}
                   <a
                     href={l.to}
-                    class="tactile-btn flex items-center gap-3 px-4 py-2.5 text-sm font-semibold {isActive(
-                      l.to,
-                    )
+                    class="tactile-btn flex items-center gap-3 px-4 py-2.5 text-sm font-semibold {(l.to === '/developer' ? activePath === '/developer' : isActive(l.to))
                       ? 'active text-[var(--accent)]'
                       : 'text-slate-500 dark:text-slate-400'}"
                   >
