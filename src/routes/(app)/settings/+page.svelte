@@ -153,7 +153,6 @@
               : 'bg-amber-100/70 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30'}"
           >{auth.status || '—'}</span>
         </div>
-        <p class="text-xs text-[var(--text-muted)] truncate">{auth.email || '—'}</p>
       </div>
       <button
         onclick={openEdit}
@@ -164,6 +163,7 @@
       </button>
     </div>
 
+    <Row label="Email" val={auth.email || '—'} />
     <Row label="Telepon" val={auth.phone || '—'} />
 
     <a
