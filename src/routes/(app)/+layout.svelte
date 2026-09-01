@@ -86,10 +86,24 @@
     },
     {
       to: "/admin/billing",
-      label: "Billing Plans",
-      icon: "fa-solid fa-credit-card",
-      title: "Billing Plans",
-      subtitle: "Kelola paket langganan & langganan semua subscriber",
+      label: "Plans",
+      icon: "fa-solid fa-tags",
+      title: "Plans",
+      subtitle: "Kelola paket langganan",
+    },
+    {
+      to: "/admin/billing/subscribers",
+      label: "Subscribers",
+      icon: "fa-solid fa-user-group",
+      title: "Subscribers",
+      subtitle: "Kelola langganan semua subscriber",
+    },
+    {
+      to: "/admin/billing/invoices",
+      label: "Invoices",
+      icon: "fa-solid fa-file-invoice",
+      title: "Invoices",
+      subtitle: "Kelola & approve invoice pembayaran",
     },
     {
       to: "/admin/users",
@@ -136,9 +150,7 @@
 
   const activePath = $derived($page.url.pathname);
   const isActive = (to: string) =>
-    to.startsWith("/admin/") || to === "/merchants"
-      ? activePath.startsWith(to)
-      : activePath === to;
+    activePath === to || (to === "/merchants" && activePath.startsWith("/merchants/"));
   // Developer collapse — auto-buka kalau route aktif di dalamnya.
   let devOpen = $state(false);
   $effect(() => {

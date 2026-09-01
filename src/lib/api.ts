@@ -190,6 +190,14 @@ export const admin = {
   listSubscriptions: () => api<any>("/admin/subscriptions"),
   cancelSubscription: (id: string) =>
     api<any>(`/admin/subscriptions/${id}/cancel`, { method: "POST" }),
+
+  // Admin invoice management
+  listAllInvoices: (params?: { user_id?: string; subscription_id?: string; status?: string; limit?: number; offset?: number }) =>
+    api<any>(`/admin/invoices?${new URLSearchParams((params || {}) as any).toString()}`),
+  markInvoicePaid: (id: string) =>
+    api<any>(`/admin/invoices/${id}/paid`, { method: "POST" }),
+  rejectInvoice: (id: string) =>
+    api<any>(`/admin/invoices/${id}/reject`, { method: "POST" }),
 };
 
 export const fmtIDR = (n: number | null | undefined) =>

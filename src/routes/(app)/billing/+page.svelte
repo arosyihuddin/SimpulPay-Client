@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { admin, fmtIDR } from '$lib/api';
   import Skeleton from '$lib/components/Skeleton.svelte';
+  import QrCodeModal from '$lib/components/QrCodeModal.svelte';
   import { addToast } from '$lib/toast.svelte';
 
   interface Plan {
@@ -72,13 +73,19 @@
   function closePlans() { showPlans = false; }
 
   let subscribing = $state('');
+  let pay = $state<any | null>(null);
   async function subscribe(p: Plan) {
     subscribing = p.id; err = '';
     try {
-      await admin.subscribe(p.id, p.price);
+      const res = await admin.subscribe(p.id, p.price);
       closePlans();
-      addToast('success', 'Langganan ' + p.name + ' aktif.');
-      load();
+      const d = res.data || {};
+      if (d.qris_code) {
+        pay = { code: d.qris_code, amount: d.amount_to_pay || d.amount, trx_id: d.trx_id || '' };
+      } else {
+        addToast('success', 'Langganan ' + p.name + ' aktif.');
+        load();
+      }
     } catch (e: any) { err = e.message; addToast('error', e.message); }
     finally { subscribing = ''; }
   }
@@ -111,8 +118,10 @@
         </div>
       </div>
       <div class="text-sm space-y-1.5 sm:text-right">
-        <p class="flex sm:justify-end gap-3"><span class="text-[var(--text-muted)]">Mulai</span><span class="font-semibold">{fmtDate(sub.starts_at)}</span></p>
-        <p class="flex sm:justify-end gap-3"><span class="text-[var(--text-muted)]">Tagihan Berikutnya</span><span class="font-semibold text-[var(--accent)]">{fmtDate(sub.ends_at)}</span></p>
+        {#if sub.plan_id !== 'p_free'}
+          <p class="flex sm:justify-end gap-3"><span class="text-[var(--text-muted)]">Mulai</span><span class="font-semibold">{fmtDate(sub.starts_at)}</span></p>
+          <p class="flex sm:justify-end gap-3"><span class="text-[var(--text-muted)]">Tagihan Berikutnya</span><span class="font-semibold text-[var(--accent)]">{fmtDate(sub.ends_at)}</span></p>
+        {/if}
         <button onclick={openPlans} class="tactile-btn px-4 py-2 text-xs font-bold text-[var(--accent)] mt-1">{sub.plan_id === 'p_free' ? 'Upgrade Plan' : 'Perpanjang Langganan'}</button>
       </div>
     {:else}
@@ -227,4 +236,9 @@
       </div>
     </div>
   </div>
+{/if}
+
+<!-- QRIS pembayaran langganan -->
+{#if pay}
+  <QrCodeModal code={pay.code} qrAmount={pay.amount} onClose={() => (pay = null)} />
 {/if}
