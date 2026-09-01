@@ -75,6 +75,13 @@
       title: "API Keys",
       subtitle: "Kelola API key untuk integrasi aplikasi",
     },
+    {
+      to: "/developer/webhook",
+      label: "Webhook",
+      icon: "fa-solid fa-bolt",
+      title: "Webhook",
+      subtitle: "Notifikasi transaksi ke URL aplikasi kamu",
+    },
   ];
   const ADMIN_LINKS = [
     {
@@ -279,7 +286,7 @@
           <div class="space-y-1.5">
             <button
               onclick={() => (devOpen = !devOpen)}
-              class="tactile-btn w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold {devOpen
+              class="tactile-btn w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold {activePath === '/developer'
                 ? 'active text-[var(--accent)]'
                 : 'text-slate-500 dark:text-slate-400'} cursor-pointer"
               aria-expanded={devOpen}

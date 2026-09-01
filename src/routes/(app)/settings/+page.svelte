@@ -13,8 +13,6 @@
     max_amount: string;
     fee_percent: string;
     pooling_interval: string;
-    webhook_enabled: string;
-    webhook_url: string;
   }
 
   let form = $state<GatewaySettings>({
@@ -24,8 +22,6 @@
     max_amount: '10000000',
     fee_percent: '0',
     pooling_interval: '5000',
-    webhook_enabled: 'false',
-    webhook_url: '',
   });
   let loading = $state(true);
   let err = $state('');
@@ -33,17 +29,6 @@
   // Save per-field: 1 request per field, bukan 1 request besar.
   let saving = $state<Record<string, boolean>>({});
   let saved = $state<Record<string, boolean>>({});
-
-  // Webhook secret — cuma bisa dilihat lewat GET /settings/webhook
-  interface WebhookInfo {
-    webhook_url: string;
-    webhook_enabled: string;
-    webhook_secret: string;
-  }
-  let webhook = $state<WebhookInfo | null>(null);
-  let whLoading = $state(false);
-  let whBusy = $state(false);
-  let showSecret = $state(false);
 
   // ponytail: expand list kalau backend dukung mata uang lain
   const CURRENCIES = ['IDR', 'USD', 'SGD'];
@@ -100,7 +85,6 @@
     try {
       const r = await admin.settings();
       form = { ...(r.data?.settings as GatewaySettings) };
-      loadWebhook();
     } catch (e: any) {
       err = e.message;
     } finally {
@@ -108,18 +92,6 @@
     }
   }
   onMount(load);
-
-  async function loadWebhook() {
-    whLoading = true;
-    try {
-      const r = await admin.webhookInfo();
-      webhook = r.data as WebhookInfo;
-    } catch (e: any) {
-      err = e.message;
-    } finally {
-      whLoading = false;
-    }
-  }
 
   /** Simpan satu field — PATCH cuma berisi field itu, sisanya server yang merge. */
   async function saveField(key: keyof GatewaySettings) {
@@ -142,36 +114,10 @@
       form = { ...(res.data?.settings as GatewaySettings) };
       saved[key] = true;
       setTimeout(() => { saved[key] = false; }, 2000);
-      // Pertama kali set webhook_url → backend auto-generate secret, refresh tampilan.
-      if (key === 'webhook_url') loadWebhook();
     } catch (e: any) {
       err = e.message;
     } finally {
       saving[key] = false;
-    }
-  }
-
-  async function rotateSecret() {
-    whBusy = true;
-    err = '';
-    try {
-      await admin.updateSettings({ webhook_secret: 'regenerate' });
-      await loadWebhook();
-      addToast('success', 'Webhook secret diganti.');
-    } catch (e: any) {
-      err = e.message;
-    } finally {
-      whBusy = false;
-    }
-  }
-
-  async function copySecret() {
-    if (!webhook?.webhook_secret) return;
-    try {
-      await navigator.clipboard.writeText(webhook.webhook_secret);
-      addToast('success', 'Secret disalin.');
-    } catch {
-      addToast('error', 'Gagal menyalin secret.');
     }
   }
 
@@ -341,97 +287,6 @@
             <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('pooling_interval')}</span>
           </div>
         </div>
-      </div>
-    {/if}
-  </section>
-
-  <!-- WEBHOOK -->
-  <section class="tactile-box p-5 space-y-4">
-    <div class="flex items-center gap-2">
-      <i class="fa-solid fa-bolt text-[var(--accent)]"></i>
-      <div class="flex-1">
-        <h2 class="font-semibold">Webhook</h2>
-        <p class="text-xs text-[var(--text-muted)]">Notifikasi transaksi dikirim ke URL ini</p>
-      </div>
-      <button
-        onclick={() => {
-          form.webhook_enabled = form.webhook_enabled === 'true' ? 'false' : 'true';
-          saveField('webhook_enabled');
-        }}
-        class="tactile-btn px-3 py-1.5 text-xs font-bold flex items-center gap-2 {form.webhook_enabled === 'true'
-          ? 'text-emerald-600 dark:text-emerald-400'
-          : 'text-[var(--text-muted)]'}"
-      >
-        {#if saving.webhook_enabled}
-          <i class="fa-solid fa-spinner fa-spin"></i>
-        {:else}
-          <i class="fa-solid {form.webhook_enabled === 'true' ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
-        {/if}
-        {form.webhook_enabled === 'true' ? 'Aktif' : 'Nonaktif'}
-      </button>
-    </div>
-
-    {#if loading}
-      <div class="space-y-3">
-        <Skeleton className="h-9 w-full" />
-        <Skeleton className="h-4 w-40" />
-      </div>
-    {:else}
-      <div>
-        <label for="set-webhook-url" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Webhook URL</label>
-        <div class="relative">
-          <input
-            id="set-webhook-url"
-            type="url"
-            placeholder="https://example.com/webhook"
-            value={form.webhook_url}
-            oninput={(e) => { form.webhook_url = e.currentTarget.value; saved.webhook_url = false; }}
-            onblur={() => saveField('webhook_url')}
-            class="w-full tactile-inset px-4 py-2.5 pr-8 text-sm focus:outline-none"
-          />
-          <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('webhook_url')}</span>
-        </div>
-      </div>
-
-      <div class="space-y-2">
-        <div class="flex items-center justify-between">
-          <p class="text-xs font-bold text-[var(--text-muted)]">Webhook Secret</p>
-          <div class="flex gap-2">
-            <button
-              onclick={() => (showSecret = !showSecret)}
-              class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]"
-            >
-              <i class="fa-solid {showSecret ? 'fa-eye-slash' : 'fa-eye'} mr-1"></i>
-              {showSecret ? 'Sembunyikan' : 'Lihat'}
-            </button>
-            <button
-              onclick={copySecret}
-              class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]"
-              title="Salin secret"
-            >
-              <i class="fa-solid fa-copy"></i>
-            </button>
-            <button
-              onclick={rotateSecret}
-              disabled={whBusy}
-              class="tactile-btn px-3 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <i class="fa-solid fa-rotate mr-1"></i>
-              {whBusy ? 'Mengganti...' : 'Ganti'}
-            </button>
-          </div>
-        </div>
-        {#if whLoading}
-          <Skeleton className="h-9 w-full" />
-        {:else if webhook?.webhook_secret}
-          <code
-            class="block w-full tactile-inset px-4 py-2.5 text-xs font-mono break-all {showSecret ? '' : 'select-none'}"
-          >{showSecret ? webhook.webhook_secret : '•'.repeat(Math.min(webhook.webhook_secret.length, 32))}</code>
-        {:else}
-          <p class="text-xs text-[var(--text-muted)]">
-            Belum ada secret. Isi Webhook URL di atas — secret dibuat otomatis.
-          </p>
-        {/if}
       </div>
     {/if}
   </section>
