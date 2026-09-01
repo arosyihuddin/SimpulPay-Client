@@ -46,6 +46,11 @@
         <p class="text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-2"><i class="fa-solid fa-circle-check"></i> QRIS dibuat!</p>
         <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">TRX-ID</span><span class="font-mono text-xs break-all text-right">{created.trx_id}</span></p>
         <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">Nominal</span><span class="font-bold">{fmtIDR(created.amount)}</span></p>
+        {#if created.unique_code > 0}
+          <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">Kode Unik</span><span class="font-bold text-[var(--accent)]">{created.unique_code}</span></p>
+          <p class="flex justify-between gap-3"><span class="text-[var(--text-muted)] shrink-0">Total Bayar</span><span class="font-bold text-emerald-600 dark:text-emerald-400">{fmtIDR(created.amount_to_pay)}</span></p>
+          <p class="text-[10px] text-[var(--text-muted)]">= {fmtIDR(created.amount)} + {created.unique_code}</p>
+        {/if}
         <div class="flex justify-center">
           {#if !qrSrc}
             <div class="w-10 h-10 border-2 border-[var(--accent)]/30 border-t-[var(--accent)] rounded-full animate-spin"></div>
