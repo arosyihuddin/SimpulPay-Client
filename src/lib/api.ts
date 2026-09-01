@@ -84,6 +84,8 @@ export const admin = {
     api<any>(`/transactions/recent?limit=${limit}`),
   transactionVolume: (range = "7") =>
     api<any>(`/transactions/volume?range=${range}`),
+  topMerchants: (limit = 5) =>
+    api<any>(`/top-merchants?limit=${limit}`),
 
   // GoBiz (customer routes, path `/merchants/:id/*`)
   otpRequest: (merchantId: string, phone: string) =>
