@@ -132,13 +132,16 @@
               <td class="px-4 py-3 text-xs">{fmtTime(r.expires_at)}</td>
               <td class="px-4 py-3 text-right">
                 {#if r.status === "PENDING"}
-                <button
-                  onclick={() => openQr(r)}
-                  disabled={qrBusyId === r.id}
-                  class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
-                ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
+                  <button
+                    onclick={() => openQr(r)}
+                    disabled={qrBusyId === r.id}
+                    class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
+                    ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id
+                      ? " Memuat..."
+                      : " QR"}</button
+                  >
                 {:else}
-                <span class="text-xs text-[var(--text-muted)]">—</span>
+                  <span class="text-xs text-[var(--text-muted)]">—</span>
                 {/if}
               </td>
             </tr>
@@ -180,7 +183,7 @@
               )}">{r.status}</span
             >
           </div>
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between flex-wrap gap-x-2">
             <span class="text-base font-bold">{fmtIDR(r.amount)}</span>
             {#if r.unique_code > 0}<span
                 class="text-[10px] text-[var(--text-muted)]"
@@ -190,17 +193,24 @@
           <p class="text-xs font-semibold text-[var(--text-main)]">
             {r.merchant_name || r.merchant_id}
           </p>
-          <div class="text-xs text-[var(--text-muted)] flex justify-between">
-            <span>Dibuat: {fmtTime(r.created_at)}</span><span
-              >Kadaluwarsa: {fmtTime(r.expires_at)}</span
+          <div class="text-xs text-[var(--text-muted)] space-y-0.5">
+            <span class="flex justify-between"
+              ><span>Dibuat</span><span>{fmtTime(r.created_at)}</span></span
+            >
+            <span class="flex justify-between"
+              ><span>Kadaluwarsa</span><span>{fmtTime(r.expires_at)}</span
+              ></span
             >
           </div>
           {#if r.status === "PENDING"}
-          <button
-            onclick={() => openQr(r)}
-            disabled={qrBusyId === r.id}
-            class="tactile-btn w-full py-2 text-xs font-bold text-[var(--accent)]"
-          ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
+            <button
+              onclick={() => openQr(r)}
+              disabled={qrBusyId === r.id}
+              class="tactile-btn w-full py-2 text-xs font-bold text-[var(--accent)]"
+              ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id
+                ? " Memuat..."
+                : " QR"}</button
+            >
           {/if}
         </div>
       {/each}

@@ -121,7 +121,12 @@
     },
   ];
   const ALL_LINKS = [...USER_LINKS, ...ADMIN_LINKS];
-  const LINKS = $derived(auth.role === "admin" ? ALL_LINKS : USER_LINKS);
+  // Mobile: 4 item utama di bottom nav, sisanya masuk drawer "Lainnya".
+  const MOBILE_PRIMARY = USER_LINKS.slice(0, 4);
+  const MOBILE_MORE = $derived([
+    ...USER_LINKS.slice(4),
+    ...(auth.role === "admin" ? ADMIN_LINKS : []),
+  ]);
   // Halaman yang diblokir untuk non-admin.
   const ADMIN_ONLY = ["/admin/announcements", "/admin/plans", "/admin/subscribers", "/admin/invoices", "/admin/users", "/admin/maintenance"];
 
@@ -220,6 +225,8 @@
       unreadList.map((n) => admin.markNotificationRead(n.id).catch(() => {})),
     );
   }
+
+  let moreOpen = $state(false);
 
   async function logout() {
     await admin.logout().catch(() => {});
@@ -356,7 +363,7 @@
     <nav
       class="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-[var(--bg-base)]/95 backdrop-blur border-t border-slate-300/40 dark:border-slate-800/40 px-2 py-1.5 flex items-center"
     >
-      {#each LINKS as l (l.to)}
+      {#each MOBILE_PRIMARY as l (l.to)}
         <a
           href={l.to}
           class="flex flex-col items-center gap-0.5 flex-1 py-1.5 px-1 rounded-xl text-[10px] font-semibold transition-all duration-200 active:scale-[0.95] {isActive(
@@ -369,19 +376,69 @@
           {l.label}
         </a>
       {/each}
-      <button
-        onclick={logout}
-        class="flex flex-col items-center gap-0.5 flex-1 py-1.5 px-1 rounded-xl text-[10px] font-semibold text-[var(--text-muted)] hover:text-red-500 cursor-pointer"
-        title="Logout"
-      >
-        <i class="fa-solid fa-right-from-bracket text-base leading-none"></i>
-        Logout
-      </button>
+      {#if MOBILE_MORE.length > 0}
+        <button
+          onclick={() => (moreOpen = !moreOpen)}
+          class="flex flex-col items-center gap-0.5 flex-1 py-1.5 px-1 rounded-xl text-[10px] font-semibold text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer"
+          title="Menu lainnya"
+          aria-expanded={moreOpen}
+        >
+          <i class="fa-solid fa-ellipsis text-base leading-none"></i>
+          Lainnya
+        </button>
+      {/if}
     </nav>
+
+    <!-- Drawer mobile: menu lainnya -->
+    {#if moreOpen}
+      <button
+        type="button"
+        aria-label="Tutup"
+        class="fixed inset-0 z-40 lg:hidden bg-stone-900/60 backdrop-blur-sm cursor-default"
+        onclick={() => (moreOpen = false)}
+      ></button>
+      <div
+        class="fixed bottom-0 inset-x-0 z-50 lg:hidden bg-[var(--bg-base)] rounded-t-3xl tactile-box p-4 pb-6 max-h-[70vh] overflow-y-auto no-scrollbar"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <p class="font-bold">Menu Lainnya</p>
+          <button
+            onclick={() => (moreOpen = false)}
+            class="tactile-btn w-9 h-9 flex items-center justify-center text-[var(--text-muted)]"
+            title="Tutup"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="space-y-1.5">
+          {#each MOBILE_MORE as l (l.to)}
+            <a
+              href={l.to}
+              onclick={() => (moreOpen = false)}
+              class="tactile-btn flex items-center gap-3 px-4 py-3 text-sm font-semibold {isActive(
+                l.to,
+              )
+                ? 'active text-[var(--accent)]'
+                : 'text-slate-500 dark:text-slate-400'}"
+            >
+              <i class="{l.icon} w-5"></i>
+              <span>{l.label}</span>
+            </a>
+          {/each}
+          <button
+            onclick={logout}
+            class="tactile-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 cursor-pointer"
+          >
+            <i class="fa-solid fa-right-from-bracket w-5"></i>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    {/if}
 
     <!-- Main wrapper -->
     <div
-      class="flex-1 lg:ml-72 flex flex-col justify-between min-h-screen py-8 px-4 sm:px-6 lg:px-8"
+      class="flex-1 min-w-0 lg:ml-72 flex flex-col justify-between min-h-screen py-8 px-4 sm:px-6 lg:px-8"
     >
       <!-- Top header -->
       <header
