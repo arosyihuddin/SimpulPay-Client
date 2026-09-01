@@ -190,9 +190,9 @@ export const admin = {
     api<any>(`/admin/plans/${id}`, { method: "PATCH", body: patch }),
   deletePlan: (id: string) =>
     api<any>(`/admin/plans/${id}`, { method: "DELETE" }),
-  listSubscriptions: () => api<any>("/admin/subscriptions"),
+  listSubscriptions: () => api<any>("/admin/subscribers"),
   cancelSubscription: (id: string) =>
-    api<any>(`/admin/subscriptions/${id}/cancel`, { method: "POST" }),
+    api<any>(`/admin/subscribers/${id}/cancel`, { method: "POST" }),
 
   // Admin invoice management
   listAllInvoices: (params?: { user_id?: string; subscription_id?: string; status?: string; limit?: number; offset?: number }) =>

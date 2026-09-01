@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Admin Subscribers — kelola langganan semua subscriber (real API /admin/subscriptions).
+  // Admin Subscribers — kelola langganan semua subscriber (real API /admin/subscribers).
   import { onMount } from "svelte";
   import { admin } from "$lib/api";
   import { addToast } from "$lib/toast.svelte";
