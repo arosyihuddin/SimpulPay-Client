@@ -15,9 +15,11 @@
     plan_id: string;
     plan_name: string;
     status: string;
-    starts_at: number;
-    ends_at: number;
-    created_at: number;
+    max_merchant: number | null;
+    daily_paid_limit: number | null;
+    starts_at: number | null;
+    ends_at: number | null;
+    created_at: number | null;
   }
   interface Invoice {
     id: string;
@@ -33,6 +35,7 @@
 
   let sub = $state<Subscription | null>(null);
   let invoices = $state<Invoice[]>([]);
+  let usage = $state<{ merchants_used: number; paid_today_used: number } | null>(null);
   let loading = $state(true);
   let err = $state('');
   let plans = $state<Plan[]>([]);
@@ -70,6 +73,7 @@
       sub = s ?? null;
       invoices = iRes.data?.invoices || [];
       plans = pRes.data?.plans || [];
+      usage = sRes.data?.usage ?? null;
     } catch (e: any) { err = e.message; }
     finally { loading = false; }
   }
@@ -135,6 +139,54 @@
         <p class="text-[var(--text-muted)] text-sm">Belum ada langganan aktif.</p>
         <a href="/admin/plans" class="tactile-btn inline-flex px-4 py-2 text-xs font-bold text-[var(--accent)] mt-3">Lihat Paket</a>
       </div>
+    {/if}
+  </div>
+
+  <!-- Penggunaan -->
+  <div class="tactile-box p-5">
+    <div class="flex items-center gap-2 mb-4">
+      <i class="fa-solid fa-gauge-high text-[var(--accent)]"></i>
+      <div>
+        <h2 class="font-semibold">Penggunaan</h2>
+        <p class="text-xs text-[var(--text-muted)]">Pemakaian plan bulan ini</p>
+      </div>
+    </div>
+
+    {#if loading}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    {:else if sub}
+      <!-- Merchant: dipakai / max -->
+      <div class="space-y-1.5 mb-4">
+        <div class="flex justify-between text-xs">
+          <span class="font-bold text-[var(--text-muted)]">Merchant</span>
+          <span class="font-bold">{usage?.merchants_used ?? 0} / {sub.max_merchant ?? '∞'}</span>
+        </div>
+        <div class="h-2 rounded-full tactile-inset overflow-hidden">
+          <div
+            class="h-full bg-[var(--accent)] rounded-full transition-all"
+            style="width: {sub.max_merchant ? Math.min(100, ((usage?.merchants_used ?? 0) / sub.max_merchant) * 100) : 0}%"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Transaksi hari ini: dipakai / limit -->
+      <div class="space-y-1.5">
+        <div class="flex justify-between text-xs">
+          <span class="font-bold text-[var(--text-muted)]">Transaksi Hari Ini</span>
+          <span class="font-bold">{usage?.paid_today_used ?? 0} / {sub.daily_paid_limit == null ? '∞' : sub.daily_paid_limit}</span>
+        </div>
+        <div class="h-2 rounded-full tactile-inset overflow-hidden">
+          <div
+            class="h-full bg-[var(--accent)] rounded-full transition-all"
+            style="width: {sub.daily_paid_limit ? Math.min(100, ((usage?.paid_today_used ?? 0) / sub.daily_paid_limit) * 100) : 0}%"
+          ></div>
+        </div>
+      </div>
+    {:else}
+      <p class="text-sm text-[var(--text-muted)] text-center py-4">Belum ada data penggunaan.</p>
     {/if}
   </div>
 

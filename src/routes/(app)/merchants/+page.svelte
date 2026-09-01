@@ -76,7 +76,30 @@
   let saving = $state(false);
   let modalErr = $state('');
 
-  function openAdd() { modalOpen = true; provider = ''; name = ''; modalErr = ''; }
+  // Cek limit plan sebelum buka form tambah. Penuh → suruh upgrade.
+  let sub = $state<any | null>(null);
+  let usage = $state<{ merchants_used: number } | null>(null);
+  let upgradeOpen = $state(false);
+
+  async function openAdd() {
+    modalErr = '';
+    try {
+      const r = await admin.mySubscription();
+      const s = r.data?.subscription;
+      const u = r.data?.usage;
+      sub = s;
+      usage = u;
+      const max = s?.max_merchant ?? 1;
+      const used = u?.merchants_used ?? merchants.list.length;
+      if (used >= max) {
+        upgradeOpen = true;
+        return;
+      }
+    } catch {
+      /* gagal cek limit → biarkan buka form */
+    }
+    modalOpen = true; provider = ''; name = '';
+  }
   async function submit() {
     if (!provider) { modalErr = 'Pilih provider dulu.'; return; }
     if (provider === 'shopeepay') { modalErr = 'ShopeePay merchant masih placeholder — tunggu update berikutnya.'; return; }
@@ -262,6 +285,32 @@
           </button>
         </div>
       {/if}
+    </div>
+  </div>
+{/if}
+
+<!-- Limit tercapai → ajak upgrade -->
+{#if upgradeOpen}
+  <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (upgradeOpen = false)}></button>
+    <div class="tactile-modal w-full max-w-sm p-6 relative z-50 text-center">
+      <div class="w-16 h-16 mx-auto rounded-full tactile-inset flex items-center justify-center text-[var(--accent)] text-2xl mb-3">
+        <i class="fa-solid fa-rocket"></i>
+      </div>
+      <h3 class="text-lg font-bold mb-1">Limit Merchant Tercapai</h3>
+      <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+        Plan <span class="font-semibold text-[var(--text-main)]">{sub?.plan_name || 'saat ini'}</span> terbatas
+        <span class="font-semibold text-[var(--text-main)]">{sub?.max_merchant ?? 1} merchant</span>.
+        {#if (usage?.merchants_used ?? merchants.list.length) > 0}
+          Anda sudah pakai {usage?.merchants_used ?? merchants.list.length}. Upgrade untuk tambah lebih banyak.
+        {:else}
+          Upgrade untuk menambah merchant.
+        {/if}
+      </p>
+      <a href="/billing" onclick={() => (upgradeOpen = false)} class="tactile-btn w-full py-3 mt-4 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
+        <i class="fa-solid fa-arrow-up"></i> Upgrade Plan
+      </a>
+      <button onclick={() => (upgradeOpen = false)} class="tactile-btn w-full mt-2 py-3 text-sm text-[var(--text-muted)]">Tutup</button>
     </div>
   </div>
 {/if}
