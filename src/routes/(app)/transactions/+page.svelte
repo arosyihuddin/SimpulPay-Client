@@ -43,6 +43,7 @@
   let qrUnique = $state(0);
   let qrBusyId = $state<string | null>(null);
   let qrTxId = $state("");
+  let qrPaid = $state(false);
   let copiedId = $state("");
 
   const copyTrx = (id: string) => {
@@ -87,6 +88,7 @@
       qrBase = tx.base_amount;
       qrUnique = tx.unique_code;
       qrTxId = tx.id;
+      qrPaid = false;
     } catch {
       qrCode = "";
     }
@@ -96,6 +98,7 @@
   const closeQr = () => {
     qrCode = "";
     qrTxId = "";
+    qrPaid = false;
   };
 
   async function load() {
@@ -131,9 +134,16 @@
 
   useWs((m) => {
     if (m.type === "qris_created" || m.type === "qris_expired" || m.type === "payment_received" || m.type === "transaction_updated") {
-      // QR yang lagi dibuka expired → tutup modal + update status row.
+      const txId = m.data?.id ?? m.data?.transaction_id;
+      // QR yang lagi dibuka: expired → tutup modal, paid → state sukses.
+      if (txId === qrTxId) {
+        if (m.type === "qris_expired") {
+          closeQr();
+        } else if (m.type === "transaction_updated" && m.data.status === "paid") {
+          qrPaid = true;
+        }
+      }
       if (m.type === "qris_expired" && m.data?.id === qrTxId) {
-        closeQr();
         rows = rows.map((r) => (r.id === m.data.id ? { ...r, status: "expired" } : r));
       }
       load();
@@ -379,5 +389,5 @@
 </div>
 
 {#if qrCode}
-  <QrCodeModal code={qrCode} {qrAmount} baseAmount={qrBase} uniqueCode={qrUnique} onClose={closeQr} />
+  <QrCodeModal code={qrCode} {qrAmount} baseAmount={qrBase} uniqueCode={qrUnique} paid={qrPaid} onClose={closeQr} />
 {/if}

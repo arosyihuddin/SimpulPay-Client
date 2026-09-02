@@ -7,7 +7,7 @@
   import Skeleton from '$lib/components/Skeleton.svelte';
   import ConfirmModal from '$lib/components/ConfirmModal.svelte';
   import GoBizConfigModal from '$lib/components/GoBizConfigModal.svelte';
-  import QrisModal from '$lib/components/QrisModal.svelte';
+  import QrCodeModal from '$lib/components/QrCodeModal.svelte';
 
   const TYPE_META: Record<string, { label: string; img: string }> = {
     gopay: { label: 'GoPay', img: '/gopay.webp' },
@@ -344,7 +344,9 @@
 
 <!-- Buat QRIS dinamis -->
 {#if qrisTarget}
-  <QrisModal
+  <QrCodeModal
+    code={""}
+    qrAmount={0}
     merchant={qrisTarget}
     onClose={() => (qrisTarget = null)}
     onDone={() => loadMerchants()}

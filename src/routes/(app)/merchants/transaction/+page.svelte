@@ -3,10 +3,8 @@
   import { page } from "$app/state";
   import { admin, fmtIDR, fmtTime } from "$lib/api";
   import { addToast } from "$lib/toast.svelte";
-  import { useWs } from "$lib/useWs";
   import Pagination from "$lib/components/Pagination.svelte";
   import Skeleton from "$lib/components/Skeleton.svelte";
-  import QrCodeModal from "$lib/components/QrCodeModal.svelte";
 
   interface TxRow {
     id: string;
@@ -29,17 +27,10 @@
   const PAGE_SIZE = 20;
 
   let rows = $state<TxRow[]>([]);
-  const hasPending = $derived(rows.some((r) => r.status === "pending"));
   let total = $state(0);
   let curPage = $state(1);
   let err = $state("");
   let loading = $state(true);
-  let qrCode = $state("");
-  let qrAmount = $state(0);
-  let qrBase = $state(0);
-  let qrUnique = $state(0);
-  let qrBusyId = $state<string | null>(null);
-  let qrTxId = $state("");
   let copiedId = $state("");
 
   const copyOrder = (id: string) => {
@@ -51,26 +42,6 @@
         setTimeout(() => (copiedId = ""), 2000);
       })
       .catch(() => {});
-  };
-
-  async function openQr(tx: TxRow) {
-    qrBusyId = tx.id;
-    try {
-      const res = await admin.getTransactionCode(tx.id);
-      qrCode = res.data.code;
-      qrAmount = tx.amount;
-      qrBase = tx.base_amount;
-      qrUnique = tx.unique_code;
-      qrTxId = tx.id;
-    } catch {
-      qrCode = "";
-    }
-    qrBusyId = null;
-  }
-
-  const closeQr = () => {
-    qrCode = "";
-    qrTxId = "";
   };
 
   const mid = $derived(page.url.searchParams.get("merchant_id"));
@@ -108,17 +79,6 @@
   $effect(() => {
     load();
   });
-
-  useWs((m) => {
-    if (m.type === "qris_created" || m.type === "qris_expired" || m.type === "payment_received" || m.type === "transaction_updated") {
-      // QR yang lagi dibuka expired → tutup modal + update status row.
-      if (m.type === "qris_expired" && m.data?.id === qrTxId) {
-        closeQr();
-        rows = rows.map((r) => (r.id === m.data.id ? { ...r, status: "expired" } : r));
-      }
-      load();
-    }
-  });
 </script>
 
 <div class="space-y-6">
@@ -149,20 +109,25 @@
           <th class="px-4 py-3 font-medium">Status</th>
           <th class="px-4 py-3 font-medium">Issuer</th>
           <th class="px-4 py-3 font-medium">Waktu</th>
-          {#if hasPending}
-            <th class="px-4 py-3 font-medium text-right">Aksi</th>
-          {/if}
         </tr>
       </thead>
       <tbody>
         {#if loading}
           {#each Array.from({ length: 5 }) as _}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
-              {#each Array.from({ length: 6 }) as _}
+              {#each Array.from({ length: 5 }) as _}
                 <td class="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
               {/each}
             </tr>
           {/each}
+        {:else if rows.length === 0}
+          <tr
+            ><td
+              colspan={5}
+              class="px-4 py-8 text-center text-[var(--text-muted)]"
+              >Belum ada transaksi</td
+            ></tr
+          >
         {:else}
           {#each rows as r (r.id)}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
@@ -190,33 +155,8 @@
               >
               <td class="px-4 py-3 text-xs font-semibold">{r.issuer || "—"}</td>
               <td class="px-4 py-3 text-xs">{fmtTime(r.created_at)}</td>
-              {#if hasPending}
-                <td class="px-4 py-3 text-right">
-                  {#if r.status === "pending"}
-                    <button
-                      onclick={() => openQr(r)}
-                      disabled={qrBusyId === r.id}
-                      class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
-                      ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id
-                        ? " Memuat..."
-                        : " QR"}</button
-                    >
-                  {:else}
-                    <span class="text-xs text-[var(--text-muted)]">—</span>
-                  {/if}
-                </td>
-              {/if}
             </tr>
           {/each}
-        {/if}
-        {#if !loading && rows.length === 0}
-          <tr
-            ><td
-              colspan={hasPending ? 7 : 6}
-              class="px-4 py-8 text-center text-[var(--text-muted)]"
-              >Belum ada transaksi</td
-            ></tr
-          >
         {/if}
       </tbody>
     </table>
@@ -232,6 +172,8 @@
           /><Skeleton className="h-3 w-40" />
         </div>
       {/each}
+    {:else if rows.length === 0}
+      <p class="text-center text-[var(--text-muted)] py-8">Belum ada transaksi</p>
     {:else}
       {#each rows as r (r.id)}
         <div class="tactile-box p-4 space-y-2">
@@ -256,34 +198,14 @@
                 r.status,
               )}">{r.status.toUpperCase()}</span
             >
-            <span
-              class="text-xs font-semibold px-2.5 py-1 rounded-full {statusBadge(
-                r.status,
-              )}">{r.status.toUpperCase()}</span
-            >
           </div>
           <div class="text-xs text-[var(--text-muted)] flex justify-between">
             <span>Issuer: {r.issuer || "—"}</span>
             <span>{fmtTime(r.created_at)}</span>
           </div>
-          {#if r.status === "pending"}
-            <button
-              onclick={() => openQr(r)}
-              disabled={qrBusyId === r.id}
-              class="tactile-btn w-full py-2 text-xs font-bold text-[var(--accent)]"
-              ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id
-                ? " Memuat..."
-                : " QR"}</button
-            >
-          {/if}
         </div>
       {/each}
     {/if}
-    {#if !loading && rows.length === 0}<p
-        class="text-center text-[var(--text-muted)] py-8"
-      >
-        Belum ada transaksi
-      </p>{/if}
   </div>
 
   {#if total > PAGE_SIZE}
@@ -297,13 +219,3 @@
     />
   {/if}
 </div>
-
-{#if qrCode}
-  <QrCodeModal
-    code={qrCode}
-    {qrAmount}
-    baseAmount={qrBase}
-    uniqueCode={qrUnique}
-    onClose={closeQr}
-  />
-{/if}
