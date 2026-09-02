@@ -6,6 +6,7 @@
   import { auth, checkAuth } from "$lib/auth.svelte";
   import { theme, toggleTheme } from "$lib/theme.svelte";
   import Logo from "$lib/components/Logo.svelte";
+  import Skeleton from "$lib/components/Skeleton.svelte";
   import Toast from "$lib/components/Toast.svelte";
   import { addToast } from "$lib/toast.svelte";
   import { useWs } from "$lib/useWs";
@@ -192,20 +193,45 @@
   }
   let notifs = $state<Notif[]>([]);
   let unread = $state(0);
-  async function loadNotifs() {
-    notifLoading = true;
+  const NOTIF_PAGE = 20;
+  let notifLoaded = $state(0); // jumlah baris real yg udah di-fetch (offset berikutnya)
+  let notifHasMore = $state(false);
+  let notifBusy = $state(false); // lagi muat halaman berikutnya
+  async function loadNotifs(reset = true) {
+    if (notifBusy || (!reset && !notifHasMore)) return;
+    if (reset) {
+      notifLoading = true;
+      notifs = [];
+      notifLoaded = 0;
+    }
+    notifBusy = true;
     try {
-      const r = await admin.listNotifications();
-      notifs = r.data.notifications;
+      const r = await admin.listNotifications({ limit: NOTIF_PAGE, offset: notifLoaded });
+      const fresh: Notif[] = r.data.notifications;
+      if (reset) {
+        notifs = fresh;
+      } else {
+        // skip yg udah ada (id dummy inject WS negatif gak clash)
+        const seen = new Set(notifs.map((n) => n.id));
+        notifs = [...notifs, ...fresh.filter((n) => !seen.has(n.id))];
+      }
+      notifLoaded += fresh.length;
+      notifHasMore = fresh.length === NOTIF_PAGE;
       unread = r.data.unread;
     } catch {
       /* non-kritis, diam */
     } finally {
       notifLoading = false;
+      notifBusy = false;
     }
   }
+  // Muat lagi saat scroll dropdown nyaris nyentuh bawah (infinite scroll).
+  function notifOnScroll(e: Event) {
+    const el = e.currentTarget as HTMLElement;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40) loadNotifs(false);
+  }
   // Fetch notifikasi saat layout dipasang.
-  onMount(loadNotifs);
+  onMount(() => loadNotifs(true));
 
   // Realtime: event "notification" (notifyUser dari backend) → toast + inject langsung ke notif list.
   useWs((m) => {
@@ -219,14 +245,17 @@
     }
   });
   const notifCount = $derived(unread);
+  const NOTIF_META: Record<string, { icon: string; cls: string; bg: string }> = {
+    payment_success: { icon: "fa-solid fa-circle-check", cls: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100/70 dark:bg-emerald-500/10" },
+    payment_received: { icon: "fa-solid fa-circle-check", cls: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100/70 dark:bg-emerald-500/10" },
+    invoice_pending: { icon: "fa-solid fa-clock", cls: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100/70 dark:bg-amber-500/10" },
+    invoice_paid: { icon: "fa-solid fa-file-invoice-dollar", cls: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100/70 dark:bg-emerald-500/10" },
+    invoice_rejected: { icon: "fa-solid fa-file-circle-xmark", cls: "text-red-500 dark:text-red-400", bg: "bg-red-100/70 dark:bg-red-500/10" },
+    subscription_cancelled: { icon: "fa-solid fa-calendar-xmark", cls: "text-red-500 dark:text-red-400", bg: "bg-red-100/70 dark:bg-red-500/10" },
+    token_warning: { icon: "fa-solid fa-triangle-exclamation", cls: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100/70 dark:bg-amber-500/10" },
+  };
   const notifMeta = (type: string) =>
-    type === "payout" || type === "settlement"
-      ? { icon: "fa-solid fa-arrow-down-left", cls: "text-emerald-500" }
-      : type === "fraud" || type === "warning"
-        ? { icon: "fa-solid fa-shield-alert", cls: "text-rose-500" }
-        : type === "info"
-          ? { icon: "fa-solid fa-circle-info", cls: "text-blue-500" }
-          : { icon: "fa-solid fa-bell", cls: "text-[var(--accent)]" };
+    NOTIF_META[type] ?? { icon: "fa-solid fa-bell", cls: "text-[var(--accent)]", bg: "bg-[var(--inset-dark)]" };
   const fmtNotifTime = (n: number) => {
     const d = new Date(n);
     const m = Math.round((Date.now() - n) / 60000);
@@ -524,7 +553,7 @@
                 onclick={() => (notifOpen = false)}
               ></button>
               <div
-                class="absolute right-0 mt-3 w-80 rounded-2xl tactile-box p-4 z-50"
+                class="absolute right-0 mt-3 w-[calc(100vw-1.5rem)] max-w-[32rem] sm:w-[32rem] rounded-2xl tactile-box p-4 z-50"
               >
                 <div
                   class="flex justify-between items-center mb-3 pb-2 border-b border-[var(--border-subtle)]"
@@ -538,13 +567,21 @@
                     >
                   {/if}
                 </div>
-                <div class="space-y-2 text-xs">
+                <div
+                  class="space-y-2 text-xs max-h-[55vh] overflow-y-auto pr-1 no-scrollbar"
+                  onscroll={notifOnScroll}
+                >
                   {#if notifLoading && notifs.length === 0}
-                    <p
-                      class="text-center text-[var(--text-muted)] py-4 font-semibold"
-                    >
-                      Memuat...
-                    </p>
+                    {#each Array.from({ length: 4 }) as _, i}
+                      <div class="flex items-start space-x-2 p-2">
+                        <Skeleton className="w-6 h-6 rounded-lg shrink-0" />
+                        <div class="flex-1 space-y-1.5">
+                          <Skeleton className="h-3 w-3/4" />
+                          <Skeleton className="h-2.5 w-full" />
+                          <Skeleton className="h-2 w-1/3" />
+                        </div>
+                      </div>
+                    {/each}
                   {:else if notifs.length === 0}
                     <p
                       class="text-center text-[var(--text-muted)] py-4 font-semibold"
@@ -556,14 +593,13 @@
                       <button
                         type="button"
                         onclick={() => markRead(n)}
-                        class="w-full text-left p-2.5 rounded-xl tactile-inset flex items-start space-x-2 {!n.read
+                        class="w-full text-left p-2.5 rounded-xl tactile-inset flex items-start gap-3 {!n.read
                           ? 'opacity-100'
                           : 'opacity-50'}"
                       >
-                        <i
-                          class="{notifMeta(n.type).icon} {notifMeta(n.type)
-                            .cls} mt-0.5 flex-shrink-0"
-                        ></i>
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 {notifMeta(n.type).bg}">
+                          <i class="{notifMeta(n.type).icon} {notifMeta(n.type).cls} text-sm"></i>
+                        </div>
                         <div class="min-w-0">
                           <p class="font-semibold truncate">{n.title}</p>
                           {#if n.message}<p
@@ -580,6 +616,13 @@
                           ></span>{/if}
                       </button>
                     {/each}
+                    {#if notifHasMore}
+                      <div class="flex justify-center py-2">
+                        <div
+                          class="w-4 h-4 border-2 border-[var(--accent)]/30 border-t-[var(--accent)] rounded-full animate-spin"
+                        ></div>
+                      </div>
+                    {/if}
                   {/if}
                 </div>
               </div>

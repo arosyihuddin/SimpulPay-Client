@@ -141,7 +141,8 @@ export const admin = {
     api<any>(`/api-keys/${id}`, { method: "DELETE" }),
 
   // Notifications (customer routes)
-  listNotifications: () => api<any>("/notifications"),
+  listNotifications: (opts: { limit?: number; offset?: number } = {}) =>
+    api<any>(`/notifications?limit=${opts.limit ?? 50}&offset=${opts.offset ?? 0}`),
   markNotificationRead: (id: number) =>
     api<any>(`/notifications/${id}/read`, { method: "POST" }),
 
