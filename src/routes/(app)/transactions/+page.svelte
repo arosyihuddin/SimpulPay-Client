@@ -66,8 +66,13 @@
   const dayTo = (d: string) => (d ? new Date(d + "T23:59:59").getTime() : undefined);
 
   const hasFilter = $derived(!!(fStatus || fQ || fCreatedFrom || fCreatedTo || fExpiresFrom || fExpiresTo));
-  // Pagination total: kalau filter aktif pakai jumlah baris hasil filter, selain itu global.
-  const pagerTotal = $derived(hasFilter ? rows.length : total);
+  // Pagination total — pakai count yang match status filter aktif (kalau status nggak di-filter, global).
+  const pagerTotal = $derived(
+    fStatus === "pending" ? pendingCount
+      : fStatus === "paid" ? paidCount
+        : fStatus === "expired" ? expiredCount
+          : total,
+  );
 
   // Klik card ringkasan → set filter status otomatis (klik lagi → reset)
   const setStatus = (st: string) => {

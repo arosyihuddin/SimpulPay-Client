@@ -52,14 +52,31 @@
   }
 
   let q = $state('');
+  let fStatus = $state('');
+  const hasFilter = $derived(!!(fStatus || q));
+  const setStatus = (st: string) => (fStatus = fStatus === st ? "" : st);
+  const cardCls = (st: string) =>
+    `cursor-pointer transition ${fStatus === st ? "ring-2 ring-[var(--accent)]" : ""}`;
+  const resetFilter = () => {
+    fStatus = "";
+    q = "";
+  };
+
   const PAGE_SIZE = 5;
   let page = $state(1);
-  const pageItems = $derived(users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
+  // Filter per status (client-side — data udah ke-ambil semua).
+  const filtered = $derived(users.filter((u) => !fStatus || u.status === fStatus));
+  const pageItems = $derived(filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
   function setPage(p: number) { page = p; }
-  $effect(() => { if (page > Math.max(1, Math.ceil(users.length / PAGE_SIZE))) page = 1; });
+  // Reset ke halaman 1 saat q/status berubah.
+  $effect(() => { if (page > Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))) page = 1; });
+  $effect(() => {
+    void q; void fStatus;
+    page = 1;
+  });
   // Reload tiap q berubah (debounce 300ms)
   $effect(() => {
-    void q; void page;
+    void q;
     const t = setTimeout(load, 300);
     return () => clearTimeout(t);
   });
@@ -229,22 +246,22 @@
         </div>
       {/each}
     {:else}
-      <div class="tactile-box p-4">
+      <button class="tactile-box p-4 text-left w-full" onclick={() => setStatus('')}>
         <p class="text-[11px] text-[var(--text-muted)] font-medium">Total User</p>
         <p class="text-xl font-extrabold">{users.length}</p>
-      </div>
-      <div class="tactile-box p-4">
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('active')}" onclick={() => setStatus('active')}>
         <p class="text-[11px] text-[var(--text-muted)] font-medium">Aktif</p>
         <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{active}</p>
-      </div>
-      <div class="tactile-box p-4">
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('suspended')}" onclick={() => setStatus('suspended')}>
         <p class="text-[11px] text-[var(--text-muted)] font-medium">Suspended</p>
         <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{suspended}</p>
-      </div>
-      <div class="tactile-box p-4">
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('banned')}" onclick={() => setStatus('banned')}>
         <p class="text-[11px] text-[var(--text-muted)] font-medium">Banned</p>
         <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{banned}</p>
-      </div>
+      </button>
     {/if}
   </div>
 
@@ -259,6 +276,9 @@
         class="w-full tactile-inset pl-10 pr-4 py-2.5 text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
       />
     </div>
+    {#if hasFilter}
+      <button onclick={resetFilter} class="tactile-btn px-3 py-2.5 text-xs font-bold text-[var(--text-muted)]"><i class="fa-solid fa-xmark mr-1"></i>Reset</button>
+    {/if}
     <button onclick={openAdd} class="tactile-btn px-4 py-2.5 font-bold text-[var(--accent)] text-sm flex items-center gap-2 whitespace-nowrap">
       <i class="fa-solid fa-plus"></i> Tambah
     </button>
@@ -328,10 +348,10 @@
           {/each}
         </tbody>
       </table>
-      {#if users.length === 0}
+      {#if filtered.length === 0}
         <p class="text-center text-sm text-[var(--text-muted)] py-8 font-semibold">Tidak ada user cocok dengan pencarian.</p>
-      {:else}
-        <Pagination {page} total={users.length} pageSize={PAGE_SIZE} onChange={setPage} />
+      {:else if filtered.length > PAGE_SIZE}
+        <Pagination {page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
       {/if}
     </div>
 
@@ -366,10 +386,10 @@
           </div>
         </div>
       {/each}
-      {#if users.length === 0}
+      {#if filtered.length === 0}
         <p class="text-center text-sm text-[var(--text-muted)] py-8 font-semibold">Tidak ada user cocok dengan pencarian.</p>
-      {:else}
-        <Pagination {page} total={users.length} pageSize={PAGE_SIZE} onChange={setPage} />
+      {:else if filtered.length > PAGE_SIZE}
+        <Pagination {page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
       {/if}
     </div>
   {/if}

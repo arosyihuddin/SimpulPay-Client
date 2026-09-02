@@ -172,7 +172,14 @@ export const admin = {
 
   // Langganan saya + invoice (customer)
   mySubscription: () => api<any>("/subscriptions"),
-  myInvoices: () => api<any>("/invoices"),
+  myInvoices: (params?: { limit?: number; offset?: number }) => {
+    const clean = Object.fromEntries(
+      Object.entries((params as Record<string, unknown>) || {}).filter(
+        ([, v]) => v !== undefined && v !== null && v !== "",
+      ),
+    );
+    return api<any>(`/invoices?${new URLSearchParams(clean as any).toString()}`);
+  },
   subscribe: (planId: string, amount = 0) =>
     api<any>("/subscriptions", { method: "POST", body: { plan_id: planId, amount } }),
 
@@ -235,8 +242,15 @@ export const admin = {
     api<any>(`/admin/subscribers/${id}/cancel`, { method: "POST" }),
 
   // Admin invoice management
-  listAllInvoices: (params?: { user_id?: string; subscription_id?: string; status?: string; limit?: number; offset?: number }) =>
-    api<any>(`/admin/invoices?${new URLSearchParams((params || {}) as any).toString()}`),
+  listAllInvoices: (params?: { user_id?: string; subscription_id?: string; status?: string; q?: string; limit?: number; offset?: number }) => {
+    // Buang key kosong/undefined — jangan serialize jadi "undefined" di URL.
+    const clean = Object.fromEntries(
+      Object.entries((params as Record<string, unknown>) || {}).filter(
+        ([, v]) => v !== undefined && v !== null && v !== "",
+      ),
+    );
+    return api<any>(`/admin/invoices?${new URLSearchParams(clean as any).toString()}`);
+  },
   markInvoicePaid: (id: string) =>
     api<any>(`/admin/invoices/${id}/paid`, { method: "POST" }),
   rejectInvoice: (id: string) =>

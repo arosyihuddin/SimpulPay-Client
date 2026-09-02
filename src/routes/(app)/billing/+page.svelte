@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { admin, fmtIDR } from '$lib/api';
   import Skeleton from '$lib/components/Skeleton.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
   import QrCodeModal from '$lib/components/QrCodeModal.svelte';
   import { addToast } from '$lib/toast.svelte';
   import { useWs } from '$lib/useWs';
@@ -44,6 +44,13 @@
   let plans = $state<Plan[]>([]);
   let showPlans = $state(false);
 
+  // Pagination riwayat pembelian (server-side — backend sudah terima limit/offset).
+  const PAGE_SIZE = 10;
+  let total = $state(0);
+  let page = $state(1);
+  let invoicesLoaded = $state(false);
+  function setPage(p: number) { page = p; }
+
   const fmtDate = (n: number | null) =>
     n ? new Date(n).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -68,24 +75,37 @@
   };
   const fmtPrice = (p: number) => p <= 0 ? 'Gratis' : fmtIDR(p) + ' / bln';
 
-  async function load(silent = false) {
-    if (!silent) loading = true;
+  // Ambil plan aktif + usage (bukan invoice) — invoice di-load terpisah via loadInvoices biar pagination.
+  async function loadUsage() {
+    loading = true;
     err = '';
     try {
-      const [sRes, iRes, pRes] = await Promise.all([admin.mySubscription(), admin.myInvoices(), admin.listPlans()]);
+      const [sRes, pRes] = await Promise.all([admin.mySubscription(), admin.listPlans()]);
       const s = sRes.data?.subscription;
       sub = s ?? null;
-      invoices = iRes.data?.invoices || [];
       plans = pRes.data?.plans || [];
       usage = sRes.data?.usage ?? null;
     } catch (e: any) { err = e.message; }
     finally { loading = false; }
   }
-  onMount(load);
+  async function loadInvoices() {
+    try {
+      const iRes = await admin.myInvoices({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+      invoices = iRes.data?.invoices || [];
+      total = iRes.data?.total ?? invoices.length;
+    } catch (e: any) { err = e.message; }
+    finally { invoicesLoaded = true; }
+  }
+  loadUsage();
+  // Reload invoice saat halaman berubah.
+  $effect(() => {
+    void page;
+    loadInvoices();
+  });
 
   // Realtime per-user: invoice baru/bayar atau sub dicancel → refresh.
   useWs((m) => {
-    if (m.type === "invoice_pending" || m.type === "payment_received" || m.type === "subscription_cancelled") load(true);
+    if (m.type === "invoice_pending" || m.type === "payment_received" || m.type === "subscription_cancelled") loadInvoices();
   });
 
   function openPlans() { showPlans = true; }
@@ -123,7 +143,7 @@
         }
       } else {
         addToast('success', 'Langganan ' + p.name + ' aktif.');
-        load(true);
+        loadUsage(); loadInvoices();
       }
     } catch (e: any) { err = e.message; addToast('error', e.message); }
     finally { subscribing = ''; }
@@ -220,7 +240,7 @@
   </div>
 
   <!-- Riwayat Pembelian -->
-  {#if invoices.length > 0}
+  {#if total > 0}
     <div class="hidden md:block tactile-box overflow-x-auto">
       <div class="px-4 pt-4 pb-2">
         <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-receipt text-[var(--accent)]"></i> Riwayat Pembelian</h2>
@@ -252,6 +272,11 @@
           {/each}
         </tbody>
       </table>
+      {#if total > PAGE_SIZE}
+        <div class="px-4 py-3">
+          <Pagination {page} {total} pageSize={PAGE_SIZE} onChange={setPage} />
+        </div>
+      {/if}
     </div>
 
     <div class="md:hidden space-y-3">
@@ -269,8 +294,11 @@
           </div>
         </div>
       {/each}
+      {#if total > PAGE_SIZE}
+        <Pagination {page} {total} pageSize={PAGE_SIZE} onChange={setPage} />
+      {/if}
     </div>
-  {:else if !loading}
+  {:else if invoicesLoaded && !loading}
     <div class="tactile-box p-10 text-center text-sm text-[var(--text-muted)]">
       Belum ada riwayat pembelian.
     </div>

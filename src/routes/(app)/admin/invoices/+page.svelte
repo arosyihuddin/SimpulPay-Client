@@ -1,11 +1,11 @@
 <script lang="ts">
   // Admin Invoices — kelola invoice semua user (real API /admin/invoices).
-  import { onMount } from "svelte";
   import { admin, fmtIDR } from "$lib/api";
   import { addToast } from "$lib/toast.svelte";
   import { useWs } from "$lib/useWs";
   import ConfirmModal from "$lib/components/ConfirmModal.svelte";
   import Skeleton from "$lib/components/Skeleton.svelte";
+  import Pagination from "$lib/components/Pagination.svelte";
 
   interface Invoice {
     id: string;
@@ -23,6 +23,26 @@
   let invoices = $state<Invoice[]>([]);
   let err = $state("");
   let loading = $state(true);
+  let loadedOnce = $state(false);
+
+  // Ringkasan count dari backend (total/pending/paid/overdue/failed).
+  let total = $state(0);
+  let pendingCount = $state(0);
+  let paidCount = $state(0);
+  let overdueCount = $state(0);
+  let failedCount = $state(0);
+
+  // Filter & search (dikirim ke backend via query params)
+  let fStatus = $state("");
+  let fQ = $state("");
+  const hasFilter = $derived(!!(fStatus || fQ));
+  const setStatus = (st: string) => (fStatus = fStatus === st ? "" : st);
+  const cardCls = (st: string) =>
+    `cursor-pointer transition ${fStatus === st ? "ring-2 ring-[var(--accent)]" : ""}`;
+  const resetFilter = () => {
+    fStatus = "";
+    fQ = "";
+  };
 
   let invTarget = $state<Invoice | null>(null);
   let invAction = $state<"paid" | "reject" | null>(null);
@@ -46,19 +66,52 @@
       : st === "pending" ? "tactile-pill pill-amber"
         : "tactile-pill pill-red";
 
+  const PAGE_SIZE = 20;
+  let page = $state(1);
+
+  // Total buat pagination — pakai count yang match status filter aktif.
+  const pageTotal = $derived(
+    fStatus === "pending" ? pendingCount
+      : fStatus === "paid" ? paidCount
+        : fStatus === "overdue" ? overdueCount
+          : fStatus === "failed" ? failedCount
+            : total,
+  );
+
   async function load() {
     loading = true;
     err = "";
     try {
-      const iv = await admin.listAllInvoices({ limit: 100 });
+      const iv = await admin.listAllInvoices({
+        status: fStatus || undefined,
+        q: fQ.trim() || undefined,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      });
       invoices = iv.data.invoices || [];
+      total = iv.data.total ?? invoices.length;
+      pendingCount = iv.data.pending_count ?? 0;
+      paidCount = iv.data.paid_count ?? 0;
+      overdueCount = iv.data.overdue_count ?? 0;
+      failedCount = iv.data.failed_count ?? 0;
     } catch (e: any) {
       err = e.message;
     } finally {
       loading = false;
+      loadedOnce = true;
     }
   }
-  onMount(load);
+  // Reset ke halaman 1 saat filter/search berubah.
+  $effect(() => {
+    void fStatus; void fQ;
+    page = 1;
+  });
+  // Debounce reload tiap filter/halaman berubah (biar gak spam backend).
+  $effect(() => {
+    void fStatus; void fQ; void page;
+    const t = setTimeout(load, 300);
+    return () => clearTimeout(t);
+  });
 
   // Realtime scope=admin: inject langsung ke row (tanpa skeleton), baru paling atas.
   useWs((m) => {
@@ -104,7 +157,15 @@
       else await admin.rejectInvoice(target.id);
       // Update local state langsung — no skeleton flash
       const idx = invoices.findIndex((iv) => iv.id === target.id);
-      if (idx !== -1) invoices[idx] = { ...invoices[idx], status: action === "paid" ? "paid" : "failed" };
+      if (idx !== -1) {
+        const prev = invoices[idx].status;
+        invoices[idx] = { ...invoices[idx], status: action === "paid" ? "paid" : "failed" };
+        // Sinkron count cards (global) biar gak kedaluwarsa.
+        if (prev === "pending") pendingCount -= 1;
+        else if (prev === "overdue") overdueCount -= 1;
+        if (action === "paid") paidCount += 1;
+        else failedCount += 1;
+      }
       invTarget = null;
       invAction = null;
       addToast(
@@ -125,6 +186,57 @@
     >
       <i class="fa-solid fa-circle-exclamation mr-2"></i>{err}
     </p>{/if}
+
+  <!-- Ringkasan count cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+    {#if !loadedOnce}
+      {#each Array.from({ length: 5 }) as _, i}
+        <div class="tactile-box p-4 space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-6 w-16" />
+        </div>
+      {/each}
+    {:else}
+      <button class="tactile-box p-4 text-left w-full" onclick={() => setStatus("")}>
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Semua</p>
+        <p class="text-xl font-extrabold">{total}</p>
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('pending')}" onclick={() => setStatus('pending')}>
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Pending</p>
+        <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{pendingCount}</p>
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('paid')}" onclick={() => setStatus('paid')}>
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Lunas</p>
+        <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{paidCount}</p>
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('overdue')}" onclick={() => setStatus('overdue')}>
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Overdue</p>
+        <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{overdueCount}</p>
+      </button>
+      <button class="tactile-box p-4 text-left w-full {cardCls('failed')}" onclick={() => setStatus('failed')}>
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Gagal</p>
+        <p class="text-xl font-extrabold text-stone-500 dark:text-stone-400">{failedCount}</p>
+      </button>
+    {/if}
+  </div>
+
+  <!-- Filter & search -->
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="input-well px-3 py-1.5 flex items-center gap-2 flex-1 min-w-[160px]">
+      <i class="fa-solid fa-magnifying-glass text-[var(--text-muted)] text-xs"></i>
+      <input type="text" bind:value={fQ} placeholder="Cari subscriber..." class="bg-transparent w-full text-xs focus:outline-none placeholder:text-[var(--text-muted)]" />
+    </div>
+    <select bind:value={fStatus} class="tactile-inset px-3 py-1.5 text-xs focus:outline-none cursor-pointer">
+      <option value="">Semua</option>
+      <option value="pending">Pending</option>
+      <option value="paid">Lunas</option>
+      <option value="overdue">Overdue</option>
+      <option value="failed">Gagal</option>
+    </select>
+    {#if hasFilter}
+      <button onclick={resetFilter} class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]"><i class="fa-solid fa-xmark mr-1"></i>Reset</button>
+    {/if}
+  </div>
 
   <div class="hidden md:block tactile-box overflow-x-auto">
     <div class="px-4 pt-4 pb-2">
@@ -161,7 +273,7 @@
             <td
               colspan={hasAction ? 6 : 5}
               class="px-4 py-8 text-center text-[var(--text-muted)]"
-              >Belum ada invoice</td
+              >{hasFilter ? "Tidak ada hasil filter" : "Belum ada invoice"}</td
             >
           </tr>
         {:else}
@@ -212,6 +324,11 @@
         {/if}
       </tbody>
     </table>
+    {#if pageTotal > PAGE_SIZE}
+      <div class="px-4 py-3">
+        <Pagination {page} total={pageTotal} pageSize={PAGE_SIZE} onChange={(p) => { page = p; }} />
+      </div>
+    {/if}
   </div>
 
   <!-- Mobile cards -->
@@ -229,7 +346,7 @@
       {/each}
     {:else if invoices.length === 0}
       <p class="text-center text-[var(--text-muted)] py-6 text-sm">
-        Belum ada invoice
+        {hasFilter ? "Tidak ada hasil filter" : "Belum ada invoice"}
       </p>
     {:else}
       {#each invoices as iv (iv.id)}
@@ -266,6 +383,9 @@
           {/if}
         </div>
       {/each}
+      {#if pageTotal > PAGE_SIZE}
+        <Pagination {page} total={pageTotal} pageSize={PAGE_SIZE} onChange={(p) => { page = p; }} />
+      {/if}
     {/if}
   </div>
 </div>

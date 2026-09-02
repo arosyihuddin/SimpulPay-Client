@@ -1,9 +1,9 @@
 <script lang="ts">
   // Admin Subscribers — kelola langganan semua subscriber (real API /admin/subscribers).
-  import { onMount } from "svelte";
   import { admin } from "$lib/api";
   import { addToast } from "$lib/toast.svelte";
   import Skeleton from "$lib/components/Skeleton.svelte";
+  import Pagination from "$lib/components/Pagination.svelte";
 
   interface Subscription {
     id: string;
@@ -36,6 +36,17 @@
   let fEndTo = $state("");
   let q = $state("");
 
+  const PAGE_SIZE = 20;
+  let page = $state(1);
+
+  // Total buat pagination — pakai count yang match status filter aktif.
+  const pageTotal = $derived(
+    fStatus === "active" ? activeCount
+      : fStatus === "cancelled" ? cancelledCount
+        : fStatus === "expired" ? expiredCount
+          : totalCount,
+  );
+
   const dayFrom = (d: string) => (d ? new Date(d + "T00:00:00").getTime() : undefined);
   const dayTo = (d: string) => (d ? new Date(d + "T23:59:59").getTime() : undefined);
 
@@ -60,7 +71,8 @@
         start_to: dayTo(fStartTo),
         end_from: dayFrom(fEndFrom),
         end_to: dayTo(fEndTo),
-        limit: 100,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
       };
       const s = await admin.listSubscriptions(params);
       subs = s.data.subscriptions || [];
@@ -74,9 +86,14 @@
       loadedOnce = true;
     }
   }
-  // Reload tiap filter berubah (debounce 300ms biar gak spam backend pas ngetik).
+  // Reset ke halaman 1 saat filter/search berubah.
   $effect(() => {
     void fStatus; void q; void fStartFrom; void fStartTo; void fEndFrom; void fEndTo;
+    page = 1;
+  });
+  // Reload tiap filter/halaman berubah (debounce 300ms biar gak spam backend pas ngetik).
+  $effect(() => {
+    void fStatus; void q; void fStartFrom; void fStartTo; void fEndFrom; void fEndTo; void page;
     const t = setTimeout(load, 300);
     return () => clearTimeout(t);
   });
@@ -267,6 +284,11 @@
         {/if}
       </tbody>
     </table>
+    {#if pageTotal > PAGE_SIZE}
+      <div class="px-4 py-3">
+        <Pagination page={page} total={pageTotal} pageSize={PAGE_SIZE} onChange={(p) => { page = p; }} />
+      </div>
+    {/if}
   </div>
 
   <!-- Mobile cards -->
@@ -309,6 +331,9 @@
           {/if}
         </div>
       {/each}
+      {#if pageTotal > PAGE_SIZE}
+        <Pagination page={page} total={pageTotal} pageSize={PAGE_SIZE} onChange={(p) => { page = p; }} />
+      {/if}
     {/if}
   </div>
 </div>
