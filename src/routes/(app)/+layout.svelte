@@ -193,7 +193,6 @@
   let notifs = $state<Notif[]>([]);
   let unread = $state(0);
   async function loadNotifs() {
-    if (notifLoading) return;
     notifLoading = true;
     try {
       const r = await admin.listNotifications();
@@ -205,17 +204,18 @@
       notifLoading = false;
     }
   }
-  // Fetch notifikasi sekali saat layout dipasang, gak perlu nunggu klik bell.
-  onMount(() => {
-    loadNotifs();
-  });
+  // Fetch notifikasi saat layout dipasang.
+  onMount(loadNotifs);
 
-  // Realtime: event "notification" (notifyUser dari backend) → toast + refresh notif.
+  // Realtime: event "notification" (notifyUser dari backend) → toast + inject langsung ke notif list.
   useWs((m) => {
     if (m.type === "notification") {
       const n = m.data ?? {};
       addToast("info", `${n.title}: ${n.message}`);
-      loadNotifs();
+      // Inject langsung, tanpa refetch — id dummy (negatif biar gak clash dg real).
+      const id = -(Date.now() + Math.floor(Math.random() * 9999));
+      notifs = [{ id, type: n.type, title: n.title, message: n.message, read: false, created_at: n.created_at ?? Date.now() }, ...notifs];
+      unread += 1;
     }
   });
   const notifCount = $derived(unread);

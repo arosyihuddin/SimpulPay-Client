@@ -1,5 +1,6 @@
 <script lang="ts">
-  // Toast — notifikasi floating di kanan atas. Auto-dismiss 3 detik.
+  // Toast — notifikasi floating di kanan atas, clay/skeuomorphic (tactile-box).
+  // Auto-dismiss 3 detik. Warna semantik lewat strip kiri + teks.
   import { toasts, removeToast } from '$lib/toast.svelte';
 
   const icons = {
@@ -8,9 +9,9 @@
     info: 'fa-solid fa-circle-info',
   };
   const cls = {
-    success: 'bg-emerald-100/90 dark:bg-emerald-500/15 border-emerald-200/60 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300',
-    error: 'bg-red-100/90 dark:bg-red-500/15 border-red-200/60 dark:border-red-500/30 text-red-700 dark:text-red-300',
-    info: 'bg-blue-100/90 dark:bg-blue-500/15 border-blue-200/60 dark:border-blue-500/30 text-blue-700 dark:text-blue-300',
+    success: 'text-emerald-700 dark:text-emerald-300',
+    error: 'text-red-700 dark:text-red-300',
+    info: 'text-blue-700 dark:text-blue-300',
   };
 </script>
 
@@ -27,7 +28,7 @@
           type="button"
           aria-label="Tutup"
           onclick={() => removeToast(t.id)}
-          class="shrink-0 opacity-60 hover:opacity-100 cursor-pointer"
+          class="shrink-0 opacity-60 hover:opacity-100 hover:text-[var(--text-main)] cursor-pointer"
         >
           <i class="fa-solid fa-xmark"></i>
         </button>
