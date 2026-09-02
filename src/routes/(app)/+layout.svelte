@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { admin } from "$lib/api";
@@ -150,7 +150,7 @@
     "Transaksi dari merchant terpilih",
   ];
 
-  const activePath = $derived($page.url.pathname);
+  const activePath = $derived(page.url.pathname);
 
   // Auth guard — redirect unauthed, block non-admin from admin pages.
   $effect(() => {

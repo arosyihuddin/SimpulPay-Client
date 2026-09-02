@@ -140,19 +140,35 @@
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <button class="tactile-box p-4 text-left w-full" onclick={() => setStatus("")}>
       <p class="text-[11px] text-[var(--text-muted)] font-medium">Total Transaksi</p>
-      <p class="text-xl font-extrabold">{total}</p>
+      {#if !loadedOnce}
+        <Skeleton className="h-6 w-16 mt-2" />
+      {:else}
+        <p class="text-xl font-extrabold">{total}</p>
+      {/if}
     </button>
     <button class="tactile-box p-4 text-left w-full {cardCls('pending')}" onclick={() => setStatus('pending')}>
       <p class="text-[11px] text-[var(--text-muted)] font-medium">Pending</p>
-      <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{pendingCount}</p>
+      {#if !loadedOnce}
+        <Skeleton className="h-6 w-16 mt-2" />
+      {:else}
+        <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{pendingCount}</p>
+      {/if}
     </button>
     <button class="tactile-box p-4 text-left w-full {cardCls('paid')}" onclick={() => setStatus('paid')}>
       <p class="text-[11px] text-[var(--text-muted)] font-medium">Dibayar</p>
-      <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{paidCount}</p>
+      {#if !loadedOnce}
+        <Skeleton className="h-6 w-16 mt-2" />
+      {:else}
+        <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{paidCount}</p>
+      {/if}
     </button>
     <button class="tactile-box p-4 text-left w-full {cardCls('expired')}" onclick={() => setStatus('expired')}>
       <p class="text-[11px] text-[var(--text-muted)] font-medium">Kedaluwarsa</p>
-      <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{expiredCount}</p>
+      {#if !loadedOnce}
+        <Skeleton className="h-6 w-16 mt-2" />
+      {:else}
+        <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{expiredCount}</p>
+      {/if}
     </button>
   </div>
 

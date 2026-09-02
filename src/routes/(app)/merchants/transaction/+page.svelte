@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import { admin, fmtIDR, fmtTime } from "$lib/api";
   import { addToast } from "$lib/toast.svelte";
   import { useWs } from "$lib/useWs";
@@ -42,11 +42,14 @@
   let copiedId = $state("");
 
   const copyOrder = (id: string) => {
-    navigator.clipboard.writeText(id).then(() => {
-      copiedId = id;
-      addToast('success', 'Order ID disalin!');
-      setTimeout(() => (copiedId = ""), 2000);
-    }).catch(() => {});
+    navigator.clipboard
+      .writeText(id)
+      .then(() => {
+        copiedId = id;
+        addToast("success", "Order ID disalin!");
+        setTimeout(() => (copiedId = ""), 2000);
+      })
+      .catch(() => {});
   };
 
   async function openQr(tx: TxRow) {
@@ -63,8 +66,11 @@
     qrBusyId = null;
   }
 
-  const mid = $derived($page.url.searchParams.get("merchant_id"));
-  $effect(() => { mid; curPage = 1; }); // reset halaman saat ganti filter merchant
+  const mid = $derived(page.url.searchParams.get("merchant_id"));
+  $effect(() => {
+    mid;
+    curPage = 1;
+  }); // reset halaman saat ganti filter merchant
 
   async function load() {
     loading = true;
@@ -136,9 +142,9 @@
       </thead>
       <tbody>
         {#if loading}
-          {#each Array.from({ length: 5 }) as _, i}
+          {#each Array.from({ length: 5 }) as _}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
-              {#each Array.from({ length: 6 }) as _, j}
+              {#each Array.from({ length: 6 }) as _}
                 <td class="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
               {/each}
             </tr>
@@ -147,9 +153,17 @@
           {#each rows as r (r.id)}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               <td class="px-4 py-3">
-                <button onclick={() => copyOrder(r.order_id)} title="Salin order-id" class="font-mono text-xs flex items-center gap-1.5 hover:text-[var(--accent)] transition group">
+                <button
+                  onclick={() => copyOrder(r.order_id)}
+                  title="Salin order-id"
+                  class="font-mono text-xs flex items-center gap-1.5 hover:text-[var(--accent)] transition group"
+                >
                   <span>{r.order_id}</span>
-                  <i class="fa-solid {copiedId === r.order_id ? 'fa-check text-emerald-500 pop' : 'fa-copy opacity-0 group-hover:opacity-100'} text-[10px]"></i>
+                  <i
+                    class="fa-solid {copiedId === r.order_id
+                      ? 'fa-check text-emerald-500 pop'
+                      : 'fa-copy opacity-0 group-hover:opacity-100'} text-[10px]"
+                  ></i>
                 </button>
               </td>
               <td class="px-4 py-3 font-semibold">{fmtIDR(r.amount)}</td>
@@ -160,18 +174,21 @@
                   )}">{r.status.toUpperCase()}</span
                 ></td
               >
-              <td class="px-4 py-3 text-xs font-semibold">{r.issuer || '—'}</td>
+              <td class="px-4 py-3 text-xs font-semibold">{r.issuer || "—"}</td>
               <td class="px-4 py-3 text-xs">{fmtTime(r.created_at)}</td>
               {#if hasPending}
                 <td class="px-4 py-3 text-right">
                   {#if r.status === "pending"}
-                  <button
-                    onclick={() => openQr(r)}
-                    disabled={qrBusyId === r.id}
-                    class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
-                  ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
+                    <button
+                      onclick={() => openQr(r)}
+                      disabled={qrBusyId === r.id}
+                      class="tactile-btn px-3 py-1.5 text-xs font-bold text-[var(--accent)]"
+                      ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id
+                        ? " Memuat..."
+                        : " QR"}</button
+                    >
                   {:else}
-                  <span class="text-xs text-[var(--text-muted)]">—</span>
+                    <span class="text-xs text-[var(--text-muted)]">—</span>
                   {/if}
                 </td>
               {/if}
@@ -194,7 +211,7 @@
   <!-- Mobile cards -->
   <div class="md:hidden space-y-3">
     {#if loading}
-      {#each Array.from({ length: 3 }) as _, i}
+      {#each Array.from({ length: 3 }) as _}
         <div class="tactile-box p-4 space-y-2">
           <Skeleton className="h-4 w-24" /><Skeleton
             className="h-5 w-32"
@@ -205,9 +222,17 @@
       {#each rows as r (r.id)}
         <div class="tactile-box p-4 space-y-2">
           <div class="flex items-center justify-between">
-            <button onclick={() => copyOrder(r.order_id)} title="Salin order-id" class="font-mono text-[var(--accent)] text-xs flex items-center gap-1.5 hover:opacity-80 transition">
+            <button
+              onclick={() => copyOrder(r.order_id)}
+              title="Salin order-id"
+              class="font-mono text-[var(--accent)] text-xs flex items-center gap-1.5 hover:opacity-80 transition"
+            >
               <span>{r.order_id}</span>
-              <i class="fa-solid {copiedId === r.order_id ? 'fa-check text-emerald-500 pop' : 'fa-copy'} text-[10px]"></i>
+              <i
+                class="fa-solid {copiedId === r.order_id
+                  ? 'fa-check text-emerald-500 pop'
+                  : 'fa-copy'} text-[10px]"
+              ></i>
             </button>
             <span class="text-base font-bold">{fmtIDR(r.amount)}</span>
           </div>
@@ -224,15 +249,18 @@
             >
           </div>
           <div class="text-xs text-[var(--text-muted)] flex justify-between">
-            <span>Issuer: {r.issuer || '—'}</span>
+            <span>Issuer: {r.issuer || "—"}</span>
             <span>{fmtTime(r.created_at)}</span>
           </div>
           {#if r.status === "pending"}
-          <button
-            onclick={() => openQr(r)}
-            disabled={qrBusyId === r.id}
-            class="tactile-btn w-full py-2 text-xs font-bold text-[var(--accent)]"
-          ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id ? ' Memuat...' : ' QR'}</button>
+            <button
+              onclick={() => openQr(r)}
+              disabled={qrBusyId === r.id}
+              class="tactile-btn w-full py-2 text-xs font-bold text-[var(--accent)]"
+              ><i class="fa-solid fa-qrcode"></i>{qrBusyId === r.id
+                ? " Memuat..."
+                : " QR"}</button
+            >
           {/if}
         </div>
       {/each}
@@ -257,5 +285,11 @@
 </div>
 
 {#if qrCode}
-  <QrCodeModal code={qrCode} {qrAmount} baseAmount={qrBase} uniqueCode={qrUnique} onClose={() => (qrCode = "")} />
+  <QrCodeModal
+    code={qrCode}
+    {qrAmount}
+    baseAmount={qrBase}
+    uniqueCode={qrUnique}
+    onClose={() => (qrCode = "")}
+  />
 {/if}
