@@ -3,6 +3,7 @@
   import { addToast } from '$lib/toast.svelte';
   import { onMount } from 'svelte';
   import { qrDataUrl } from '$lib/qrcode';
+  import { useWs } from '$lib/useWs';
 
   let { merchant, onClose, onDone } = $props();
 
@@ -11,10 +12,11 @@
   let busy = $state(false);
   let created = $state<any | null>(null);
   let qrSrc = $state('');
+  let expired = $state(false);
 
   async function create(e: SubmitEvent) {
     e.preventDefault();
-    busy = true; err = ''; created = null; qrSrc = '';
+    busy = true; err = ''; created = null; qrSrc = ''; expired = false;
     try {
       const a = parseInt(amount, 10);
       if (!a || a <= 0) throw new Error('Nominal tidak valid');
@@ -25,6 +27,11 @@
     } catch (e: any) { err = e.message; }
     finally { busy = false; }
   }
+
+  // QR yang lagi ditampilkan expired → tampilkan state expired (QR tak valid lagi).
+  useWs((m) => {
+    if (m.type === "qris_expired" && created?.qris_id === m.data?.id) expired = true;
+  });
 </script>
 
 <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -41,6 +48,15 @@
       <p class="text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/30 rounded-2xl px-4 py-3">
         ⚠️ QRIS static belum diatur untuk merchant ini. Konfigurasi dulu lewat tombol Konfigurasi (login GoBiz + scan QRIS static) sebelum buat QR dinamis.
       </p>
+    {:else if expired}
+      <div class="text-center py-6 space-y-3">
+        <div class="w-16 h-16 mx-auto rounded-full bg-red-100/80 dark:bg-red-500/10 flex items-center justify-center">
+          <i class="fa-solid fa-clock text-2xl text-red-500"></i>
+        </div>
+        <p class="font-bold text-lg">QRIS Kedaluwarsa</p>
+        <p class="text-xs text-[var(--text-muted)]">QRIS ini sudah kadaluwarsa dan tidak bisa digunakan lagi. Buat ulang untuk melanjutkan.</p>
+        <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
+      </div>
     {:else if created}
       <div class="space-y-4">
         <div class="flex justify-center">

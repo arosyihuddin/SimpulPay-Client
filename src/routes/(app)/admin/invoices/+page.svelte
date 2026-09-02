@@ -3,6 +3,7 @@
   import { onMount } from "svelte";
   import { admin, fmtIDR } from "$lib/api";
   import { addToast } from "$lib/toast.svelte";
+  import { useWs } from "$lib/useWs";
   import ConfirmModal from "$lib/components/ConfirmModal.svelte";
   import Skeleton from "$lib/components/Skeleton.svelte";
 
@@ -58,6 +59,11 @@
     }
   }
   onMount(load);
+
+  // Realtime scope=admin: ada invoice baru lunas/ditolak (dari pooling atau aksi admin lain).
+  useWs((m) => {
+    if (m.type === "invoice_paid" || m.type === "invoice_rejected") load();
+  });
 
   async function doInvoiceAction() {
     const target = invTarget;

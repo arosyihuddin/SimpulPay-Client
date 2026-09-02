@@ -39,6 +39,7 @@
   let qrBase = $state(0);
   let qrUnique = $state(0);
   let qrBusyId = $state<string | null>(null);
+  let qrTxId = $state("");
   let copiedId = $state("");
 
   const copyOrder = (id: string) => {
@@ -60,11 +61,17 @@
       qrAmount = tx.amount;
       qrBase = tx.base_amount;
       qrUnique = tx.unique_code;
+      qrTxId = tx.id;
     } catch {
       qrCode = "";
     }
     qrBusyId = null;
   }
+
+  const closeQr = () => {
+    qrCode = "";
+    qrTxId = "";
+  };
 
   const mid = $derived(page.url.searchParams.get("merchant_id"));
   $effect(() => {
@@ -103,7 +110,14 @@
   });
 
   useWs((m) => {
-    if (m.type === "qris_status" || m.type === "qris_created") load();
+    if (m.type === "qris_created" || m.type === "qris_expired" || m.type === "payment_received" || m.type === "transaction_updated") {
+      // QR yang lagi dibuka expired → tutup modal + update status row.
+      if (m.type === "qris_expired" && m.data?.id === qrTxId) {
+        closeQr();
+        rows = rows.map((r) => (r.id === m.data.id ? { ...r, status: "expired" } : r));
+      }
+      load();
+    }
   });
 </script>
 
@@ -290,6 +304,6 @@
     {qrAmount}
     baseAmount={qrBase}
     uniqueCode={qrUnique}
-    onClose={() => (qrCode = "")}
+    onClose={closeQr}
   />
 {/if}

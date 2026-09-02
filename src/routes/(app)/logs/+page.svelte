@@ -35,7 +35,7 @@
   }
   $effect(() => { load(); });
 
-  useWs((m) => { if (m.type === 'qris_status' || m.type === 'qris_created') load(); });
+  useWs((m) => { if (m.type === 'qris_status' || m.type === 'qris_created' || m.type === 'log' || m.type === 'qris_expired' || m.type === 'transaction_updated') load(); });
 </script>
 
 <div class="space-y-6">

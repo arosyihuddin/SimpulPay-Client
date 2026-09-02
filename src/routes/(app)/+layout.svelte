@@ -7,6 +7,8 @@
   import { theme, toggleTheme } from "$lib/theme.svelte";
   import Logo from "$lib/components/Logo.svelte";
   import Toast from "$lib/components/Toast.svelte";
+  import { addToast } from "$lib/toast.svelte";
+  import { useWs } from "$lib/useWs";
   let { children } = $props();
 
   // Grup menu: USER_LINKS untuk semua role, ADMIN_LINKS khusus admin.
@@ -206,6 +208,15 @@
   // Fetch notifikasi sekali saat layout dipasang, gak perlu nunggu klik bell.
   onMount(() => {
     loadNotifs();
+  });
+
+  // Realtime: event "notification" (notifyUser dari backend) → toast + refresh notif.
+  useWs((m) => {
+    if (m.type === "notification") {
+      const n = m.data ?? {};
+      addToast("info", `${n.title}: ${n.message}`);
+      loadNotifs();
+    }
   });
   const notifCount = $derived(unread);
   const notifMeta = (type: string) =>

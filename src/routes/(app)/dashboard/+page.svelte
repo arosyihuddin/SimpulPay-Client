@@ -79,7 +79,7 @@
   });
 
   useWs((m) => {
-    if (m.type === "qris_created" || m.type === "qris_status") load();
+    if (m.type === "qris_created" || m.type === "qris_expired" || m.type === "payment_received" || m.type === "transaction_updated") load();
   });
 
   const s = $derived(data?.stats);

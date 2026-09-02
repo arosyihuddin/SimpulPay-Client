@@ -4,6 +4,7 @@
   import Skeleton from '$lib/components/Skeleton.svelte';
   import QrCodeModal from '$lib/components/QrCodeModal.svelte';
   import { addToast } from '$lib/toast.svelte';
+  import { useWs } from '$lib/useWs';
 
   interface Plan {
     id: string; name: string; type: string; price: number;
@@ -81,6 +82,11 @@
     finally { loading = false; }
   }
   onMount(load);
+
+  // Realtime per-user: transaksi/invoice lunas atau sub dicancel → refresh.
+  useWs((m) => {
+    if (m.type === "payment_received" || m.type === "subscription_cancelled") load(true);
+  });
 
   function openPlans() { showPlans = true; }
   function closePlans() { showPlans = false; }

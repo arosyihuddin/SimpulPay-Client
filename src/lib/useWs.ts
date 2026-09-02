@@ -1,8 +1,9 @@
 import { onMount } from 'svelte';
 import { API_BASE } from './api';
+import { auth } from './auth.svelte';
 
-// Admin WebSocket — subscribe scope=admin. Auto-reconnect 3s.
-// API_BASE dari VITE_API_BASE. WS derived: http→ws, https→wss, strip path.
+// WebSocket realtime — admin subscribe scope=admin, selain itu per-user (tanpa scope).
+// Auto-reconnect 3s. API_BASE dari VITE_API_BASE. WS derived: http→ws, https→wss.
 export function useWs(onEvent: (msg: { type: string; data?: any }) => void) {
   onMount(() => {
     const wsBase = API_BASE
@@ -12,7 +13,8 @@ export function useWs(onEvent: (msg: { type: string; data?: any }) => void) {
     let retry: ReturnType<typeof setTimeout>;
 
     const connect = () => {
-      ws = new WebSocket(`${wsBase}/ws?scope=admin`);
+      const scope = auth.role === "admin" ? "?scope=admin" : "";
+      ws = new WebSocket(`${wsBase}/ws${scope}`);
       ws.onmessage = (e) => {
         try {
           onEvent(JSON.parse(e.data));
