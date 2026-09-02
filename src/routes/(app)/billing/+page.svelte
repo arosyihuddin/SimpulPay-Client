@@ -83,9 +83,9 @@
   }
   onMount(load);
 
-  // Realtime per-user: transaksi/invoice lunas atau sub dicancel → refresh.
+  // Realtime per-user: invoice baru/bayar atau sub dicancel → refresh.
   useWs((m) => {
-    if (m.type === "payment_received" || m.type === "subscription_cancelled") load(true);
+    if (m.type === "invoice_pending" || m.type === "payment_received" || m.type === "subscription_cancelled") load(true);
   });
 
   function openPlans() { showPlans = true; }
@@ -101,6 +101,26 @@
       const d = res.data || {};
       if (d.qris_code) {
         pay = { code: d.qris_code, amount: d.amount_to_pay, baseAmount: d.amount, uniqueCode: d.unique_code || 0 };
+        // Inject invoice pending ke tabel langsung dari response (tanpa nunggu WS).
+        if (d.invoice_id && !invoices.some((iv) => iv.id === d.invoice_id)) {
+          const now = Date.now();
+          invoices = [
+            {
+              id: d.invoice_id,
+              amount: d.amount_to_pay ?? d.amount,
+              status: 'pending',
+              qris_code: d.qris_code,
+              unique_code: d.unique_code || null,
+              amount_to_pay: d.amount_to_pay ?? null,
+              transaction_id: d.qris_id ?? null,
+              period_start: now,
+              period_end: now + 30 * 24 * 60 * 60 * 1000,
+              paid_at: null,
+              created_at: now,
+            },
+            ...invoices,
+          ];
+        }
       } else {
         addToast('success', 'Langganan ' + p.name + ' aktif.');
         load(true);

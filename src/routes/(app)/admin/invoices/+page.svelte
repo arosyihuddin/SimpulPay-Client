@@ -60,9 +60,37 @@
   }
   onMount(load);
 
-  // Realtime scope=admin: ada invoice baru lunas/ditolak (dari pooling atau aksi admin lain).
+  // Realtime scope=admin: inject langsung ke row (tanpa skeleton), baru paling atas.
   useWs((m) => {
-    if (m.type === "invoice_paid" || m.type === "invoice_rejected") load();
+    const d = m.data ?? {};
+    if (m.type === "invoice_pending") {
+      if (invoices.some((iv) => iv.id === d.invoice_id)) return; // duplikat
+      invoices = [
+        {
+          id: d.invoice_id,
+          user_id: d.user_id,
+          user_name: d.user_name ?? null,
+          user_email: d.user_email ?? null,
+          amount: d.amount,
+          status: "pending",
+          period_start: d.periodStart ?? Date.now(),
+          period_end: 0,
+          paid_at: null,
+          created_at: d.periodStart ?? Date.now(),
+        },
+        ...invoices,
+      ];
+    } else if (m.type === "invoice_paid" || m.type === "invoice_rejected") {
+      invoices = invoices.map((iv) =>
+        iv.id === d.invoice_id
+          ? {
+              ...iv,
+              status: m.type === "invoice_paid" ? "paid" : "failed",
+              paid_at: m.type === "invoice_paid" ? (d.paid_at ?? Date.now()) : iv.paid_at,
+            }
+          : iv,
+      );
+    }
   });
 
   async function doInvoiceAction() {
