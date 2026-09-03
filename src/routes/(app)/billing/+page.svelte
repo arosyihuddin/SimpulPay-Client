@@ -107,12 +107,26 @@
   useWs((m) => {
     const d = m.data ?? {};
     if (m.type === "invoice_paid") {
-      // Admin tandai lunas → patch status baris lokal, tanpa reload.
+      // Admin tandai lunas → patch status baris lokal + plan dari payload, tanpa reload.
       invoices = invoices.map((iv) =>
         iv.id === d.invoice_id
           ? { ...iv, status: "paid", paid_at: d.paid_at ?? Date.now() }
           : iv,
       );
+      const s = d.subscription;
+      if (s?.plan) {
+        sub = {
+          id: s.id ?? sub?.id ?? "",
+          plan_id: s.plan_id ?? s.plan.id,
+          plan_name: s.plan.name,
+          status: s.status ?? "active",
+          max_merchant: s.plan.max_merchants ?? null,
+          daily_paid_limit: s.plan.daily_paid_limit ?? null,
+          starts_at: s.starts_at ?? sub?.starts_at ?? null,
+          ends_at: s.ends_at ?? sub?.ends_at ?? null,
+          created_at: s.created_at ?? sub?.created_at ?? null,
+        };
+      }
     } else if (m.type === "subscriptions_cancelled") {
       // Langganan dicancel admin → turun ke free. Patch plan lokal.
       sub = {
