@@ -316,7 +316,7 @@
     <aside
       class="hidden lg:flex fixed inset-y-0 left-0 z-50 w-72 p-6 flex-col justify-between bg-[var(--bg-base)] border-r border-slate-300/40 dark:border-slate-800/40"
     >
-      <div class="flex items-center gap-3 mb-8">
+      <a href="/" class="flex items-center gap-3 mb-8" title="Ke Landing Page">
         <div
           class="tactile-btn w-12 h-12 flex items-center justify-center text-[var(--accent)] text-xl"
         >
@@ -330,7 +330,7 @@
             Merchant Gateway
           </p>
         </div>
-      </div>
+      </a>
 
       <div class="flex-1 min-h-0 overflow-y-auto -mr-2 pr-2 pb-4 no-scrollbar">
         <nav class="space-y-3">
