@@ -19,6 +19,7 @@
 
   let subs = $state<Subscription[]>([]);
   let err = $state("");
+  let loading = $state(true);
   let loadedOnce = $state(false);
   let totalCount = $state(0);
   let activeCount = $state(0);
@@ -62,6 +63,7 @@
       : "-";
 
   async function load() {
+    loading = true;
     err = "";
     try {
       const params = {
@@ -83,6 +85,7 @@
     } catch (e: any) {
       err = e.message;
     } finally {
+      loading = false;
       loadedOnce = true;
     }
   }
@@ -238,7 +241,7 @@
         </tr>
       </thead>
       <tbody>
-        {#if !loadedOnce}
+        {#if loading}
           {#each Array.from({ length: 3 }) as _, i}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               {#each Array.from({ length: 6 }) as _, j}
@@ -298,7 +301,7 @@
 
   <!-- Mobile cards -->
   <div class="md:hidden space-y-3">
-    {#if !loadedOnce}
+    {#if loading}
       {#each Array.from({ length: 3 }) as _, i}
         <div class="tactile-box p-4 space-y-2">
           <Skeleton className="h-4 w-32" /><Skeleton

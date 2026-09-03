@@ -36,6 +36,7 @@
   let expiredCount = $state(0);
   let curPage = $state(1);
   let err = $state("");
+  let loading = $state(true);
   let loadedOnce = $state(false);
   let qrCode = $state("");
   let qrAmount = $state(0);
@@ -107,6 +108,7 @@
   };
 
   async function load() {
+    loading = true;
     const params = {
       limit: PAGE_SIZE,
       offset: (curPage - 1) * PAGE_SIZE,
@@ -127,6 +129,7 @@
     } catch (e: any) {
       err = e.message;
     } finally {
+      loading = false;
       loadedOnce = true;
     }
   }
@@ -250,7 +253,7 @@
         </tr>
       </thead>
       <tbody>
-        {#if !loadedOnce}
+        {#if loading}
           {#each Array.from({ length: 5 }) as _, i}
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               {#each Array.from({ length: 6 }) as _, j}
@@ -321,7 +324,7 @@
 
   <!-- Mobile cards -->
   <div class="md:hidden space-y-3">
-    {#if !loadedOnce}
+    {#if loading}
       {#each Array.from({ length: 3 }) as _, i}
         <div class="tactile-box p-4 space-y-2">
           <Skeleton className="h-4 w-24" /><Skeleton
