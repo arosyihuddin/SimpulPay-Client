@@ -240,7 +240,46 @@
   </div>
 
   <!-- Riwayat Pembelian -->
-  {#if total > 0}
+  {#if !invoicesLoaded}
+    <div class="hidden md:block tactile-box overflow-x-auto">
+      <div class="px-4 pt-4 pb-2">
+        <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-receipt text-[var(--accent)]"></i> Riwayat Pembelian</h2>
+      </div>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-[var(--text-muted)] border-b border-[var(--border-subtle)]">
+            <th class="px-4 py-3 font-medium">Invoice</th>
+            <th class="px-4 py-3 font-medium">Jumlah</th>
+            <th class="px-4 py-3 font-medium">Periode</th>
+            <th class="px-4 py-3 font-medium">Dibayar</th>
+            <th class="px-4 py-3 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each Array.from({ length: 5 }) as _, i}
+            <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
+              {#each Array.from({ length: 5 }) as _, j}
+                <td class="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+              {/each}
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+    <div class="md:hidden space-y-3">
+      <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-receipt text-[var(--accent)]"></i> Riwayat Pembelian</h2>
+      {#each Array.from({ length: 5 }) as _}
+        <div class="tactile-box p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-4 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-3 w-40" />
+        </div>
+      {/each}
+    </div>
+  {:else if total > 0}
     <div class="hidden md:block tactile-box overflow-x-auto">
       <div class="px-4 pt-4 pb-2">
         <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-receipt text-[var(--accent)]"></i> Riwayat Pembelian</h2>
@@ -298,7 +337,7 @@
         <Pagination {page} {total} pageSize={PAGE_SIZE} onChange={setPage} />
       {/if}
     </div>
-  {:else if invoicesLoaded && !loading}
+  {:else}
     <div class="tactile-box p-10 text-center text-sm text-[var(--text-muted)]">
       Belum ada riwayat pembelian.
     </div>
