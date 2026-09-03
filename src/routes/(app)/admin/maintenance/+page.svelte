@@ -3,11 +3,13 @@
   import { admin } from '$lib/api';
   import { addToast } from '$lib/toast.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
+  import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
   let maintenance = $state(false);
   let loading = $state(true);
   let saving = $state(false);
   let err = $state('');
+  let confirm = $state<'aktif' | 'mati' | null>(null);
 
   async function load() {
     loading = true;
@@ -23,8 +25,7 @@
   }
   onMount(load);
 
-  async function toggle() {
-    const target = !maintenance;
+  async function toggle(target: boolean) {
     saving = true;
     err = '';
     try {
@@ -35,6 +36,7 @@
       err = e.message;
     } finally {
       saving = false;
+      confirm = null;
     }
   }
 </script>
@@ -69,7 +71,7 @@
           </p>
         </div>
         <button
-          onclick={toggle}
+          onclick={() => (confirm = maintenance ? 'mati' : 'aktif')}
           disabled={saving}
           class="tactile-btn px-5 py-3 text-sm font-bold shrink-0 disabled:opacity-50 disabled:cursor-not-allowed {maintenance
             ? 'text-red-500'
@@ -88,3 +90,20 @@
     {/if}
   </div>
 </div>
+
+<ConfirmModal
+  open={confirm !== null}
+  title={confirm === 'aktif' ? 'Aktifkan Mode Maintenance' : 'Matikan Mode Maintenance'}
+  confirmLabel={confirm === 'aktif' ? 'Ya, Aktifkan' : 'Ya, Matikan'}
+  busyLabel="Menyimpan..."
+  icon={confirm === 'aktif' ? 'fa-power-off' : 'fa-circle-check'}
+  busy={saving}
+  onConfirm={() => toggle(confirm === 'aktif')}
+  onClose={() => (confirm = null)}
+>
+  <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+    {confirm === 'aktif'
+      ? 'Aktifkan mode maintenance? Semua user tidak bisa mengakses sistem sampai mode ini dimatikan.'
+      : 'Matikan mode maintenance? Semua user bisa mengakses sistem kembali.'}
+  </p>
+</ConfirmModal>
