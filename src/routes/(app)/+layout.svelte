@@ -276,7 +276,6 @@
     payment_success: "/transactions",
     payment_received: "/transactions",
     invoice_pending: "/admin/invoices",
-    invoice_paid: "/admin/invoices",
     invoice_rejected: "/admin/invoices",
     subscription_cancelled: "/billing",
     usage: "/admin/users",
@@ -285,7 +284,12 @@
   function openNotif(n: Notif) {
     notifOpen = false;
     markRead(n);
-    const to = NOTIF_ROUTE[n.type];
+    const to =
+      n.type === "invoice_paid"
+        ? auth.role === "admin"
+          ? "/admin/invoices"
+          : "/billing"
+        : NOTIF_ROUTE[n.type];
     if (to) goto(to);
   }
   async function markAllRead() {
