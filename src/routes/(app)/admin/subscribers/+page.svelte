@@ -105,9 +105,14 @@
     err = "";
     try {
       await admin.cancelSubscription(target.id);
-      subs = subs.map((s) =>
-        s.id === target.id ? { ...s, status: "cancelled" as const } : s,
-      );
+      // Card count: pindah dari aktif ke dibatalkan (backend count di-update saat reload berikutnya).
+      activeCount = Math.max(0, activeCount - 1);
+      cancelledCount += 1;
+      // Filter default "active" → sub yang dicancel langsung keluar tabel;
+      // kalau filter lain/empty, status di-update dan tetap tampil.
+      subs = subs
+        .map((s) => (s.id === target.id ? { ...s, status: "cancelled" as const } : s))
+        .filter((s) => fStatus !== "active" || s.status !== "cancelled");
       cancelSub = null;
       addToast("success", "Langganan dibatalkan.");
     } catch (e: any) {
