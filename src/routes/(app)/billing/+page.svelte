@@ -105,7 +105,17 @@
 
   // Realtime per-user: invoice baru/bayar atau sub dicancel → refresh.
   useWs((m) => {
-    if (m.type === "invoice_pending" || m.type === "payment_received" || m.type === "subscription_cancelled") loadInvoices();
+    const d = m.data ?? {};
+    if (m.type === "invoice_paid") {
+      // Admin tandai lunas → patch status baris lokal, tanpa reload.
+      invoices = invoices.map((iv) =>
+        iv.id === d.invoice_id
+          ? { ...iv, status: "paid", paid_at: d.paid_at ?? Date.now() }
+          : iv,
+      );
+    } else if (m.type === "invoice_pending" || m.type === "payment_received" || m.type === "subscription_cancelled") {
+      loadInvoices();
+    }
   });
 
   function openPlans() { showPlans = true; }
