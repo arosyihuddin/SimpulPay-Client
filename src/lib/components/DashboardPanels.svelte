@@ -61,8 +61,8 @@
 
   // ---- Ringkasan merchant (real backend: /merchants/summary, diisi store) ----
 
-  // ---- Top Merchants (real endpoint /top-merchants) ----
-  let topMerchants = $state<any[] | null>(null);
+  // ---- Top Merchants (dari endpoint dashboard — data.top_merchants) ----
+  let { topMerchants = null } = $props<{ topMerchants?: any[] | null }>();
 
   // ---- Konfigurasi Gateway (real endpoint /settings) ----
   let gtwSettings = $state<Record<string, string> | null>(null);
@@ -75,7 +75,6 @@
   $effect(() => {
     admin.recentTransactions(5).then((d) => (txs = d.data?.transactions || [])).catch(() => (txs = []));
     admin.transactionVolume(range).then((d) => (volume = d.data)).catch(() => (volume = null));
-    admin.topMerchants(5).then((d) => (topMerchants = d.data?.merchants || [])).catch(() => (topMerchants = []));
     admin.settings().then((d) => (gtwSettings = d.data?.settings || null)).catch(() => (gtwSettings = null));
   });
 </script>
@@ -163,7 +162,7 @@
       </a>
     </div>
 
-    <!-- Top Merchants (real endpoint /top-merchants) -->
+    <!-- Top Merchants (dari prop dashboard data.top_merchants) -->
     <div class="tactile-box p-5 flex flex-col justify-between">
       <div>
         <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-store text-[var(--accent)]"></i> Top Merchants</h3>

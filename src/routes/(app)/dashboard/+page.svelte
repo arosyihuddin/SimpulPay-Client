@@ -15,6 +15,12 @@
       active_qris: number;
       total_qris: number;
     };
+    top_merchants?: {
+      rank: number;
+      merchant_id: string;
+      merchant_name?: string;
+      total: number;
+    }[];
     gobiz_session: {
       exists: boolean;
       phone?: string;
@@ -212,5 +218,5 @@
     </div>
   {/if}
 
-  <DashboardPanels />
+  <DashboardPanels topMerchants={data?.top_merchants ?? null} />
 </div>
