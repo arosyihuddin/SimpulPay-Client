@@ -129,7 +129,7 @@
           created_at: s.created_at ?? sub?.created_at ?? null,
         };
       }
-    } else if (m.type === "subscriptions_cancelled") {
+    } else if (m.type === "subscription_cancelled" || m.type === "subscriptions_cancelled") {
       // Langganan dicancel admin → turun ke free. Patch plan lokal.
       sub = {
         id: sub?.id ?? "",
@@ -142,7 +142,7 @@
         ends_at: sub?.ends_at ?? null,
         created_at: d.created_at ?? sub?.created_at ?? null,
       };
-    } else if (m.type === "invoice_pending" || m.type === "payment_received" || m.type === "subscription_cancelled") {
+    } else if (m.type === "invoice_pending" || m.type === "payment_received") {
       loadInvoices();
     }
   });
