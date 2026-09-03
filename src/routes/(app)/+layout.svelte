@@ -271,6 +271,22 @@
     unread = Math.max(0, unread - 1);
     await admin.markNotificationRead(n.id).catch(() => {});
   }
+  // Klik notif → tandai dibaca + arahkan ke halaman sesuai tipe.
+  const NOTIF_ROUTE: Record<string, string> = {
+    payment_success: "/transactions",
+    payment_received: "/transactions",
+    invoice_pending: "/admin/invoices",
+    invoice_paid: "/admin/invoices",
+    invoice_rejected: "/admin/invoices",
+    subscription_cancelled: "/admin/subscribers",
+    token_warning: "/developer/api-keys",
+  };
+  function openNotif(n: Notif) {
+    notifOpen = false;
+    markRead(n);
+    const to = NOTIF_ROUTE[n.type];
+    if (to) goto(to);
+  }
   async function markAllRead() {
     const unreadList = notifs.filter((n) => !n.read);
     notifs = notifs.map((x) => ({ ...x, read: true }));
@@ -592,7 +608,7 @@
                     {#each notifs as n (n.id)}
                       <button
                         type="button"
-                        onclick={() => markRead(n)}
+                        onclick={() => openNotif(n)}
                         class="w-full text-left p-2.5 rounded-xl tactile-inset flex items-start gap-3 {!n.read
                           ? 'opacity-100'
                           : 'opacity-50'}"
