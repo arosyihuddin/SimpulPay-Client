@@ -14,6 +14,7 @@
     baseAmount,
     uniqueCode,
     paid = false,
+    rejected = false,
     merchant,
     onDone,
     onClose,
@@ -23,6 +24,7 @@
     baseAmount?: number;
     uniqueCode?: number;
     paid?: boolean;
+    rejected?: boolean;
     merchant?: any;
     onDone?: () => void;
     onClose: () => void;
@@ -147,6 +149,15 @@
           </div>
           <p class="font-bold text-xl">Pembayaran Berhasil</p>
           <p class="text-xs text-[var(--text-muted)]">Transaksi sudah dibayar dan sedang diproses.</p>
+          <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
+        </div>
+      {:else if rejected}
+        <div class="text-center py-6 space-y-4">
+          <div class="w-20 h-20 mx-auto rounded-full bg-red-100/80 dark:bg-red-500/10 flex items-center justify-center animate-bounce-in">
+            <i class="fa-solid fa-circle-xmark text-4xl text-red-500"></i>
+          </div>
+          <p class="font-bold text-xl">Pembayaran Ditolak</p>
+          <p class="text-xs text-[var(--text-muted)]">Invoice ditolak oleh admin. Langganan tidak diaktifkan.</p>
           <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
         </div>
       {:else}

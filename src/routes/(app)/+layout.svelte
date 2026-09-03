@@ -278,7 +278,8 @@
     invoice_pending: "/admin/invoices",
     invoice_paid: "/admin/invoices",
     invoice_rejected: "/admin/invoices",
-    subscription_cancelled: "/admin/subscribers",
+    subscription_cancelled: "/billing",
+    usage: "/admin/users",
     token_warning: "/developer/api-keys",
   };
   function openNotif(n: Notif) {

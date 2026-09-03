@@ -132,18 +132,26 @@
         };
       }
     } else if (m.type === "subscription_cancelled" || m.type === "subscriptions_cancelled") {
-      // Langganan dicancel admin → turun ke free. Patch plan lokal.
-      sub = {
-        id: sub?.id ?? "",
-        plan_id: d.plan_id,
-        plan_name: d.plan_name,
-        status: d.status ?? "active",
-        max_merchant: d.max_merchant ?? null,
-        daily_paid_limit: d.daily_paid_limit ?? null,
-        starts_at: sub?.starts_at ?? null,
-        ends_at: sub?.ends_at ?? null,
-        created_at: d.created_at ?? sub?.created_at ?? null,
-      };
+      if (d.status === "failed" && d.invoice_id) {
+        // Invoice ditolak admin → plan TIDAK diubah, cuma status invoice + modal QR.
+        invoices = invoices.map((iv) =>
+          iv.id === d.invoice_id ? { ...iv, status: "failed" } : iv,
+        );
+        if (pay?.invoice_id === d.invoice_id && pay && !pay.paid) pay = { ...pay, rejected: true };
+      } else {
+        // Langganan beneran dicancel admin → turun ke free. Patch plan lokal.
+        sub = {
+          id: sub?.id ?? "",
+          plan_id: d.plan_id,
+          plan_name: d.plan_name,
+          status: d.status ?? "active",
+          max_merchant: d.max_merchant ?? null,
+          daily_paid_limit: d.daily_paid_limit ?? null,
+          starts_at: sub?.starts_at ?? null,
+          ends_at: sub?.ends_at ?? null,
+          created_at: d.created_at ?? sub?.created_at ?? null,
+        };
+      }
     } else if (m.type === "invoice_pending" || m.type === "payment_received") {
       loadInvoices();
     }
@@ -446,6 +454,7 @@
     baseAmount={pay.baseAmount}
     uniqueCode={pay.uniqueCode}
     paid={pay.paid}
+    rejected={pay.rejected}
     onClose={() => (pay = null)}
   />
 {/if}
