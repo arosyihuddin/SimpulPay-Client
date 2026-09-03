@@ -107,6 +107,8 @@
   useWs((m) => {
     const d = m.data ?? {};
     if (m.type === "invoice_paid") {
+      // Modal QR yang lagi dibuka untuk invoice ini → tampilkan state sukses.
+      if (pay?.invoice_id === d.invoice_id && pay && !pay.paid) pay = { ...pay, paid: true };
       // Admin tandai lunas → patch status baris lokal + plan dari payload, tanpa reload.
       invoices = invoices.map((iv) =>
         iv.id === d.invoice_id
@@ -157,7 +159,7 @@
       closePlans();
       const d = res.data || {};
       if (d.qris_code) {
-        pay = { code: d.qris_code, amount: d.amount_to_pay, baseAmount: d.amount, uniqueCode: d.unique_code || 0 };
+        pay = { code: d.qris_code, amount: d.amount_to_pay, baseAmount: d.amount, uniqueCode: d.unique_code || 0, invoice_id: d.invoice_id ?? '', paid: false };
         // Inject invoice pending ke tabel langsung dari response (tanpa nunggu WS).
         if (d.invoice_id && !invoices.some((iv) => iv.id === d.invoice_id)) {
           const now = Date.now();
@@ -341,7 +343,7 @@
               <td class="px-4 py-3">
                 <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(i.status)}">{i.status.toUpperCase()}</span>
                 {#if i.status === 'pending' && i.qris_code}
-                  <button onclick={() => (pay = { code: i.qris_code, amount: i.amount_to_pay || i.amount, baseAmount: i.amount, uniqueCode: i.unique_code || 0 })} title="Bayar invoice" class="tactile-btn ml-2 px-3 py-1 text-xs font-bold text-[var(--accent)]"><i class="fa-solid fa-qrcode"></i> Bayar</button>
+                  <button onclick={() => (pay = { code: i.qris_code, amount: i.amount_to_pay || i.amount, baseAmount: i.amount, uniqueCode: i.unique_code || 0, invoice_id: i.id, paid: false })} title="Bayar invoice" class="tactile-btn ml-2 px-3 py-1 text-xs font-bold text-[var(--accent)]"><i class="fa-solid fa-qrcode"></i> Bayar</button>
                 {/if}
               </td>
             </tr>
@@ -441,6 +443,7 @@
     qrAmount={pay.amount}
     baseAmount={pay.baseAmount}
     uniqueCode={pay.uniqueCode}
+    paid={pay.paid}
     onClose={() => (pay = null)}
   />
 {/if}
