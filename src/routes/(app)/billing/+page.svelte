@@ -116,17 +116,19 @@
           : iv,
       );
       const s = d.subscription;
-      if (s?.plan) {
+      if (s || d.plan_id) {
+        // Payload real cuma bawa plan_id, tanpa objek plan → ambil detail dari daftar plans lokal.
+        const pl = plans.find((p) => p.id === (s?.plan_id ?? d.plan_id));
         sub = {
-          id: s.id ?? sub?.id ?? "",
-          plan_id: s.plan_id ?? s.plan.id,
-          plan_name: s.plan.name,
-          status: s.status ?? "active",
-          max_merchant: s.plan.max_merchants ?? null,
-          daily_paid_limit: s.plan.daily_paid_limit ?? null,
-          starts_at: s.starts_at ?? sub?.starts_at ?? null,
-          ends_at: s.ends_at ?? sub?.ends_at ?? null,
-          created_at: s.created_at ?? sub?.created_at ?? null,
+          id: s?.id ?? sub?.id ?? "",
+          plan_id: s?.plan_id ?? d.plan_id,
+          plan_name: pl?.name ?? d.plan_name ?? sub?.plan_name ?? "",
+          status: s?.status ?? "active",
+          max_merchant: pl?.max_merchants ?? d.max_merchant ?? sub?.max_merchant ?? null,
+          daily_paid_limit: pl?.daily_paid_limit ?? d.daily_paid_limit ?? sub?.daily_paid_limit ?? null,
+          starts_at: s?.starts_at ?? sub?.starts_at ?? null,
+          ends_at: s?.ends_at ?? sub?.ends_at ?? null,
+          created_at: s?.created_at ?? sub?.created_at ?? null,
         };
       }
     } else if (m.type === "subscription_cancelled" || m.type === "subscriptions_cancelled") {
