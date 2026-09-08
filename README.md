@@ -1,6 +1,6 @@
-# GoMerch Client
+# SimpulPay Client
 
-Admin dashboard SPA (SvelteKit + adapter-static + Tailwind v4) untuk GoMerch API. Dipisah dari backend — development pakai Vite dev server + proxy ke API.
+Admin dashboard SPA (SvelteKit + adapter-static + Tailwind v4) untuk SimpulPay. Dipisah dari backend — development pakai Vite dev server + proxy ke API.
 
 ## Setup
 

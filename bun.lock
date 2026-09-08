@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "gomerch-client",
+      "name": "simpulpay-client",
       "dependencies": {
         "qrcode": "^1.5.4",
       },

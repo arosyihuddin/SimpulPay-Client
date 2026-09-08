@@ -1,10 +1,10 @@
 <script lang="ts">
-  import Pagination from '$lib/components/Pagination.svelte';
-  import Skeleton from '$lib/components/Skeleton.svelte';
-  import { admin } from '$lib/api';
-  import { addToast } from '$lib/toast.svelte';
+  import Pagination from "$lib/components/Pagination.svelte";
+  import Skeleton from "$lib/components/Skeleton.svelte";
+  import { admin } from "$lib/api";
+  import { addToast } from "$lib/toast.svelte";
 
-  // User sistem GoMerch — data dari backend (GET /admin/users).
+  // User sistem SimpulPay — data dari backend (GET /admin/users).
   // Backend pakai email sebagai identitas (username sudah dihapus).
 
   interface User {
@@ -14,18 +14,39 @@
     status: string;
     created_at: number;
     updated_at: number;
-    plan?: { id: string; name: string; type: string; price: number; max_merchants: number; daily_paid_limit: number | null; } | null;
-    latest_invoice?: { id: string; amount: number; status: string; period_end: number; } | null;
+    plan?: {
+      id: string;
+      name: string;
+      type: string;
+      price: number;
+      max_merchants: number;
+      daily_paid_limit: number | null;
+    } | null;
+    latest_invoice?: {
+      id: string;
+      amount: number;
+      status: string;
+      period_end: number;
+    } | null;
   }
-  interface Plan { id: string; name: string; type: string; price: number; max_merchants: number; daily_paid_limit: number | null; features_json: string | null; active: boolean; }
+  interface Plan {
+    id: string;
+    name: string;
+    type: string;
+    price: number;
+    max_merchants: number;
+    daily_paid_limit: number | null;
+    features_json: string | null;
+    active: boolean;
+  }
 
   let users = $state<User[]>([]);
   let plans = $state<Plan[]>([]);
   let loadedOnce = $state(false);
-  let loadErr = $state('');
+  let loadErr = $state("");
 
   async function load() {
-    loadErr = '';
+    loadErr = "";
     try {
       const u = await admin.listUsers({ q: q.trim() || undefined, limit: 100 });
       users = u.data.users || [];
@@ -37,10 +58,10 @@
   }
 
   let planLoading = $state(false);
-  let planErr = $state('');
+  let planErr = $state("");
   async function loadPlans() {
     planLoading = true;
-    planErr = '';
+    planErr = "";
     try {
       const p = await admin.listPlans();
       plans = p.data.plans;
@@ -51,8 +72,8 @@
     }
   }
 
-  let q = $state('');
-  let fStatus = $state('');
+  let q = $state("");
+  let fStatus = $state("");
   const hasFilter = $derived(!!(fStatus || q));
   const setStatus = (st: string) => (fStatus = fStatus === st ? "" : st);
   const cardCls = (st: string) =>
@@ -65,13 +86,22 @@
   const PAGE_SIZE = 5;
   let page = $state(1);
   // Filter per status (client-side — data udah ke-ambil semua).
-  const filtered = $derived(users.filter((u) => !fStatus || u.status === fStatus));
-  const pageItems = $derived(filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
-  function setPage(p: number) { page = p; }
+  const filtered = $derived(
+    users.filter((u) => !fStatus || u.status === fStatus),
+  );
+  const pageItems = $derived(
+    filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+  );
+  function setPage(p: number) {
+    page = p;
+  }
   // Reset ke halaman 1 saat q/status berubah.
-  $effect(() => { if (page > Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))) page = 1; });
   $effect(() => {
-    void q; void fStatus;
+    if (page > Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))) page = 1;
+  });
+  $effect(() => {
+    void q;
+    void fStatus;
     page = 1;
   });
   // Reload tiap q berubah (debounce 300ms)
@@ -81,34 +111,60 @@
     return () => clearTimeout(t);
   });
 
-  const active = $derived(users.filter((u) => u.status === 'active').length);
-  const suspended = $derived(users.filter((u) => u.status === 'suspended').length);
-  const banned = $derived(users.filter((u) => u.status === 'banned').length);
+  const active = $derived(users.filter((u) => u.status === "active").length);
+  const suspended = $derived(
+    users.filter((u) => u.status === "suspended").length,
+  );
+  const banned = $derived(users.filter((u) => u.status === "banned").length);
 
-  const ROLES = ['admin', 'customer'];
-  const STATUSES = ['active', 'suspended', 'banned'];
+  const ROLES = ["admin", "customer"];
+  const STATUSES = ["active", "suspended", "banned"];
   // Plan aktif dari backend, pakai id sebagai value.
-  const PLAN_OPTS = $derived(plans.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name })));
-  const defaultPlan = $derived(PLAN_OPTS[0]?.id || '');
-  $effect(() => { if (defaultPlan && !PLAN_OPTS.some((p) => p.id === form.plan)) form.plan = defaultPlan; });
+  const PLAN_OPTS = $derived(
+    plans.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name })),
+  );
+  const defaultPlan = $derived(PLAN_OPTS[0]?.id || "");
+  $effect(() => {
+    if (defaultPlan && !PLAN_OPTS.some((p) => p.id === form.plan))
+      form.plan = defaultPlan;
+  });
 
-  const roleLabel = (r: string) => (r === 'admin' ? 'ADMIN' : 'CUSTOMER');
+  const roleLabel = (r: string) => (r === "admin" ? "ADMIN" : "CUSTOMER");
   const roleCls = (r: string) =>
-    r === 'admin' ? 'tactile-pill pill-violet' : 'tactile-pill pill-green';
+    r === "admin" ? "tactile-pill pill-violet" : "tactile-pill pill-green";
   const statusCls = (st: string | undefined) =>
-    st === 'active' ? 'tactile-pill pill-green'
-    : st === 'suspended' ? 'tactile-pill pill-amber'
-    : 'tactile-pill pill-red';
+    st === "active"
+      ? "tactile-pill pill-green"
+      : st === "suspended"
+        ? "tactile-pill pill-amber"
+        : "tactile-pill pill-red";
 
   const displayName = (u: User) => u.email;
-  const initials = (u: User) => displayName(u).split('@')[0].slice(0, 2).toUpperCase();
+  const initials = (u: User) =>
+    displayName(u).split("@")[0].slice(0, 2).toUpperCase();
   const fmtDate = (iso: string | number | undefined) =>
-    iso ? new Date(typeof iso === 'number' ? iso : iso + (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? 'T00:00:00' : '')).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-  const fmtTime = (ts: number) => ts ? new Date(ts).toLocaleString('id-ID') : '—';
+    iso
+      ? new Date(
+          typeof iso === "number"
+            ? iso
+            : iso +
+              (typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso)
+                ? "T00:00:00"
+                : ""),
+        ).toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "—";
+  const fmtTime = (ts: number) =>
+    ts ? new Date(ts).toLocaleString("id-ID") : "—";
   const avatarCls = (u: User) =>
-    u.status === 'active' ? 'text-emerald-600 dark:text-emerald-300'
-    : u.status === 'suspended' ? 'text-amber-600 dark:text-amber-300'
-    : 'text-red-600 dark:text-red-300';
+    u.status === "active"
+      ? "text-emerald-600 dark:text-emerald-300"
+      : u.status === "suspended"
+        ? "text-amber-600 dark:text-amber-300"
+        : "text-red-600 dark:text-red-300";
 
   // ---- Menu titik tiga per baris ----
   let menuFor = $state<string | null>(null);
@@ -117,7 +173,11 @@
 
   // Buka menu — posisi fixed (koordinat tombol) biar tidak ke-clip container (overflow table).
   function toggleMenu(u: User, e: Event) {
-    if (menuFor === u.id) { menuFor = null; menuPos = null; return; }
+    if (menuFor === u.id) {
+      menuFor = null;
+      menuPos = null;
+      return;
+    }
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const W = 192;
     menuPos = {
@@ -126,7 +186,10 @@
     };
     menuFor = u.id;
   }
-  const closeMenu = () => { menuFor = null; menuPos = null; };
+  const closeMenu = () => {
+    menuFor = null;
+    menuPos = null;
+  };
 
   // Ubah status user (active/suspended/banned) lewat API updateUser.
   async function setUserStatus(u: User, st: string) {
@@ -134,7 +197,7 @@
     try {
       await admin.updateUser(u.id, { status: st });
       users = users.map((x) => (x.id === u.id ? { ...x, status: st } : x));
-      addToast('success', `Status "${u.email}" diubah ke ${st}.`);
+      addToast("success", `Status "${u.email}" diubah ke ${st}.`);
     } catch (e: any) {
       loadErr = e.message;
     }
@@ -143,38 +206,54 @@
   // ---- Detail user modal ----
   let detailOpen = $state(false);
   let sel = $state<User | null>(null);
-  function openDetail(u: User) { sel = u; detailOpen = true; }
+  function openDetail(u: User) {
+    sel = u;
+    detailOpen = true;
+  }
 
   // ---- Form tambah / edit ----
   let editOpen = $state(false);
   let editing = $state<User | null>(null);
-  const emptyForm = () => ({ email: '', password: '', role: 'customer', plan: '', status: 'active' });
+  const emptyForm = () => ({
+    email: "",
+    password: "",
+    role: "customer",
+    plan: "",
+    status: "active",
+  });
   let form = $state(emptyForm());
   let showPass = $state(false);
-  let formErr = $state('');
+  let formErr = $state("");
   let saving = $state(false);
 
   // Generate password acak (12 karakter, huruf+angka+simbol).
   function genPass() {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    const chars =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
     form.password = Array.from(crypto.getRandomValues(new Uint32Array(12)))
       .map((n) => chars[n % chars.length])
-      .join('');
+      .join("");
     showPass = true;
   }
 
   function openEdit(u: User) {
     editing = u;
     showPass = false;
-    formErr = '';
+    formErr = "";
     loadPlans();
-    form = { email: u.email, password: '', role: u.role, plan: u.plan?.id || defaultPlan, status: u.status || 'active' };
+    form = {
+      email: u.email,
+      password: "",
+      role: u.role,
+      plan: u.plan?.id || defaultPlan,
+      status: u.status || "active",
+    };
     editOpen = true;
   }
   function openAdd() {
     editing = null;
     showPass = false;
-    formErr = '';
+    formErr = "";
     form = emptyForm();
     loadPlans();
     editOpen = true;
@@ -182,12 +261,24 @@
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   async function save() {
-    formErr = '';
+    formErr = "";
     const email = form.email.trim().toLowerCase();
-    if (!EMAIL_RE.test(email)) { formErr = 'Format email tidak valid.'; return; }
-    if (!editing && form.password.length < 8) { formErr = 'Password minimal 8 karakter.'; return; }
-    if (editing && form.password && form.password.length < 8) { formErr = 'Password minimal 8 karakter.'; return; }
-    if (!ROLES.includes(form.role)) { formErr = 'Role tidak valid.'; return; }
+    if (!EMAIL_RE.test(email)) {
+      formErr = "Format email tidak valid.";
+      return;
+    }
+    if (!editing && form.password.length < 8) {
+      formErr = "Password minimal 8 karakter.";
+      return;
+    }
+    if (editing && form.password && form.password.length < 8) {
+      formErr = "Password minimal 8 karakter.";
+      return;
+    }
+    if (!ROLES.includes(form.role)) {
+      formErr = "Role tidak valid.";
+      return;
+    }
     const extra = { plan_id: form.plan, status: form.status };
     saving = true;
     try {
@@ -197,15 +288,54 @@
         await admin.updateUser(editing.id, patch);
         users = users.map((u) =>
           u.id === editing!.id
-            ? { ...u, email, role: form.role, status: form.status, plan: { id: form.plan, name: plans.find((p) => p.id === form.plan)?.name || '', type: 'paid', price: 0, max_merchants: 0, daily_paid_limit: null } }
+            ? {
+                ...u,
+                email,
+                role: form.role,
+                status: form.status,
+                plan: {
+                  id: form.plan,
+                  name: plans.find((p) => p.id === form.plan)?.name || "",
+                  type: "paid",
+                  price: 0,
+                  max_merchants: 0,
+                  daily_paid_limit: null,
+                },
+              }
             : u,
         );
       } else {
-        const r = await admin.createUser(email, form.password, form.role, extra);
-        users = [...users, { id: r.data.id, email, role: form.role, status: form.status, created_at: Date.now(), updated_at: Date.now(), plan: form.plan ? { id: form.plan, name: plans.find((p) => p.id === form.plan)?.name || '', type: 'paid', price: 0, max_merchants: 0, daily_paid_limit: null } : null, latest_invoice: null }];
+        const r = await admin.createUser(
+          email,
+          form.password,
+          form.role,
+          extra,
+        );
+        users = [
+          ...users,
+          {
+            id: r.data.id,
+            email,
+            role: form.role,
+            status: form.status,
+            created_at: Date.now(),
+            updated_at: Date.now(),
+            plan: form.plan
+              ? {
+                  id: form.plan,
+                  name: plans.find((p) => p.id === form.plan)?.name || "",
+                  type: "paid",
+                  price: 0,
+                  max_merchants: 0,
+                  daily_paid_limit: null,
+                }
+              : null,
+            latest_invoice: null,
+          },
+        ];
       }
       editOpen = false;
-      addToast('success', editing ? 'User diperbarui.' : 'User ditambahkan.');
+      addToast("success", editing ? "User diperbarui." : "User ditambahkan.");
     } catch (e: any) {
       formErr = e.message;
     } finally {
@@ -216,17 +346,17 @@
   // ---- Hapus user ----
   let delTarget = $state<User | null>(null);
   let delBusy = $state(false);
-  let delErr = $state('');
+  let delErr = $state("");
   async function confirmDelete() {
     if (!delTarget) return;
     const id = delTarget.id;
     delBusy = true;
-    delErr = '';
+    delErr = "";
     try {
       await admin.deleteUser(id);
       users = users.filter((u) => u.id !== id);
       delTarget = null;
-      addToast('success', 'User dihapus.');
+      addToast("success", "User dihapus.");
     } catch (e: any) {
       delErr = e.message;
     } finally {
@@ -246,21 +376,45 @@
         </div>
       {/each}
     {:else}
-      <button class="tactile-box p-4 text-left w-full" onclick={() => setStatus('')}>
-        <p class="text-[11px] text-[var(--text-muted)] font-medium">Total User</p>
+      <button
+        class="tactile-box p-4 text-left w-full"
+        onclick={() => setStatus("")}
+      >
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">
+          Total User
+        </p>
         <p class="text-xl font-extrabold">{users.length}</p>
       </button>
-      <button class="tactile-box p-4 text-left w-full {cardCls('active')}" onclick={() => setStatus('active')}>
+      <button
+        class="tactile-box p-4 text-left w-full {cardCls('active')}"
+        onclick={() => setStatus("active")}
+      >
         <p class="text-[11px] text-[var(--text-muted)] font-medium">Aktif</p>
-        <p class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{active}</p>
+        <p
+          class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400"
+        >
+          {active}
+        </p>
       </button>
-      <button class="tactile-box p-4 text-left w-full {cardCls('suspended')}" onclick={() => setStatus('suspended')}>
-        <p class="text-[11px] text-[var(--text-muted)] font-medium">Suspended</p>
-        <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{suspended}</p>
+      <button
+        class="tactile-box p-4 text-left w-full {cardCls('suspended')}"
+        onclick={() => setStatus("suspended")}
+      >
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">
+          Suspended
+        </p>
+        <p class="text-xl font-extrabold text-amber-600 dark:text-amber-400">
+          {suspended}
+        </p>
       </button>
-      <button class="tactile-box p-4 text-left w-full {cardCls('banned')}" onclick={() => setStatus('banned')}>
+      <button
+        class="tactile-box p-4 text-left w-full {cardCls('banned')}"
+        onclick={() => setStatus("banned")}
+      >
         <p class="text-[11px] text-[var(--text-muted)] font-medium">Banned</p>
-        <p class="text-xl font-extrabold text-red-600 dark:text-red-400">{banned}</p>
+        <p class="text-xl font-extrabold text-red-600 dark:text-red-400">
+          {banned}
+        </p>
       </button>
     {/if}
   </div>
@@ -268,7 +422,9 @@
   <!-- Cari + Tambah -->
   <div class="flex items-center gap-3">
     <div class="relative flex-1 max-w-md">
-      <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm"></i>
+      <i
+        class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm"
+      ></i>
       <input
         type="text"
         bind:value={q}
@@ -277,26 +433,43 @@
       />
     </div>
     {#if hasFilter}
-      <button onclick={resetFilter} class="tactile-btn px-3 py-2.5 text-xs font-bold text-[var(--text-muted)]"><i class="fa-solid fa-xmark mr-1"></i>Reset</button>
+      <button
+        onclick={resetFilter}
+        class="tactile-btn px-3 py-2.5 text-xs font-bold text-[var(--text-muted)]"
+        ><i class="fa-solid fa-xmark mr-1"></i>Reset</button
+      >
     {/if}
-    <button onclick={openAdd} class="tactile-btn px-4 py-2.5 font-bold text-[var(--accent)] text-sm flex items-center gap-2 whitespace-nowrap">
+    <button
+      onclick={openAdd}
+      class="tactile-btn px-4 py-2.5 font-bold text-[var(--accent)] text-sm flex items-center gap-2 whitespace-nowrap"
+    >
       <i class="fa-solid fa-plus"></i> Tambah
     </button>
   </div>
 
   {#if loadErr}
-    <p class="text-sm font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
+    <p
+      class="text-sm font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 flex items-center justify-between gap-3"
+    >
       <span>{loadErr}</span>
-      <button onclick={load} class="text-[var(--accent)] font-bold">Coba lagi</button>
+      <button onclick={load} class="text-[var(--accent)] font-bold"
+        >Coba lagi</button
+      >
     </p>
   {:else if !loadedOnce}
     <div class="tactile-box divide-y divide-[var(--border-subtle)]/50">
       {#each Array(5) as _}
         <div class="p-4 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-[var(--border-subtle)]/60 animate-pulse"></div>
+          <div
+            class="w-9 h-9 rounded-xl bg-[var(--border-subtle)]/60 animate-pulse"
+          ></div>
           <div class="space-y-2 flex-1">
-            <div class="h-3 w-1/3 bg-[var(--border-subtle)]/60 animate-pulse rounded"></div>
-            <div class="h-2.5 w-1/4 bg-[var(--border-subtle)]/60 animate-pulse rounded"></div>
+            <div
+              class="h-3 w-1/3 bg-[var(--border-subtle)]/60 animate-pulse rounded"
+            ></div>
+            <div
+              class="h-2.5 w-1/4 bg-[var(--border-subtle)]/60 animate-pulse rounded"
+            ></div>
           </div>
         </div>
       {/each}
@@ -306,7 +479,9 @@
     <div class="hidden md:block tactile-box overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
-          <tr class="text-left text-[var(--text-muted)] border-b border-[var(--border-subtle)]">
+          <tr
+            class="text-left text-[var(--text-muted)] border-b border-[var(--border-subtle)]"
+          >
             <th class="px-4 py-3 font-medium">User</th>
             <th class="px-4 py-3 font-medium">Plan</th>
             <th class="px-4 py-3 font-medium">Status</th>
@@ -320,27 +495,49 @@
             <tr class="border-b border-[var(--border-subtle)]/50 last:border-0">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-xl bg-emerald-500/10 tactile-inset flex items-center justify-center text-xs font-extrabold {avatarCls(u)}">
+                  <div
+                    class="w-9 h-9 rounded-xl bg-emerald-500/10 tactile-inset flex items-center justify-center text-xs font-extrabold {avatarCls(
+                      u,
+                    )}"
+                  >
                     {initials(u)}
                   </div>
                   <div>
                     <p class="font-bold">{displayName(u)}</p>
-                    <p class="text-xs text-[var(--text-muted)]">{u.email || '—'}</p>
+                    <p class="text-xs text-[var(--text-muted)]">
+                      {u.email || "—"}
+                    </p>
                   </div>
                 </div>
               </td>
-              <td class="px-4 py-3 font-semibold">{u.plan?.name || '—'}</td>
+              <td class="px-4 py-3 font-semibold">{u.plan?.name || "—"}</td>
               <td class="px-4 py-3">
                 {#if u.status}
-                  <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(u.status)}">{u.status.toUpperCase()}</span>
+                  <span
+                    class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(
+                      u.status,
+                    )}">{u.status.toUpperCase()}</span
+                  >
                 {:else}
                   <span class="text-xs text-[var(--text-muted)]">—</span>
                 {/if}
               </td>
-              <td class="px-4 py-3"><span class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(u.role)}">{roleLabel(u.role)}</span></td>
-              <td class="px-4 py-3 text-xs text-[var(--text-muted)]">{fmtDate(u.latest_invoice?.period_end)}</td>
+              <td class="px-4 py-3"
+                ><span
+                  class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(
+                    u.role,
+                  )}">{roleLabel(u.role)}</span
+                ></td
+              >
+              <td class="px-4 py-3 text-xs text-[var(--text-muted)]"
+                >{fmtDate(u.latest_invoice?.period_end)}</td
+              >
               <td class="px-4 py-3 text-right">
-                <button onclick={(e) => toggleMenu(u, e)} aria-label="Menu user" class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]">
+                <button
+                  onclick={(e) => toggleMenu(u, e)}
+                  aria-label="Menu user"
+                  class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"
+                >
                   <i class="fa-solid fa-ellipsis-vertical"></i>
                 </button>
               </td>
@@ -349,9 +546,18 @@
         </tbody>
       </table>
       {#if filtered.length === 0}
-        <p class="text-center text-sm text-[var(--text-muted)] py-8 font-semibold">Tidak ada user cocok dengan pencarian.</p>
+        <p
+          class="text-center text-sm text-[var(--text-muted)] py-8 font-semibold"
+        >
+          Tidak ada user cocok dengan pencarian.
+        </p>
       {:else if filtered.length > PAGE_SIZE}
-        <Pagination {page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
+        <Pagination
+          {page}
+          total={filtered.length}
+          pageSize={PAGE_SIZE}
+          onChange={setPage}
+        />
       {/if}
     </div>
 
@@ -360,36 +566,68 @@
       {#each pageItems as u (u.id)}
         <div class="tactile-box p-4 space-y-2">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 tactile-inset flex items-center justify-center text-xs font-extrabold {avatarCls(u)}">
+            <div
+              class="w-10 h-10 rounded-xl bg-emerald-500/10 tactile-inset flex items-center justify-center text-xs font-extrabold {avatarCls(
+                u,
+              )}"
+            >
               {initials(u)}
             </div>
             <div class="min-w-0 flex-1">
               <p class="font-bold truncate">{displayName(u)}</p>
-              <p class="text-xs text-[var(--text-muted)] truncate">{u.plan?.name || '—'}</p>
+              <p class="text-xs text-[var(--text-muted)] truncate">
+                {u.plan?.name || "—"}
+              </p>
             </div>
-            <span class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(u.role)}">{roleLabel(u.role)}</span>
+            <span
+              class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(
+                u.role,
+              )}">{roleLabel(u.role)}</span
+            >
           </div>
           <div class="flex items-center gap-2">
             {#if u.status}
-              <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(u.status)}">{u.status.toUpperCase()}</span>
+              <span
+                class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(
+                  u.status,
+                )}">{u.status.toUpperCase()}</span
+              >
             {/if}
-            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--border-subtle)]/50 text-[var(--text-muted)]">{u.plan?.name || '—'}</span>
-            <span class="text-xs font-mono text-[var(--text-muted)] ml-auto">{u.id}</span>
+            <span
+              class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--border-subtle)]/50 text-[var(--text-muted)]"
+              >{u.plan?.name || "—"}</span
+            >
+            <span class="text-xs font-mono text-[var(--text-muted)] ml-auto"
+              >{u.id}</span
+            >
           </div>
           <div class="text-xs text-[var(--text-muted)] flex justify-between">
             <span>Tagihan: {fmtDate(u.latest_invoice?.period_end)}</span>
           </div>
           <div class="flex justify-end">
-            <button onclick={(e) => toggleMenu(u, e)} aria-label="Menu user" class="tactile-btn w-9 h-9 flex items-center justify-center text-[var(--text-muted)]">
+            <button
+              onclick={(e) => toggleMenu(u, e)}
+              aria-label="Menu user"
+              class="tactile-btn w-9 h-9 flex items-center justify-center text-[var(--text-muted)]"
+            >
               <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
           </div>
         </div>
       {/each}
       {#if filtered.length === 0}
-        <p class="text-center text-sm text-[var(--text-muted)] py-8 font-semibold">Tidak ada user cocok dengan pencarian.</p>
+        <p
+          class="text-center text-sm text-[var(--text-muted)] py-8 font-semibold"
+        >
+          Tidak ada user cocok dengan pencarian.
+        </p>
       {:else if filtered.length > PAGE_SIZE}
-        <Pagination {page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
+        <Pagination
+          {page}
+          total={filtered.length}
+          pageSize={PAGE_SIZE}
+          onChange={setPage}
+        />
       {/if}
     </div>
   {/if}
@@ -397,35 +635,76 @@
 
 <!-- Menu titik tiga (fixed, level halaman biar tidak ke-clip overflow tabel) -->
 {#if menuUser && menuPos}
-  <button type="button" aria-label="Tutup menu" class="fixed inset-0 z-40 cursor-default" onclick={closeMenu}></button>
+  <button
+    type="button"
+    aria-label="Tutup menu"
+    class="fixed inset-0 z-40 cursor-default"
+    onclick={closeMenu}
+  ></button>
   <div
     class="fixed w-48 rounded-xl tactile-box p-2 z-50 text-xs space-y-1"
     style="top: {menuPos.top}px; left: {menuPos.left}px"
   >
-    <button onclick={() => { openDetail(menuUser); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]">
+    <button
+      onclick={() => {
+        openDetail(menuUser);
+        closeMenu();
+      }}
+      class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]"
+    >
       <i class="fa-solid fa-eye w-4"></i> Lihat
     </button>
-    <button onclick={() => { openEdit(menuUser); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]">
+    <button
+      onclick={() => {
+        openEdit(menuUser);
+        closeMenu();
+      }}
+      class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-[var(--text-main)]"
+    >
       <i class="fa-solid fa-pen w-4"></i> Edit
     </button>
     <div class="border-t border-[var(--border-subtle)] my-1"></div>
-    {#if menuUser.status !== 'active'}
-      <button onclick={() => { setUserStatus(menuUser, 'active'); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+    {#if menuUser.status !== "active"}
+      <button
+        onclick={() => {
+          setUserStatus(menuUser, "active");
+          closeMenu();
+        }}
+        class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-emerald-600 dark:text-emerald-400"
+      >
         <i class="fa-solid fa-check w-4"></i> Aktifkan
       </button>
     {/if}
-    {#if menuUser.status !== 'suspended'}
-      <button onclick={() => { setUserStatus(menuUser, 'suspended'); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-amber-600 dark:text-amber-400">
+    {#if menuUser.status !== "suspended"}
+      <button
+        onclick={() => {
+          setUserStatus(menuUser, "suspended");
+          closeMenu();
+        }}
+        class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-amber-600 dark:text-amber-400"
+      >
         <i class="fa-solid fa-pause w-4"></i> Suspend
       </button>
     {/if}
-    {#if menuUser.status !== 'banned'}
-      <button onclick={() => { setUserStatus(menuUser, 'banned'); closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-red-500">
+    {#if menuUser.status !== "banned"}
+      <button
+        onclick={() => {
+          setUserStatus(menuUser, "banned");
+          closeMenu();
+        }}
+        class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-red-500"
+      >
         <i class="fa-solid fa-ban w-4"></i> Banned
       </button>
     {/if}
     <div class="border-t border-[var(--border-subtle)] my-1"></div>
-    <button onclick={() => { delTarget = menuUser; closeMenu(); }} class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-red-500">
+    <button
+      onclick={() => {
+        delTarget = menuUser;
+        closeMenu();
+      }}
+      class="w-full text-left flex items-center gap-2 p-2.5 rounded-lg hover:bg-[var(--inset-dark)] transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0.5 font-semibold text-red-500"
+    >
       <i class="fa-solid fa-trash-can w-4"></i> Hapus
     </button>
   </div>
@@ -433,54 +712,99 @@
 
 <!-- Detail user modal -->
 {#if detailOpen && sel}
-  <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (detailOpen = false)}></button>
+  <div
+    class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <button
+      type="button"
+      aria-label="Tutup"
+      class="fixed inset-0 z-40 cursor-default"
+      onclick={() => (detailOpen = false)}
+    ></button>
     <div class="tactile-modal w-full max-w-md p-6 relative z-50">
-      <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
+      <div
+        class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]"
+      >
         <h3 class="text-lg font-bold">Detail User</h3>
-        <button type="button" aria-label="Tutup" onclick={() => (detailOpen = false)} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
+        <button
+          type="button"
+          aria-label="Tutup"
+          onclick={() => (detailOpen = false)}
+          class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"
+          ><i class="fa-solid fa-xmark"></i></button
+        >
       </div>
 
       <div class="flex items-center gap-3 mb-4">
-        <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 tactile-inset flex items-center justify-center font-extrabold {avatarCls(sel)}">
+        <div
+          class="w-12 h-12 rounded-2xl bg-emerald-500/10 tactile-inset flex items-center justify-center font-extrabold {avatarCls(
+            sel,
+          )}"
+        >
           {initials(sel)}
         </div>
         <div>
           <p class="font-bold">{displayName(sel)}</p>
-          <p class="text-xs text-[var(--text-muted)]">{sel.plan?.name || '—'}</p>
+          <p class="text-xs text-[var(--text-muted)]">
+            {sel.plan?.name || "—"}
+          </p>
         </div>
       </div>
 
       <div class="text-sm space-y-2.5">
-        <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
+        <div
+          class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <span class="text-[var(--text-muted)]">User ID</span>
           <span class="font-mono text-xs">{sel.id}</span>
         </div>
-        <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
+        <div
+          class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <span class="text-[var(--text-muted)]">Email</span>
           <span class="font-semibold break-all">{sel.email}</span>
         </div>
-        <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
+        <div
+          class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <span class="text-[var(--text-muted)]">Role</span>
-          <span class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(sel.role)}">{roleLabel(sel.role)}</span>
+          <span
+            class="text-xs font-semibold px-2.5 py-1 rounded-full {roleCls(
+              sel.role,
+            )}">{roleLabel(sel.role)}</span
+          >
         </div>
-        <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
+        <div
+          class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <span class="text-[var(--text-muted)]">Plan</span>
-          <span class="font-semibold">{sel.plan?.name || '—'}</span>
+          <span class="font-semibold">{sel.plan?.name || "—"}</span>
         </div>
-        <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
+        <div
+          class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <span class="text-[var(--text-muted)]">Status</span>
           {#if sel.status}
-            <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(sel.status)}">{sel.status.toUpperCase()}</span>
+            <span
+              class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(
+                sel.status,
+              )}">{sel.status.toUpperCase()}</span
+            >
           {:else}
             <span class="text-[var(--text-muted)]">—</span>
           {/if}
         </div>
-        <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
+        <div
+          class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <span class="text-[var(--text-muted)]">Tagihan Berikutnya</span>
-          <span class="font-semibold">{fmtDate(sel.latest_invoice?.period_end)}</span>
+          <span class="font-semibold"
+            >{fmtDate(sel.latest_invoice?.period_end)}</span
+          >
         </div>
-        <div class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
+        <div
+          class="flex justify-between gap-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <span class="text-[var(--text-muted)]">Dibuat</span>
           <span class="font-semibold">{fmtTime(sel.created_at)}</span>
         </div>
@@ -491,7 +815,10 @@
       </div>
 
       <div class="flex gap-2 pt-5">
-        <button onclick={() => (detailOpen = false)} class="tactile-btn flex-1 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
+        <button
+          onclick={() => (detailOpen = false)}
+          class="tactile-btn flex-1 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2"
+        >
           <i class="fa-solid fa-check"></i> Tutup
         </button>
       </div>
@@ -501,38 +828,88 @@
 
 <!-- Form tambah / edit modal -->
 {#if editOpen}
-  <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (editOpen = false)}></button>
+  <div
+    class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <button
+      type="button"
+      aria-label="Tutup"
+      class="fixed inset-0 z-40 cursor-default"
+      onclick={() => (editOpen = false)}
+    ></button>
     <div class="tactile-modal w-full max-w-md p-6 relative z-50">
-      <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
-        <h3 class="text-lg font-bold">{editing ? 'Edit User' : 'Tambah User'}</h3>
-        <button type="button" aria-label="Tutup" onclick={() => (editOpen = false)} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
+      <div
+        class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]"
+      >
+        <h3 class="text-lg font-bold">
+          {editing ? "Edit User" : "Tambah User"}
+        </h3>
+        <button
+          type="button"
+          aria-label="Tutup"
+          onclick={() => (editOpen = false)}
+          class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"
+          ><i class="fa-solid fa-xmark"></i></button
+        >
       </div>
 
       <div class="space-y-4">
         {#if formErr}
-          <p class="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{formErr}</p>
+          <p
+            class="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2"
+          >
+            {formErr}
+          </p>
         {/if}
         <div>
-          <label for="user-email" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Email</label>
-          <input id="user-email" type="email" bind:value={form.email} class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none" />
+          <label
+            for="user-email"
+            class="block text-xs font-bold text-[var(--text-muted)] mb-1"
+            >Email</label
+          >
+          <input
+            id="user-email"
+            type="email"
+            bind:value={form.email}
+            class="w-full tactile-inset px-4 py-2.5 text-sm focus:outline-none"
+          />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label for="user-role" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Role</label>
-            <select id="user-role" bind:value={form.role} class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer">
+            <label
+              for="user-role"
+              class="block text-xs font-bold text-[var(--text-muted)] mb-1"
+              >Role</label
+            >
+            <select
+              id="user-role"
+              bind:value={form.role}
+              class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer"
+            >
               <option value="admin">admin</option>
               <option value="customer">customer</option>
             </select>
           </div>
           <div>
-            <label for="user-plan" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Plan</label>
+            <label
+              for="user-plan"
+              class="block text-xs font-bold text-[var(--text-muted)] mb-1"
+              >Plan</label
+            >
             {#if planErr}
-              <p class="text-xs font-semibold text-red-500 mb-1">Gagal muat plan: {planErr}</p>
+              <p class="text-xs font-semibold text-red-500 mb-1">
+                Gagal muat plan: {planErr}
+              </p>
             {/if}
-            <select id="user-plan" bind:value={form.plan} class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer">
+            <select
+              id="user-plan"
+              bind:value={form.plan}
+              class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer"
+            >
               {#if PLAN_OPTS.length === 0}
-                <option value="">{planLoading ? 'Memuat plan...' : 'Belum ada plan'}</option>
+                <option value=""
+                  >{planLoading ? "Memuat plan..." : "Belum ada plan"}</option
+                >
               {/if}
               {#each PLAN_OPTS as p (p.id)}
                 <option value={p.id}>{p.name}</option>
@@ -542,8 +919,16 @@
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label for="user-status" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Status</label>
-            <select id="user-status" bind:value={form.status} class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer">
+            <label
+              for="user-status"
+              class="block text-xs font-bold text-[var(--text-muted)] mb-1"
+              >Status</label
+            >
+            <select
+              id="user-status"
+              bind:value={form.status}
+              class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer"
+            >
               {#each STATUSES as st (st)}
                 <option value={st}>{st}</option>
               {/each}
@@ -552,9 +937,17 @@
         </div>
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label for="user-pass" class="block text-xs font-bold text-[var(--text-muted)]">{editing ? 'Password Baru (opsional)' : 'Password'}</label>
+            <label
+              for="user-pass"
+              class="block text-xs font-bold text-[var(--text-muted)]"
+              >{editing ? "Password Baru (opsional)" : "Password"}</label
+            >
             {#if !editing}
-              <button type="button" onclick={genPass} class="text-[10px] font-bold text-[var(--accent)] flex items-center gap-1 hover:opacity-80 cursor-pointer">
+              <button
+                type="button"
+                onclick={genPass}
+                class="text-[10px] font-bold text-[var(--accent)] flex items-center gap-1 hover:opacity-80 cursor-pointer"
+              >
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Generate
               </button>
             {/if}
@@ -562,7 +955,7 @@
           <div class="relative">
             <input
               id="user-pass"
-              type={showPass ? 'text' : 'password'}
+              type={showPass ? "text" : "password"}
               bind:value={form.password}
               class="w-full tactile-inset pl-4 pr-11 py-2.5 text-sm focus:outline-none"
             />
@@ -570,7 +963,7 @@
               type="button"
               onclick={() => (showPass = !showPass)}
               class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer"
-              title={showPass ? 'Sembunyikan password' : 'Lihat password'}
+              title={showPass ? "Sembunyikan password" : "Lihat password"}
             >
               <i class="fa-solid {showPass ? 'fa-eye-slash' : 'fa-eye'}"></i>
             </button>
@@ -578,10 +971,19 @@
         </div>
 
         <div class="flex gap-2 pt-2">
-          <button disabled={saving} onclick={save} class="tactile-btn flex-1 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
-            <i class="fa-solid fa-floppy-disk"></i> {saving ? 'Menyimpan...' : editing ? 'Simpan' : 'Tambah'}
+          <button
+            disabled={saving}
+            onclick={save}
+            class="tactile-btn flex-1 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2"
+          >
+            <i class="fa-solid fa-floppy-disk"></i>
+            {saving ? "Menyimpan..." : editing ? "Simpan" : "Tambah"}
           </button>
-          <button onclick={() => (editOpen = false)} class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Batal</button>
+          <button
+            onclick={() => (editOpen = false)}
+            class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]"
+            >Batal</button
+          >
         </div>
       </div>
     </div>
@@ -590,24 +992,56 @@
 
 <!-- Konfirmasi hapus -->
 {#if delTarget}
-  <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={() => (delTarget = null)}></button>
+  <div
+    class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <button
+      type="button"
+      aria-label="Tutup"
+      class="fixed inset-0 z-40 cursor-default"
+      onclick={() => (delTarget = null)}
+    ></button>
     <div class="tactile-modal w-full max-w-sm p-6 relative z-50">
-      <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
-        <h3 class="text-lg font-bold text-red-600 dark:text-red-400">Hapus User</h3>
-        <button type="button" aria-label="Tutup" onclick={() => (delTarget = null)} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
+      <div
+        class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]"
+      >
+        <h3 class="text-lg font-bold text-red-600 dark:text-red-400">
+          Hapus User
+        </h3>
+        <button
+          type="button"
+          aria-label="Tutup"
+          onclick={() => (delTarget = null)}
+          class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"
+          ><i class="fa-solid fa-xmark"></i></button
+        >
       </div>
       <p class="text-sm text-[var(--text-muted)]">
-        Yakin hapus user <span class="font-bold text-[var(--text)]">'{delTarget.email}'</span>? Tindakan ini tidak bisa dibatalkan.
+        Yakin hapus user <span class="font-bold text-[var(--text)]"
+          >'{delTarget.email}'</span
+        >? Tindakan ini tidak bisa dibatalkan.
       </p>
       {#if delErr}
-        <p class="mt-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{delErr}</p>
+        <p
+          class="mt-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2"
+        >
+          {delErr}
+        </p>
       {/if}
       <div class="flex gap-2 pt-5">
-        <button disabled={delBusy} onclick={confirmDelete} class="tactile-btn flex-1 py-3 font-bold text-red-600 dark:text-red-400 flex items-center justify-center gap-2">
-          <i class="fa-solid fa-trash-can"></i> {delBusy ? 'Menghapus...' : 'Hapus'}
+        <button
+          disabled={delBusy}
+          onclick={confirmDelete}
+          class="tactile-btn flex-1 py-3 font-bold text-red-600 dark:text-red-400 flex items-center justify-center gap-2"
+        >
+          <i class="fa-solid fa-trash-can"></i>
+          {delBusy ? "Menghapus..." : "Hapus"}
         </button>
-        <button onclick={() => (delTarget = null)} class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]">Batal</button>
+        <button
+          onclick={() => (delTarget = null)}
+          class="tactile-btn px-5 py-3 text-sm text-[var(--text-muted)]"
+          >Batal</button
+        >
       </div>
     </div>
   </div>

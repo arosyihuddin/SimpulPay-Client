@@ -1,27 +1,29 @@
 <script lang="ts">
-  import { admin } from '$lib/api';
-  import { checkAuth } from '$lib/auth.svelte';
-  import { theme, toggleTheme } from '$lib/theme.svelte';
-  import { goto } from '$app/navigation';
-  import Logo from '$lib/components/Logo.svelte';
-  import ErrBox from '$lib/components/ErrBox.svelte';
+  import { admin } from "$lib/api";
+  import { checkAuth } from "$lib/auth.svelte";
+  import { theme, toggleTheme } from "$lib/theme.svelte";
+  import { goto } from "$app/navigation";
+  import Logo from "$lib/components/Logo.svelte";
+  import ErrBox from "$lib/components/ErrBox.svelte";
 
-  let err = $state('');
+  let err = $state("");
   let busy = $state(false);
-  let email = $state('');
-  let password = $state('');
+  let email = $state("");
+  let password = $state("");
   let showPass = $state(false);
 
-  const autofocus = (node: HTMLInputElement) => { node.focus(); };
+  const autofocus = (node: HTMLInputElement) => {
+    node.focus();
+  };
 
   async function submit(e: SubmitEvent) {
     e.preventDefault();
     busy = true;
-    err = '';
+    err = "";
     try {
       await admin.login(email, password);
       await checkAuth();
-      goto('/dashboard');
+      goto("/dashboard");
     } catch (e: any) {
       err = e.message;
     } finally {
@@ -36,36 +38,57 @@
     class="tactile-btn absolute top-6 right-6 w-11 h-11 flex items-center justify-center text-[var(--text-muted)]"
     title="Ganti Tema"
   >
-    <i class="{theme.dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'}"></i>
+    <i class={theme.dark ? "fa-solid fa-sun" : "fa-solid fa-moon"}></i>
   </button>
 
   <form onsubmit={submit} class="w-full max-w-sm tactile-box p-8 space-y-5">
     <div class="flex items-center gap-3">
-      <div class="tactile-btn w-12 h-12 flex items-center justify-center text-[var(--accent)] text-xl">
+      <div
+        class="tactile-btn w-12 h-12 flex items-center justify-center text-[var(--accent)] text-xl"
+      >
         <Logo />
       </div>
       <div>
-        <h1 class="text-xl font-bold tracking-wide">GoMerch<span class="text-[var(--accent)]"> API</span></h1>
-        <p class="text-xs text-[var(--text-muted)] font-medium">Admin Management</p>
+        <h1 class="text-xl font-bold tracking-wide">
+          Simpul<span class="text-[var(--accent)]">Pay</span>
+        </h1>
+        <p class="text-xs text-[var(--text-muted)] font-medium">
+          Admin Management
+        </p>
       </div>
     </div>
 
     <ErrBox msg={err} />
 
     <div class="space-y-1.5">
-      <label for="login-email" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Email</label>
+      <label
+        for="login-email"
+        class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1"
+        >Email</label
+      >
       <div class="input-well px-4 py-3 flex items-center">
         <i class="fa-regular fa-envelope text-[var(--text-muted)] mr-3"></i>
-        <input id="login-email" type="email" use:autofocus bind:value={email} placeholder="email" class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]" />
+        <input
+          id="login-email"
+          type="email"
+          use:autofocus
+          bind:value={email}
+          placeholder="email"
+          class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
+        />
       </div>
     </div>
     <div class="space-y-1.5">
-      <label for="login-pass" class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">Password</label>
+      <label
+        for="login-pass"
+        class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1"
+        >Password</label
+      >
       <div class="input-well px-4 py-3 flex items-center">
         <i class="fa-solid fa-lock text-[var(--text-muted)] mr-3"></i>
         <input
           id="login-pass"
-          type={showPass ? 'text' : 'password'}
+          type={showPass ? "text" : "password"}
           bind:value={password}
           placeholder="••••••••"
           class="bg-transparent w-full text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
@@ -74,16 +97,19 @@
           type="button"
           onclick={() => (showPass = !showPass)}
           class="text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer"
-          title={showPass ? 'Sembunyikan password' : 'Lihat password'}
+          title={showPass ? "Sembunyikan password" : "Lihat password"}
         >
           <i class="fa-solid {showPass ? 'fa-eye-slash' : 'fa-eye'} ml-2"></i>
         </button>
       </div>
     </div>
 
-    <button disabled={busy} class="tactile-btn w-full py-4 font-bold text-[var(--accent)] flex items-center justify-center gap-2">
+    <button
+      disabled={busy}
+      class="tactile-btn w-full py-4 font-bold text-[var(--accent)] flex items-center justify-center gap-2"
+    >
       <i class="fa-solid fa-lock-open"></i>
-      {busy ? 'Masuk...' : 'Masuk'}
+      {busy ? "Masuk..." : "Masuk"}
     </button>
   </form>
 </div>

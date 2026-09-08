@@ -139,7 +139,14 @@
     ...(auth.role === "admin" ? ADMIN_LINKS : []),
   ]);
   // Halaman yang diblokir untuk non-admin.
-  const ADMIN_ONLY = ["/admin/announcements", "/admin/plans", "/admin/subscribers", "/admin/invoices", "/admin/users", "/admin/maintenance"];
+  const ADMIN_ONLY = [
+    "/admin/announcements",
+    "/admin/plans",
+    "/admin/subscribers",
+    "/admin/invoices",
+    "/admin/users",
+    "/admin/maintenance",
+  ];
 
   const TITLES: Record<string, [string, string]> = Object.fromEntries(
     [...ALL_LINKS, ...DEV_LINKS].map((l) => [l.to, [l.title, l.subtitle]]),
@@ -206,7 +213,10 @@
     }
     notifBusy = true;
     try {
-      const r = await admin.listNotifications({ limit: NOTIF_PAGE, offset: notifLoaded });
+      const r = await admin.listNotifications({
+        limit: NOTIF_PAGE,
+        offset: notifLoaded,
+      });
       const fresh: Notif[] = r.data.notifications;
       if (reset) {
         notifs = fresh;
@@ -228,7 +238,8 @@
   // Muat lagi saat scroll dropdown nyaris nyentuh bawah (infinite scroll).
   function notifOnScroll(e: Event) {
     const el = e.currentTarget as HTMLElement;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40) loadNotifs(false);
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40)
+      loadNotifs(false);
   }
   // Fetch notifikasi saat layout dipasang.
   onMount(() => loadNotifs(true));
@@ -240,22 +251,65 @@
       addToast("info", `${n.title}: ${n.message}`);
       // Inject langsung, tanpa refetch — id dummy (negatif biar gak clash dg real).
       const id = -(Date.now() + Math.floor(Math.random() * 9999));
-      notifs = [{ id, type: n.type, title: n.title, message: n.message, read: false, created_at: n.created_at ?? Date.now() }, ...notifs];
+      notifs = [
+        {
+          id,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          read: false,
+          created_at: n.created_at ?? Date.now(),
+        },
+        ...notifs,
+      ];
       unread += 1;
     }
   });
   const notifCount = $derived(unread);
-  const NOTIF_META: Record<string, { icon: string; cls: string; bg: string }> = {
-    payment_success: { icon: "fa-solid fa-circle-check", cls: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100/70 dark:bg-emerald-500/10" },
-    payment_received: { icon: "fa-solid fa-circle-check", cls: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100/70 dark:bg-emerald-500/10" },
-    invoice_pending: { icon: "fa-solid fa-clock", cls: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100/70 dark:bg-amber-500/10" },
-    invoice_paid: { icon: "fa-solid fa-file-invoice-dollar", cls: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100/70 dark:bg-emerald-500/10" },
-    invoice_rejected: { icon: "fa-solid fa-file-circle-xmark", cls: "text-red-500 dark:text-red-400", bg: "bg-red-100/70 dark:bg-red-500/10" },
-    subscription_cancelled: { icon: "fa-solid fa-calendar-xmark", cls: "text-red-500 dark:text-red-400", bg: "bg-red-100/70 dark:bg-red-500/10" },
-    token_warning: { icon: "fa-solid fa-triangle-exclamation", cls: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100/70 dark:bg-amber-500/10" },
-  };
+  const NOTIF_META: Record<string, { icon: string; cls: string; bg: string }> =
+    {
+      payment_success: {
+        icon: "fa-solid fa-circle-check",
+        cls: "text-emerald-600 dark:text-emerald-400",
+        bg: "bg-emerald-100/70 dark:bg-emerald-500/10",
+      },
+      payment_received: {
+        icon: "fa-solid fa-circle-check",
+        cls: "text-emerald-600 dark:text-emerald-400",
+        bg: "bg-emerald-100/70 dark:bg-emerald-500/10",
+      },
+      invoice_pending: {
+        icon: "fa-solid fa-clock",
+        cls: "text-amber-600 dark:text-amber-400",
+        bg: "bg-amber-100/70 dark:bg-amber-500/10",
+      },
+      invoice_paid: {
+        icon: "fa-solid fa-file-invoice-dollar",
+        cls: "text-emerald-600 dark:text-emerald-400",
+        bg: "bg-emerald-100/70 dark:bg-emerald-500/10",
+      },
+      invoice_rejected: {
+        icon: "fa-solid fa-file-circle-xmark",
+        cls: "text-red-500 dark:text-red-400",
+        bg: "bg-red-100/70 dark:bg-red-500/10",
+      },
+      subscription_cancelled: {
+        icon: "fa-solid fa-calendar-xmark",
+        cls: "text-red-500 dark:text-red-400",
+        bg: "bg-red-100/70 dark:bg-red-500/10",
+      },
+      token_warning: {
+        icon: "fa-solid fa-triangle-exclamation",
+        cls: "text-amber-600 dark:text-amber-400",
+        bg: "bg-amber-100/70 dark:bg-amber-500/10",
+      },
+    };
   const notifMeta = (type: string) =>
-    NOTIF_META[type] ?? { icon: "fa-solid fa-bell", cls: "text-[var(--accent)]", bg: "bg-[var(--inset-dark)]" };
+    NOTIF_META[type] ?? {
+      icon: "fa-solid fa-bell",
+      cls: "text-[var(--accent)]",
+      bg: "bg-[var(--inset-dark)]",
+    };
   const fmtNotifTime = (n: number) => {
     const d = new Date(n);
     const m = Math.round((Date.now() - n) / 60000);
@@ -324,7 +378,7 @@
         </div>
         <div>
           <h1 class="text-xl font-bold tracking-wide">
-            GoMerch<span class="text-[var(--accent)]"> API</span>
+            Simpul<span class="text-[var(--accent)]">Pay</span>
           </h1>
           <p class="text-xs text-[var(--text-muted)] font-medium">
             Merchant Gateway
@@ -352,7 +406,8 @@
           <div class="space-y-1.5">
             <button
               onclick={() => (devOpen = !devOpen)}
-              class="tactile-btn w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold {activePath === '/developer'
+              class="tactile-btn w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold {activePath ===
+              '/developer'
                 ? 'active text-[var(--accent)]'
                 : 'text-slate-500 dark:text-slate-400'} cursor-pointer"
               aria-expanded={devOpen}
@@ -370,7 +425,11 @@
                 {#each DEV_LINKS as l (l.to)}
                   <a
                     href={l.to}
-                    class="tactile-btn flex items-center gap-3 px-4 py-2.5 text-sm font-semibold {(l.to === '/developer' ? activePath === '/developer' : isActive(l.to))
+                    class="tactile-btn flex items-center gap-3 px-4 py-2.5 text-sm font-semibold {(
+                      l.to === '/developer'
+                        ? activePath === '/developer'
+                        : isActive(l.to)
+                    )
                       ? 'active text-[var(--accent)]'
                       : 'text-slate-500 dark:text-slate-400'}"
                   >
@@ -618,8 +677,15 @@
                           ? 'opacity-100'
                           : 'opacity-50'}"
                       >
-                        <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 {notifMeta(n.type).bg}">
-                          <i class="{notifMeta(n.type).icon} {notifMeta(n.type).cls} text-sm"></i>
+                        <div
+                          class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 {notifMeta(
+                            n.type,
+                          ).bg}"
+                        >
+                          <i
+                            class="{notifMeta(n.type).icon} {notifMeta(n.type)
+                              .cls} text-sm"
+                          ></i>
                         </div>
                         <div class="min-w-0">
                           <p class="font-semibold truncate">{n.title}</p>
@@ -660,7 +726,7 @@
       <footer
         class="max-w-6xl mx-auto w-full text-center text-xs text-slate-400 dark:text-slate-500 mt-8 pb-16 lg:pb-0"
       >
-        <p>&copy; 2026 GoMerch API Merchant Gateway. All rights reserved.</p>
+        <p>&copy; 2026 SimpulPay Merchant Gateway. All rights reserved.</p>
       </footer>
     </div>
   </div>

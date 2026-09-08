@@ -23,18 +23,24 @@
       class="tactile-btn absolute top-6 right-6 w-11 h-11 flex items-center justify-center text-[var(--text-muted)]"
       title="Ganti Tema"
     >
-      <i class="{theme.dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'}"></i>
+      <i class={theme.dark ? "fa-solid fa-sun" : "fa-solid fa-moon"}></i>
     </button>
 
     <div class="w-full max-w-sm tactile-box p-8 space-y-5 text-center">
       <div class="flex items-center justify-center gap-3">
-        <div class="tactile-btn w-12 h-12 flex items-center justify-center text-[var(--accent)] text-xl">
+        <div
+          class="tactile-btn w-12 h-12 flex items-center justify-center text-[var(--accent)] text-xl"
+        >
           <Logo />
         </div>
-        <h1 class="text-xl font-bold tracking-wide">GoMerch<span class="text-[var(--accent)]"> API</span></h1>
+        <h1 class="text-xl font-bold tracking-wide">
+          Simpul<span class="text-[var(--accent)]">Pay</span>
+        </h1>
       </div>
 
-      <div class="w-20 h-20 mx-auto rounded-full tactile-inset flex items-center justify-center text-[var(--accent)] text-3xl">
+      <div
+        class="w-20 h-20 mx-auto rounded-full tactile-inset flex items-center justify-center text-[var(--accent)] text-3xl"
+      >
         <i class="fa-solid fa-screwdriver-wrench"></i>
       </div>
 
