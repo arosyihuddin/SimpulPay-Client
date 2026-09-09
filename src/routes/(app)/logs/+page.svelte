@@ -4,7 +4,7 @@
   import Pagination from '$lib/components/Pagination.svelte';
   import Skeleton from '$lib/components/Skeleton.svelte';
 
-  interface LogRow { id: number; timestamp: string; type: string; message: string; details_json: string | null; }
+  interface LogRow { id: number; timestamp: string | number; type: string; message: string; details_json: string | null; }
 
   const badgeOf = (t: string) =>
     t === 'ERROR' ? 'tactile-pill pill-red'

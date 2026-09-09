@@ -65,7 +65,7 @@ export const admin = {
       body: { amount },
     }),
   getTransactionCode: (id: string) =>
-    api<{ data: { code: string } }>(`/transactions/${id}/code`),
+    api<{ data: { code: string; status: string; created_at: number; expires_at: number; merchant_id: string; merchant_name: string } }>(`/transactions/${id}/code`),
 
   // Semua transaksi — semua merchant user, filter lewat query
   transactions: (params?: {
@@ -262,8 +262,10 @@ export const fmtIDR = (n: number | null | undefined) =>
     minimumFractionDigits: 0,
   }).format(n ?? 0);
 
-export const fmtTime = (iso: string | number | null | undefined) => {
-  if (!iso) return "-";
-  const d = new Date(typeof iso === "number" ? iso : iso);
-  return isNaN(d.getTime()) ? String(iso) : d.toLocaleString("id-ID");
+export const fmtTime = (ts: string | number | null | undefined) => {
+  if (ts == null || ts === "") return "-";
+  const ms = typeof ts === "number" ? ts : /^\d+$/.test(String(ts).trim()) ? Number(ts) : Date.parse(String(ts));
+  if (!Number.isFinite(ms)) return String(ts);
+  const d = new Date(ms);
+  return isNaN(d.getTime()) ? String(ts) : d.toLocaleString("id-ID");
 };

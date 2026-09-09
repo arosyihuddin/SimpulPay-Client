@@ -13,6 +13,7 @@
     merchant_name?: string;
     amount: number;
     base_amount: number;
+    fee_amount?: number;
     unique_code: number;
     status: string;
     created_at: number;
@@ -25,6 +26,9 @@
       : st === "expired"
         ? "tactile-pill pill-red"
         : "tactile-pill pill-amber";
+
+  const feeOf = (r: TxRow) => r.fee_amount ?? Math.max(0, r.amount - (r.base_amount || 0) - r.unique_code);
+  const baseOf = (r: TxRow) => r.base_amount || r.amount - r.unique_code - feeOf(r);
 
   const PAGE_SIZE = 20;
 
@@ -42,6 +46,9 @@
   let qrAmount = $state(0);
   let qrBase = $state(0);
   let qrUnique = $state(0);
+  let qrFee = $state(0);
+  let qrName = $state("");
+  let qrExpires = $state(0);
   let qrBusyId = $state<string | null>(null);
   let qrTxId = $state("");
   let qrPaid = $state(false);
@@ -89,10 +96,14 @@
     qrBusyId = tx.id;
     try {
       const res = await admin.getTransactionCode(tx.id);
-      qrCode = res.data.code;
+      const d = res.data as any;
+      qrCode = d.code;
       qrAmount = tx.amount;
       qrBase = tx.base_amount;
       qrUnique = tx.unique_code;
+      qrFee = tx.fee_amount ?? Math.max(0, tx.amount - tx.base_amount - tx.unique_code);
+      qrName = d.merchant_name ?? tx.merchant_name ?? tx.merchant_id;
+      qrExpires = d.expires_at ?? tx.expires_at;
       qrTxId = tx.id;
       qrPaid = false;
     } catch {
@@ -105,6 +116,8 @@
     qrCode = "";
     qrTxId = "";
     qrPaid = false;
+    qrName = "";
+    qrExpires = 0;
   };
 
   async function load() {
@@ -283,10 +296,10 @@
               >
               <td class="px-4 py-3 font-semibold">
                 {fmtIDR(r.amount)}
-                {#if r.unique_code > 0}
+                {#if r.unique_code > 0 || feeOf(r) > 0}
                   <span
                     class="block text-[10px] text-[var(--text-muted)] font-normal"
-                    >= {fmtIDR(r.base_amount || r.amount - r.unique_code)} + {r.unique_code}</span
+                    >= {fmtIDR(baseOf(r))}{#if feeOf(r) > 0} + {fmtIDR(feeOf(r))}{/if} + {r.unique_code}</span
                   >
                 {/if}
               </td>
@@ -352,9 +365,9 @@
           </div>
           <div class="flex items-center justify-between flex-wrap gap-x-2">
             <span class="text-base font-bold">{fmtIDR(r.amount)}</span>
-            {#if r.unique_code > 0}<span
+            {#if r.unique_code > 0 || feeOf(r) > 0}<span
                 class="text-[10px] text-[var(--text-muted)]"
-                >= {fmtIDR(r.base_amount || r.amount - r.unique_code)} + {r.unique_code}</span
+                >= {fmtIDR(baseOf(r))}{#if feeOf(r) > 0} + {fmtIDR(feeOf(r))}{/if} + {r.unique_code}</span
               >{/if}
           </div>
           <p class="text-xs font-semibold text-[var(--text-main)]">
@@ -397,5 +410,5 @@
 </div>
 
 {#if qrCode}
-  <QrCodeModal code={qrCode} {qrAmount} baseAmount={qrBase} uniqueCode={qrUnique} paid={qrPaid} onClose={closeQr} />
+  <QrCodeModal code={qrCode} {qrAmount} baseAmount={qrBase} uniqueCode={qrUnique} feeAmount={qrFee} displayName={qrName} expiresAt={qrExpires} paid={qrPaid} onClose={closeQr} />
 {/if}

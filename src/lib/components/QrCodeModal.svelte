@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { admin, fmtIDR } from "$lib/api";
   import { addToast } from "$lib/toast.svelte";
   import { qrDataUrl } from "$lib/qrcode";
@@ -13,6 +13,9 @@
     qrAmount,
     baseAmount,
     uniqueCode,
+    feeAmount,
+    displayName,
+    expiresAt,
     paid = false,
     rejected = false,
     merchant,
@@ -23,6 +26,9 @@
     qrAmount: number;
     baseAmount?: number;
     uniqueCode?: number;
+    feeAmount?: number;
+    displayName?: string;
+    expiresAt?: number;
     paid?: boolean;
     rejected?: boolean;
     merchant?: any;
@@ -40,12 +46,32 @@
   let expired = $state(false);
   let createdPaid = $state(false);
 
+  // Countdown: DISPLAY pakai expiresAt, CREATE pakai created.expires_at — tampilan disamakan.
+  let now = $state(Date.now());
+  let timer: ReturnType<typeof setInterval> | null = null;
+  const unifiedExpires = $derived((created?.expires_at ?? expiresAt ?? 0) as number);
+  const remainingMs = $derived(unifiedExpires > 0 ? Math.max(0, unifiedExpires - now) : 0);
+  const remainingTxt = $derived.by(() => {
+    const s = Math.floor(remainingMs / 1000);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return h > 0
+      ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
+      : `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  });
+
   onMount(() => {
     if (!merchant && code) {
       qrDataUrl(code)
         .then((d) => (src = d))
         .catch(() => (err = "Gagal membuat QR"));
     }
+    timer = setInterval(() => (now = Date.now()), 1000);
+  });
+
+  onDestroy(() => {
+    if (timer) clearInterval(timer);
   });
 
   async function create(e: SubmitEvent) {
@@ -73,7 +99,7 @@
   <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={onClose}></button>
   <div class="tactile-modal w-full max-w-lg p-6 relative z-50 max-h-[90vh] overflow-y-auto">
     <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
-      <h3 class="text-lg font-bold"><i class="fa-solid fa-qrcode text-[var(--accent)] mr-2"></i>{merchant ? `Buat QRIS — ${merchant.name}` : "QRIS Pembayaran"}</h3>
+      <h3 class="text-lg font-bold"><i class="fa-solid fa-qrcode text-[var(--accent)] mr-2"></i>{merchant && !created ? `Buat QRIS — ${merchant.name}` : (merchant?.name ?? displayName) ? `QRIS — ${merchant?.name ?? displayName}` : "QRIS Pembayaran"}</h3>
       <button type="button" aria-label="Tutup" onclick={onClose} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
@@ -94,11 +120,11 @@
           <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
         </div>
       {:else if createdPaid}
-        <div class="text-center py-6 space-y-3">
+        <div class="text-center py-6 space-y-4">
           <div class="w-20 h-20 mx-auto rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 flex items-center justify-center animate-bounce-in">
             <i class="fa-solid fa-circle-check text-4xl text-emerald-500"></i>
           </div>
-          <p class="font-bold text-lg">Pembayaran Berhasil</p>
+          <p class="font-bold text-xl">Pembayaran Berhasil</p>
           <p class="text-xs text-[var(--text-muted)]">Transaksi sudah dibayar dan sedang diproses.</p>
           <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
         </div>
@@ -111,20 +137,30 @@
               <img src={src} alt="QRIS" class="w-52 h-52 rounded-xl tactile-inset" />
             {/if}
           </div>
+          {#if unifiedExpires}
+            <p class="text-center text-xs font-bold {remainingMs > 0 ? 'text-[var(--accent)]' : 'text-red-500'}">
+              {#if remainingMs > 0}Berlaku {remainingTxt}{:else}Kedaluwarsa{/if}
+            </p>
+          {/if}
           <div class="tactile-inset p-4 space-y-2 text-sm">
-            <div class="flex justify-between">
-              <span class="text-[var(--text-muted)]">Kode Unik</span>
-              <span class="font-semibold text-[var(--accent)]">{created.unique_code || 0}</span>
-            </div>
             <div class="flex justify-between">
               <span class="text-[var(--text-muted)]">Nominal</span>
               <span class="font-semibold">{fmtIDR(created.amount)}</span>
+            </div>
+            {#if created.fee_amount > 0}
+              <div class="flex justify-between">
+                <span class="text-[var(--text-muted)]">Biaya Layanan</span>
+                <span class="font-semibold">{fmtIDR(created.fee_amount)}</span>
+              </div>
+            {/if}
+            <div class="flex justify-between">
+              <span class="text-[var(--text-muted)]">Kode Unik</span>
+              <span class="font-semibold">{fmtIDR(created.unique_code || 0)}</span>
             </div>
             <div class="flex justify-between pt-2 border-t border-[var(--border-subtle)]">
               <span class="font-bold">Total Dibayar</span>
               <span class="font-bold text-[var(--accent)]">{fmtIDR(created.amount_to_pay)}</span>
             </div>
-            <p class="text-[10px] text-[var(--text-muted)] font-mono break-all">TRX-ID: {created.trx_id}</p>
           </div>
           <button onclick={onClose} class="tactile-btn w-full py-2.5 font-bold text-[var(--accent)] rounded-xl text-xs">Tutup</button>
         </div>
@@ -171,18 +207,29 @@
               <img src={src} alt="QRIS" class="w-52 h-52 rounded-xl tactile-inset" />
             </div>
           {/if}
+          {#if unifiedExpires}
+            <p class="text-center text-xs font-bold {remainingMs > 0 ? 'text-[var(--accent)]' : 'text-red-500'}">
+              {#if remainingMs > 0}Berlaku {remainingTxt}{:else}Kedaluwarsa{/if}
+            </p>
+          {/if}
           {#if qrAmount}
             <div class="tactile-inset p-4 space-y-2 text-sm">
-              <div class="flex justify-between">
-                <span class="text-[var(--text-muted)]">Biaya Layanan</span>
-                <span class="font-semibold">{fmtIDR(uniqueCode ?? 0)}</span>
-              </div>
               {#if baseAmount}
                 <div class="flex justify-between">
-                  <span class="text-[var(--text-muted)]">Harga Paket</span>
+                  <span class="text-[var(--text-muted)]">Nominal</span>
                   <span class="font-semibold">{fmtIDR(baseAmount)}</span>
                 </div>
               {/if}
+              {#if (feeAmount ?? 0) > 0}
+                <div class="flex justify-between">
+                  <span class="text-[var(--text-muted)]">Biaya Layanan</span>
+                  <span class="font-semibold">{fmtIDR(feeAmount ?? 0)}</span>
+                </div>
+              {/if}
+              <div class="flex justify-between">
+                <span class="text-[var(--text-muted)]">Kode Unik</span>
+                <span class="font-semibold">{fmtIDR(uniqueCode ?? 0)}</span>
+              </div>
               <div class="flex justify-between pt-2 border-t border-[var(--border-subtle)]">
                 <span class="font-bold">Total Dibayar</span>
                 <span class="font-bold text-[var(--accent)]">{fmtIDR(qrAmount)}</span>

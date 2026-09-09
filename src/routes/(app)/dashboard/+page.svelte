@@ -27,7 +27,7 @@
       outlet?: string;
       merchant_id?: string | null;
       expired?: boolean;
-      expires_at?: string | null;
+      expires_at?: number | string | null;
     };
   }
 

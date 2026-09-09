@@ -25,10 +25,13 @@
   interface Invoice {
     id: string;
     amount: number;
+    base_amount: number | null;
+    fee_amount: number | null;
     status: string;
     qris_code: string | null;
     unique_code: number | null;
     amount_to_pay: number | null;
+    expires_at: number | null;
     transaction_id: string | null;
     period_start: number;
     period_end: number;
@@ -169,7 +172,7 @@
       closePlans();
       const d = res.data || {};
       if (d.qris_code) {
-        pay = { code: d.qris_code, amount: d.amount_to_pay, baseAmount: d.amount, uniqueCode: d.unique_code || 0, invoice_id: d.invoice_id ?? '', paid: false };
+        pay = { code: d.qris_code, amount: d.amount_to_pay, baseAmount: d.amount, feeAmount: 0, uniqueCode: d.unique_code || 0, expiresAt: d.expires_at ?? 0, displayName: p.name, invoice_id: d.invoice_id ?? '', paid: false };
         // Inject invoice pending ke tabel langsung dari response (tanpa nunggu WS).
         if (d.invoice_id && !invoices.some((iv) => iv.id === d.invoice_id)) {
           const now = Date.now();
@@ -177,10 +180,13 @@
             {
               id: d.invoice_id,
               amount: d.amount_to_pay ?? d.amount,
+              base_amount: d.amount ?? null,
+              fee_amount: 0,
               status: 'pending',
               qris_code: d.qris_code,
               unique_code: d.unique_code || null,
               amount_to_pay: d.amount_to_pay ?? null,
+              expires_at: d.expires_at ?? null,
               transaction_id: d.qris_id ?? null,
               period_start: now,
               period_end: now + 30 * 24 * 60 * 60 * 1000,
@@ -353,7 +359,7 @@
               <td class="px-4 py-3">
                 <span class="text-xs font-semibold px-2.5 py-1 rounded-full {statusCls(i.status)}">{i.status.toUpperCase()}</span>
                 {#if i.status === 'pending' && i.qris_code}
-                  <button onclick={() => (pay = { code: i.qris_code, amount: i.amount_to_pay || i.amount, baseAmount: i.amount, uniqueCode: i.unique_code || 0, invoice_id: i.id, paid: false })} title="Bayar invoice" class="tactile-btn ml-2 px-3 py-1 text-xs font-bold text-[var(--accent)]"><i class="fa-solid fa-qrcode"></i> Bayar</button>
+                  <button onclick={() => (pay = { code: i.qris_code, amount: i.amount_to_pay || i.amount, baseAmount: i.base_amount ?? i.amount, feeAmount: i.fee_amount ?? 0, uniqueCode: i.unique_code || 0, expiresAt: i.expires_at ?? 0, displayName: sub?.plan_name ?? 'Langganan', invoice_id: i.id, paid: false })} title="Bayar invoice" class="tactile-btn ml-2 px-3 py-1 text-xs font-bold text-[var(--accent)]"><i class="fa-solid fa-qrcode"></i> Bayar</button>
                 {/if}
               </td>
             </tr>
@@ -452,7 +458,10 @@
     code={pay.code}
     qrAmount={pay.amount}
     baseAmount={pay.baseAmount}
+    feeAmount={pay.feeAmount}
     uniqueCode={pay.uniqueCode}
+    displayName={pay.displayName}
+    expiresAt={pay.expiresAt}
     paid={pay.paid}
     rejected={pay.rejected}
     onClose={() => (pay = null)}

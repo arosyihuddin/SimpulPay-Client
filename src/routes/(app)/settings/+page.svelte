@@ -17,11 +17,11 @@
 
   let form = $state<GatewaySettings>({
     default_currency: 'IDR',
-    qris_expiry_minutes: '15',
+    qris_expiry_minutes: '2',
     min_amount: '100',
     max_amount: '10000000',
     fee_percent: '0',
-    pooling_interval: '5000',
+    pooling_interval: '8',
   });
   let loading = $state(true);
   let err = $state('');
@@ -99,6 +99,18 @@
       const v = Number(form[key]);
       if (isNaN(v) || v < 0) {
         err = `${key} harus angka ≥ 0`;
+        return;
+      }
+      if (key === 'pooling_interval' && v <= 0) {
+        err = 'pooling_interval harus > 0 (detik)';
+        return;
+      }
+      if (key === 'fee_percent' && v > 100) {
+        err = 'fee_percent maksimal 100';
+        return;
+      }
+      if (key === 'qris_expiry_minutes' && v > 1440) {
+        err = 'qris_expiry_minutes maksimal 1440';
         return;
       }
       if (key === 'max_amount' && Number(form.max_amount) < Number(form.min_amount)) {
@@ -276,12 +288,13 @@
           </div>
         </div>
         <div>
-          <label for="set-pool" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Pooling Interval (ms)</label>
+          <label for="set-pool" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Pooling Interval (detik)</label>
           <div class="relative">
             <input
               id="set-pool"
               type="number"
-              min="0"
+              min="1"
+              step="1"
               value={form.pooling_interval}
               oninput={(e) => { form.pooling_interval = e.currentTarget.value; saved.pooling_interval = false; }}
               onblur={() => saveField('pooling_interval')}
