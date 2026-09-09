@@ -265,6 +265,20 @@
       unread += 1;
     }
   });
+
+  // Pooling status realtime (admin-only, scope s:admin) — ephemeral, tanpa persist.
+  let pooling = $state<{ active: boolean; transactions: number; merchants: number } | null>(null);
+  let poolingTimer: ReturnType<typeof setTimeout> | null = null;
+  useWs((m) => {
+    if (m.type === "pooling_status") {
+      const d = m.data ?? {};
+      if (poolingTimer) clearTimeout(poolingTimer);
+      poolingTimer = null;
+      pooling = { active: !!d.active, transactions: d.transactions ?? 0, merchants: d.merchants ?? 0 };
+      // DO bisa evict di antara true/false → badge nyangkut. Timeout 30 dtk matikan otomatis.
+      if (pooling.active) poolingTimer = setTimeout(() => (pooling = null), 30000);
+    }
+  });
   const notifCount = $derived(unread);
   const NOTIF_META: Record<string, { icon: string; cls: string; bg: string }> =
     {
@@ -585,6 +599,15 @@
           </p>
         </div>
         <div class="flex items-center gap-3 sm:gap-4">
+          {#if auth.role === "admin" && pooling?.active}
+            <span
+              class="hidden sm:flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-full tactile-inset text-[var(--text-muted)]"
+              title="Pooling realtime: transaksi pending yang sedang diverifikasi"
+            >
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Pooling {pooling.transactions} tx · {pooling.merchants} merchant
+            </span>
+          {/if}
           <!-- Search box (UI-only, dekoratif ala mockup) -->
           <div class="relative hidden md:block w-56 lg:w-72">
             <i
