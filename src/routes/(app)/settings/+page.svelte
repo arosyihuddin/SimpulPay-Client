@@ -30,8 +30,6 @@
   let saving = $state<Record<string, boolean>>({});
   let saved = $state<Record<string, boolean>>({});
 
-  // ponytail: expand list kalau backend dukung mata uang lain
-  const CURRENCIES = ['IDR', 'USD', 'SGD'];
   const NUM_KEYS = [
     'min_amount',
     'max_amount',
@@ -109,8 +107,8 @@
         err = 'fee_percent maksimal 100';
         return;
       }
-      if (key === 'qris_expiry_minutes' && v > 1440) {
-        err = 'qris_expiry_minutes maksimal 1440';
+      if (key === 'qris_expiry_minutes' && (v < 1 || v > 1440)) {
+        err = 'qris_expiry_minutes minimal 1, maksimal 1440';
         return;
       }
       if (key === 'max_amount' && Number(form.max_amount) < Number(form.min_amount)) {
@@ -204,23 +202,8 @@
     {:else}
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label for="set-currency" class="block text-xs font-bold text-[var(--text-muted)] mb-1">Mata Uang</label>
-          <div class="relative">
-            <select
-              id="set-currency"
-              value={form.default_currency}
-              onchange={(e) => {
-                form.default_currency = e.currentTarget.value;
-                saveField('default_currency');
-              }}
-              class="w-full tactile-inset px-3 py-2.5 text-sm focus:outline-none cursor-pointer appearance-none pr-8"
-            >
-              {#each CURRENCIES as c (c)}
-                <option value={c}>{c}</option>
-              {/each}
-            </select>
-            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none">{@html fieldStatus('default_currency')}</span>
-          </div>
+          <span class="block text-xs font-bold text-[var(--text-muted)] mb-1">Mata Uang</span>
+          <div class="tactile-inset px-4 py-2.5 text-sm font-mono">IDR</div>
         </div>
         <div>
           <label for="set-expiry" class="block text-xs font-bold text-[var(--text-muted)] mb-1">QRIS Expiry (menit)</label>
@@ -228,7 +211,7 @@
             <input
               id="set-expiry"
               type="number"
-              min="0"
+              min="1"
               value={form.qris_expiry_minutes}
               oninput={(e) => { form.qris_expiry_minutes = e.currentTarget.value; saved.qris_expiry_minutes = false; }}
               onblur={() => saveField('qris_expiry_minutes')}
