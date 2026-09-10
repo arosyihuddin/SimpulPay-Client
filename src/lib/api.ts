@@ -143,6 +143,8 @@ export const admin = {
     api<any>(`/notifications?limit=${opts.limit ?? 50}&offset=${opts.offset ?? 0}`),
   markNotificationRead: (id: number) =>
     api<any>(`/notifications/${id}/read`, { method: "POST" }),
+  markAllNotificationsRead: () =>
+    api<any>(`/notifications/read-all`, { method: "POST" }),
 
   // Announcements read (customer) + write (admin)
   listAnnouncements: (

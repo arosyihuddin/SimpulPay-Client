@@ -361,12 +361,10 @@
     if (to) goto(to);
   }
   async function markAllRead() {
-    const unreadList = notifs.filter((n) => !n.read);
+    if (!unread) return;
     notifs = notifs.map((x) => ({ ...x, read: true }));
     unread = 0;
-    await Promise.all(
-      unreadList.map((n) => admin.markNotificationRead(n.id).catch(() => {})),
-    );
+    await admin.markAllNotificationsRead().catch(() => {});
   }
 
   let moreOpen = $state(false);
