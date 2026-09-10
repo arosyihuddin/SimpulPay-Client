@@ -94,6 +94,28 @@
       addToast('error', 'Gagal menyalin secret.');
     }
   }
+
+  let testBusy = $state(false);
+  let testResult = $state<{ ok: boolean; status: number | null; error: string | null } | null>(null);
+  async function sendTest() {
+    if (!webhook?.webhook_url) {
+      err = 'Isi Webhook URL dulu';
+      return;
+    }
+    testBusy = true;
+    testResult = null;
+    err = '';
+    try {
+      const r = await admin.testWebhook();
+      testResult = r.data as { ok: boolean; status: number | null; error: string | null };
+      if (r.data?.ok) addToast('success', `Tes terkirim (HTTP ${r.data.status}).`);
+      else err = r.data?.error || 'Tes gagal';
+    } catch (e: any) {
+      err = e.message;
+    } finally {
+      testBusy = false;
+    }
+  }
 </script>
 
 <div class="space-y-6">
@@ -196,6 +218,26 @@
         {:else}
           <p class="text-xs text-[var(--text-muted)]">
             Belum ada secret. Isi Webhook URL di atas — secret dibuat otomatis.
+          </p>
+        {/if}
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-bold text-[var(--text-muted)]">Tes Pengiriman</p>
+          <button
+            onclick={sendTest}
+            disabled={testBusy || !webhook.webhook_url}
+            class="tactile-btn px-4 py-2 text-xs font-bold text-[var(--accent)] flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i class="fa-solid {testBusy ? 'fa-spinner fa-spin' : 'fa-paper-plane'}"></i>
+            {testBusy ? 'Mengirim...' : 'Kirim Tes'}
+          </button>
+        </div>
+        <p class="text-[10px] text-[var(--text-muted)]">Kirim payload dummy <code class="font-mono">transaction.paid</code> + flag <code class="font-mono">test: true</code> ke URL di atas.</p>
+        {#if testResult}
+          <p class="text-xs font-mono px-4 py-2.5 rounded-xl border {testResult.ok ? 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'border-red-500/30 text-red-500'}">
+            {testResult.ok ? `OK — HTTP ${testResult.status}` : `Gagal — ${testResult.error ?? 'unknown'}`}
           </p>
         {/if}
       </div>
