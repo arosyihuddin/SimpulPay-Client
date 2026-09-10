@@ -90,7 +90,7 @@
 
   // QR yang lagi ditampilkan: expired → tampilkan state expired, terbayar → state sukses.
   useWs((m) => {
-    if (m.type === "qris_expired" && created?.qris_id === m.data?.id) expired = true;
+    if (m.type === "qris_expired" && created?.trx_id === m.data?.trx_id) expired = true;
     if (m.type === "transaction_updated" && m.data.status === "paid" && created?.trx_id === m.data?.trx_id) createdPaid = true;
   });
 </script>

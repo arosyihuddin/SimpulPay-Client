@@ -86,6 +86,13 @@
       title: "Webhook",
       subtitle: "Notifikasi transaksi ke URL aplikasi kamu",
     },
+    {
+      to: "/developer/sandbox",
+      label: "Sandbox",
+      icon: "fa-solid fa-flask",
+      title: "Sandbox",
+      subtitle: "QRIS dummy tanpa merchant + simulasi bayar",
+    },
   ];
   const ADMIN_LINKS = [
     {
@@ -136,6 +143,7 @@
   const MOBILE_PRIMARY = USER_LINKS.slice(0, 4);
   const MOBILE_MORE = $derived([
     ...USER_LINKS.slice(4),
+    ...DEV_LINKS,
     ...(auth.role === "admin" ? ADMIN_LINKS : []),
   ]);
   // Halaman yang diblokir untuk non-admin.

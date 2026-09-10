@@ -155,7 +155,7 @@
 
   useWs((m) => {
     if (m.type === "qris_created" || m.type === "qris_expired" || m.type === "payment_received" || m.type === "transaction_updated") {
-      const txId = m.data?.id ?? m.data?.transaction_id;
+      const txId = m.data?.id ?? m.data?.trx_id;
       // QR yang lagi dibuka: expired → tutup modal, paid → state sukses.
       if (txId === qrTxId) {
         if (m.type === "qris_expired") {

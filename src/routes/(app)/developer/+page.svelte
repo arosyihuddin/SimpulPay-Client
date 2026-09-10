@@ -3,7 +3,6 @@
   import { API_BASE } from '$lib/api';
 
   interface SwaggerDoc { info: { title: string; version: string; description?: string }; paths: Record<string, Record<string, any>>; }
-
   const METHOD_BADGE: Record<string, string> = {
     get: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
     post: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
@@ -44,12 +43,12 @@
   ];
 
   const WH_EVENTS = [
-    { name: 'transaction.paid', desc: 'QRIS dibayar lunas.', fields: 'transaction_id, amount, base_amount, unique_code, fee_amount, merchant_id, merchant_name, paid_at' },
-    { name: 'transaction.expired', desc: 'QRIS kedaluwarsa tanpa bayar.', fields: 'transaction_id, amount, base_amount, unique_code, fee_amount, merchant_id, expired_at' },
+    { name: 'transaction.paid', desc: 'QRIS dibayar lunas.', fields: 'trx_id, amount, base_amount, unique_code, fee_amount, merchant_id, merchant_name, paid_at' },
+    { name: 'transaction.expired', desc: 'QRIS kedaluwarsa tanpa bayar.', fields: 'trx_id, amount, base_amount, unique_code, fee_amount, merchant_id, expired_at' },
   ];
 
-  const WH_PAYLOAD = '{\n  "event": "transaction.paid",\n  "timestamp": 1736400000000,\n  "data": {\n    "transaction_id": "a1b2c3d4",\n    "amount": 50123,\n    "base_amount": 50000,\n    "unique_code": 123,\n    "fee_amount": 0,\n    "merchant_id": "m_xxx",\n    "merchant_name": "Toko Saya",\n    "paid_at": 1736400000000\n  }\n}';
-  const WH_PAYLOAD_EXPIRED = '{\n  "event": "transaction.expired",\n  "timestamp": 1736400000000,\n  "data": {\n    "transaction_id": "a1b2c3d4",\n    "amount": 50123,\n    "base_amount": 50000,\n    "unique_code": 123,\n    "fee_amount": 0,\n    "merchant_id": "m_xxx",\n    "expired_at": 1736400000000\n  }\n}';
+  const WH_PAYLOAD = '{\n  "event": "transaction.paid",\n  "timestamp": 1736400000000,\n  "data": {\n    "trx_id": "TRX-XXXX",\n    "amount": 50123,\n    "base_amount": 50000,\n    "unique_code": 123,\n    "fee_amount": 0,\n    "merchant_id": "m_xxx",\n    "merchant_name": "Toko Saya",\n    "paid_at": 1736400000000\n  }\n}';
+  const WH_PAYLOAD_EXPIRED = '{\n  "event": "transaction.expired",\n  "timestamp": 1736400000000,\n  "data": {\n    "trx_id": "TRX-XXXX",\n    "amount": 50123,\n    "base_amount": 50000,\n    "unique_code": 123,\n    "fee_amount": 0,\n    "merchant_id": "m_xxx",\n    "expired_at": 1736400000000\n  }\n}';
 
   const WH_SNIPPETS: Record<WhLang, string> = {
     node: "import { createHmac, timingSafeEqual } from 'node:crypto';\nimport express from 'express';\n\nconst app = express();\n// Wajib raw body — jangan pakai express.json() di route ini\napp.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {\n  const rawBody = req.body.toString('utf8');\n  const secret = process.env.SIMPULPAY_WEBHOOK_SECRET || '';\n  const expected = createHmac('sha256', secret).update(rawBody).digest('hex');\n  const sig = String(req.headers['x-simpulpay-signature'] || '');\n  const ok = sig.length === expected.length && timingSafeEqual(Buffer.from(sig), Buffer.from(expected));\n  if (!ok) return res.status(401).send('invalid signature');\n  const payload = JSON.parse(rawBody);\n  if (payload.test) return res.send('ok'); // kiriman tombol tes\n  console.log(payload.event, payload.data);\n  res.send('ok');\n});",
@@ -62,7 +61,6 @@
     navigator.clipboard.writeText(text).then(() => { copiedWh = key; setTimeout(() => (copiedWh = null), 2000); }).catch(() => {});
   };
 </script>
-
 <div class="space-y-6">
   <div class="tactile-box p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
     <div>
@@ -71,6 +69,15 @@
     </div>
     <a href={docsUrl} target="_blank" class="tactile-btn px-5 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2 shrink-0">
       <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Swagger
+    </a>
+  </div>
+  <div class="tactile-box p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <h2 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-flask text-[var(--accent)]"></i> Sandbox QRIS</h2>
+      <p class="text-xs text-[var(--text-muted)] mt-1">QRIS dummy tanpa merchant + tombol simulasi bayar</p>
+    </div>
+    <a href="/developer/sandbox" class="tactile-btn px-5 py-3 font-bold text-[var(--accent)] flex items-center justify-center gap-2 shrink-0">
+      <i class="fa-solid fa-flask"></i> Buka Sandbox
     </a>
   </div>
 
@@ -118,7 +125,7 @@
       <div class="tactile-inset rounded-2xl px-3 py-2.5 space-y-1">
         <p class="font-bold">Bentuk payload</p>
         <p class="font-mono break-all">{'{ event, timestamp, test?, data }'}</p>
-        <p class="text-[var(--text-muted)] text-[11px]"><code class="font-mono">transaction_id</code> = <code class="font-mono">qris_id</code> dari respon buat QRIS. Detail status via <code class="font-mono">GET /v1/qris/{'{id}'}</code>.</p>
+        <p class="text-[var(--text-muted)] text-[11px]"><code class="font-mono">trx_id</code> dari respon buat QRIS. Detail status via <code class="font-mono">GET /v1/qris/{'{id}'}</code>.</p>
       </div>
       <div class="tactile-inset rounded-2xl px-3 py-2.5 space-y-1">
         <p class="font-bold">Header</p>

@@ -66,6 +66,12 @@ export const admin = {
     }),
   getTransactionCode: (id: string) =>
     api<{ data: { code: string; status: string; created_at: number; expires_at: number; merchant_id: string; merchant_name: string } }>(`/transactions/${id}/code`),
+  createSandboxQris: (amount: number) =>
+    api<any>(`/sandbox/qris`, { method: "POST", body: { amount } }),
+  simulateSandboxPay: (id: string) =>
+    api<any>(`/sandbox/qris/${id}/simulate-pay`, { method: "POST" }),
+  simulateSandboxExpire: (id: string) =>
+    api<any>(`/sandbox/qris/${id}/simulate-expire`, { method: "POST" }),
 
   // Semua transaksi — semua merchant user, filter lewat query
   transactions: (params?: {
