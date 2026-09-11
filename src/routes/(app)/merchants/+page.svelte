@@ -12,6 +12,7 @@
   const TYPE_META: Record<string, { label: string; img: string }> = {
     gopay: { label: 'GoPay', img: '/gopay.webp' },
     shopeepay: { label: 'ShopeePay', img: '/shopeepay.webp' },
+    dana: { label: 'DANA', img: '/dana.webp' },
   };
   const typeMeta = (t: string) => TYPE_META[t] || TYPE_META.gopay;
 
@@ -64,8 +65,9 @@
 
   // ---- Tambah Merchant ----
   const PROVIDERS = [
-    { key: 'gopay', name: 'GoPay', img: '/gopay.webp', icon: 'fa-solid fa-mobile-screen', cls: '', desc: 'Instant QR & Wallet API' },
-    { key: 'shopeepay', name: 'ShopeePay', img: '/shopeepay.webp', icon: 'fa-solid fa-bag-shopping', cls: '', desc: 'Segera hadir' },
+    { key: 'gopay', name: 'GoPay', img: '/gopay.webp', desc: 'Instant QR & Wallet API', disabled: false },
+    { key: 'shopeepay', name: 'ShopeePay', img: '/shopeepay.webp', desc: 'Segera hadir', disabled: true },
+    { key: 'dana', name: 'DANA', img: '/dana.webp', desc: 'Segera hadir', disabled: true },
   ];
   let modalOpen = $state(false);
   let provider = $state('');
@@ -104,7 +106,7 @@
   }
   async function submit() {
     if (!provider) { modalErr = 'Pilih provider dulu.'; return; }
-    if (provider === 'shopeepay') { modalErr = 'ShopeePay merchant masih placeholder — tunggu update berikutnya.'; return; }
+    if (PROVIDERS.find((p) => p.key === provider)?.disabled) { modalErr = 'Provider ini segera hadir — tunggu update berikutnya.'; return; }
     const nm = name.trim();
     if (nm.length < 2) { modalErr = 'Nama merchant minimal 2 karakter.'; return; }
     saving = true; modalErr = '';
@@ -264,13 +266,16 @@
       {#if !provider}
         <div class="space-y-4">
           <p class="text-xs font-bold text-[var(--text-muted)]">Pilih channel e-wallet atau akun gateway merchant yang ingin dihubungkan:</p>
-          <div class="grid grid-cols-2 gap-4 pt-2">
+          <div class="grid grid-cols-3 gap-3 pt-2">
             {#each PROVIDERS as p (p.key)}
               <button
-                onclick={() => { provider = p.key; modalErr = ''; }}
-                class="tactile-box p-4 text-center cursor-pointer flex flex-col items-center justify-center space-y-2"
+                disabled={p.disabled}
+                aria-disabled={p.disabled}
+                title={p.disabled ? `${p.name} segera hadir` : `Pilih ${p.name}`}
+                onclick={() => { if (p.disabled) return; provider = p.key; modalErr = ''; }}
+                class="tactile-box p-4 text-center flex flex-col items-center justify-center space-y-2 {p.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}"
               >
-                <div class="w-12 h-12 rounded-[1.25rem] bg-emerald-500/10 flex items-center justify-center {p.cls}"><i class="{p.icon} text-lg"></i></div>
+                <div class="w-12 h-12 rounded-[1.25rem] bg-emerald-500/10 flex items-center justify-center overflow-hidden"><img src={p.img} alt={p.name} loading="lazy" class="w-8 h-8 object-contain" /></div>
                 <span class="font-bold text-sm">{p.name} Merchant</span>
                 <span class="text-[10px] text-[var(--text-muted)] font-bold">{p.desc}</span>
               </button>
