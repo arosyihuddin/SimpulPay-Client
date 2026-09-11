@@ -249,8 +249,8 @@
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40)
       loadNotifs(false);
   }
-  // Fetch notifikasi saat layout dipasang.
-  onMount(() => loadNotifs(true));
+  // Guard sesi + notifikasi saat layout dipasang.
+  onMount(() => { checkAuth(); loadNotifs(true); });
 
   // Realtime: event "notification" (notifyUser dari backend) → toast + inject langsung ke notif list.
   useWs((m) => {

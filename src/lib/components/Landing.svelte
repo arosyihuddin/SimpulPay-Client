@@ -1,12 +1,14 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import Logo from "$lib/components/Logo.svelte";
-  import { auth } from "$lib/auth.svelte";
+  import { auth, readAuthHint } from "$lib/auth.svelte";
   import { theme, toggleTheme } from "$lib/theme.svelte";
 
   // Landing public — gak butuh auth. Konten hardcoded (harga contoh), tanpa call API.
 
   let menuOpen = $state(false);
+  // Penanda login terakhir (localStorage) — tanpa call /me biar kebal maintenance.
+  const hintAuthed = readAuthHint();
   const go = (p: string) => {
     menuOpen = false;
     goto(p);
@@ -206,7 +208,7 @@
         >
           <i class={theme.dark ? "fa-solid fa-sun" : "fa-solid fa-moon"}></i>
         </button>
-        {#if auth.authed}
+        {#if auth.authed || hintAuthed}
           <button
             onclick={() => go("/dashboard")}
             class="tactile-btn w-10 h-10 flex items-center justify-center text-[var(--accent)]"
