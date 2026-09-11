@@ -1,12 +1,17 @@
 <script lang="ts">
-  import { admin } from "$lib/api";
+  import { admin, googleLoginUrl } from "$lib/api";
   import { checkAuth } from "$lib/auth.svelte";
   import { theme, toggleTheme } from "$lib/theme.svelte";
   import { goto } from "$app/navigation";
   import Logo from "$lib/components/Logo.svelte";
   import ErrBox from "$lib/components/ErrBox.svelte";
 
+  let { oauthError = "" }: { oauthError?: string } = $props();
+
   let err = $state("");
+  $effect(() => {
+    if (oauthError) err = "Login Google gagal, coba lagi";
+  });
   let busy = $state(false);
   let email = $state("");
   let password = $state("");
@@ -111,5 +116,19 @@
       <i class="fa-solid fa-lock-open"></i>
       {busy ? "Masuk..." : "Masuk"}
     </button>
+
+    <div class="flex items-center gap-3 text-[var(--text-muted)]">
+      <span class="h-px flex-1 bg-[var(--border)]"></span>
+      <span class="text-xs font-semibold">atau</span>
+      <span class="h-px flex-1 bg-[var(--border)]"></span>
+    </div>
+
+    <a
+      href={googleLoginUrl}
+      class="tactile-btn w-full py-3.5 font-bold flex items-center justify-center gap-2 text-sm"
+    >
+      <i class="fa-brands fa-google"></i>
+      Masuk dengan Google
+    </a>
   </form>
 </div>

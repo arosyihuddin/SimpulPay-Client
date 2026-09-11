@@ -2,6 +2,8 @@ export const API_BASE =
   (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ||
   "";
 
+export const googleLoginUrl = `${API_BASE}/auth/google`;
+
 async function api<T = any>(
   path: string,
   opts: { method?: string; body?: unknown } = {},
