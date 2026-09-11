@@ -221,7 +221,8 @@ export const admin = {
     api<any>(`/admin/users/${id}`, { method: "PATCH", body: patch }),
   deleteUser: (id: string) =>
     api<any>(`/admin/users/${id}`, { method: "DELETE" }),
-  listPlans: () => api<any>("/plans"),
+  listPlans: (opts: { all?: boolean } = {}) =>
+    api<any>(opts.all ? "/plans?active=0" : "/plans"),
   createPlan: (plan: Record<string, unknown>) =>
     api<any>("/admin/plans", { method: "POST", body: plan }),
   updatePlan: (id: string, patch: Record<string, unknown>) =>

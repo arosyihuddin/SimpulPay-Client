@@ -53,7 +53,7 @@
     loading = true;
     err = "";
     try {
-      const p = await admin.listPlans();
+      const p = await admin.listPlans({ all: true });
       plans = p.data.plans;
     } catch (e: any) {
       err = e.message;
@@ -100,9 +100,9 @@
           ? null
           : parseInt(planForm.daily_paid_limit, 10),
       features_json: planForm.features.map((f) => f.trim()).filter(Boolean),
-      active: true,
     };
     // Bangun objek plan lokal dari form — backend cuma balikin {id}.
+    // Plan baru selalu draft; edit pertahankan status publish.
     const makePlan = (id: string): Plan => ({
       id,
       name: planForm.name,
@@ -116,7 +116,7 @@
       features_json: JSON.stringify(
         planForm.features.map((f) => f.trim()).filter(Boolean),
       ),
-      active: true,
+      active: editingPlan ? editingPlan.active : false,
     });
     try {
       if (editingPlan) {
@@ -125,13 +125,13 @@
           p.id === editingPlan!.id ? makePlan(editingPlan!.id) : p,
         );
       } else {
-        const r = await admin.createPlan(body);
+        const r = await admin.createPlan({ ...body, active: false });
         plans = [...plans, makePlan(r.data.id)];
       }
       planModal = false;
       addToast(
         "success",
-        editingPlan ? "Paket diperbarui." : "Paket ditambahkan.",
+        editingPlan ? "Paket diperbarui." : "Paket disimpan sebagai draft.",
       );
     } catch (e: any) {
       err = e.message;
@@ -152,6 +152,21 @@
       delPlanTarget = null;
     } finally {
       deletingPlan = false;
+    }
+  }
+  async function togglePublish(p: Plan) {
+    err = "";
+    try {
+      await admin.updatePlan(p.id, { active: !p.active });
+      plans = plans.map((x) =>
+        x.id === p.id ? { ...x, active: !p.active } : x,
+      );
+      addToast(
+        "success",
+        p.active ? "Paket ditarik ke draft." : "Paket dipublish.",
+      );
+    } catch (e: unknown) {
+      err = e instanceof Error ? e.message : "Gagal mengubah status paket.";
     }
   }
 </script>
@@ -206,6 +221,14 @@
               <div class="flex gap-1 shrink-0">
                 <button
                   type="button"
+                  title={p.active ? "Tarik ke draft" : "Publish"}
+                  aria-label={p.active ? `Tarik ${p.name} ke draft` : `Publish ${p.name}`}
+                  onclick={() => togglePublish(p)}
+                  class="text-[var(--text-muted)] hover:text-emerald-500 cursor-pointer px-1"
+                  ><i class="fa-solid {p.active ? 'fa-eye-slash' : 'fa-eye'}"></i></button
+                >
+                <button
+                  type="button"
                   aria-label="Edit {p.name}"
                   onclick={() => openPlanEdit(p)}
                   class="text-[var(--text-muted)] hover:text-[var(--accent)] cursor-pointer px-1"
@@ -223,8 +246,8 @@
             <p class="text-lg font-extrabold text-[var(--accent)]">
               {fmtPrice(p.price)}
             </p>
-            {#if !p.active}<p class="text-[10px] font-semibold text-red-500">
-                ● Nonaktif
+            {#if !p.active}<p class="text-[10px] font-semibold text-amber-500">
+                ● Draft — belum tampil ke customer
               </p>{/if}
             <div class="space-y-1 text-xs">
               <div

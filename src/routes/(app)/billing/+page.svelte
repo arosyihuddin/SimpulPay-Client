@@ -46,6 +46,18 @@
   let err = $state('');
   let plans = $state<Plan[]>([]);
   let showPlans = $state(false);
+  // Modal pilih paket adaptif — lebar + kolom ngikut jumlah plan publish.
+  const visiblePlans = $derived(plans.filter((p) => p.active));
+  const modalW = $derived(
+    visiblePlans.length <= 1 ? "max-w-md" : visiblePlans.length === 2 ? "max-w-2xl" : "max-w-5xl",
+  );
+  const gridCls = $derived(
+    visiblePlans.length <= 1
+      ? "grid-cols-1 justify-items-center"
+      : visiblePlans.length === 2
+        ? "grid-cols-1 sm:grid-cols-2"
+        : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+  );
 
   // Pagination riwayat pembelian (server-side — backend sudah terima limit/offset).
   const PAGE_SIZE = 10;
@@ -403,14 +415,14 @@
 {#if showPlans}
   <div class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <button type="button" aria-label="Tutup" class="fixed inset-0 z-40 cursor-default" onclick={closePlans}></button>
-    <div class="tactile-modal w-full max-w-3xl p-6 relative z-50 max-h-[90vh] overflow-y-auto">
+    <div class="tactile-modal w-full {modalW} p-6 relative z-50 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4 pb-2 border-b border-[var(--border-subtle)]">
         <h3 class="text-lg font-bold">Pilih Paket</h3>
         <button type="button" aria-label="Tutup" onclick={closePlans} class="tactile-btn w-8 h-8 flex items-center justify-center text-[var(--text-muted)]"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 auto-rows-fr gap-4 pt-2">
-        {#each plans.filter(p => p.active) as p (p.id)}
-          <div class="tactile-box p-5 space-y-3 flex flex-col {p.id === sub?.plan_id ? 'ring-2 ring-[var(--accent)]' : ''}">
+      <div class="grid {gridCls} auto-rows-fr gap-4 pt-2">
+        {#each visiblePlans as p (p.id)}
+          <div class="tactile-box p-5 space-y-3 flex flex-col w-full {visiblePlans.length === 1 ? 'max-w-sm' : ''} {p.id === sub?.plan_id ? 'ring-2 ring-[var(--accent)]' : ''}">
             <div class="flex items-center justify-between">
               <p class="font-bold text-lg">{p.name}</p>
               {#if p.id === sub?.plan_id}
