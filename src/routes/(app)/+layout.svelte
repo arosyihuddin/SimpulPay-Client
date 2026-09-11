@@ -7,6 +7,7 @@
   import { theme, toggleTheme } from "$lib/theme.svelte";
   import Logo from "$lib/components/Logo.svelte";
   import Skeleton from "$lib/components/Skeleton.svelte";
+  import Maintenance from "$lib/components/Maintenance.svelte";
   import Toast from "$lib/components/Toast.svelte";
   import { addToast } from "$lib/toast.svelte";
   import { useWs } from "$lib/useWs";
@@ -170,12 +171,12 @@
 
   const activePath = $derived(page.url.pathname);
 
-  // Auth guard — redirect unauthed, block non-admin from admin pages.
+  // Auth guard — maintenance tampilkan halaman Maintenance (bukan balik ke /);
+  // redirect unauthed; block non-admin from admin pages.
   $effect(() => {
-    if (auth.ready && !auth.authed) goto("/");
+    if (!auth.ready || auth.maintenance) return;
+    if (!auth.authed) goto("/");
     else if (
-      auth.ready &&
-      auth.authed &&
       auth.role !== "admin" &&
       ADMIN_ONLY.some((p) => activePath.startsWith(p))
     )
@@ -384,7 +385,9 @@
   }
 </script>
 
-{#if auth.ready && auth.authed}
+{#if auth.ready && auth.maintenance}
+  <Maintenance />
+{:else if auth.ready && auth.authed}
   <div class="min-h-screen flex">
     <!-- Sidebar — desktop only, clay (style baru via app.css) -->
     <aside
