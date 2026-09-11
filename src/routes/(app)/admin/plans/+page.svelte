@@ -15,6 +15,7 @@
     daily_paid_limit: number | null;
     features_json: string | null;
     active: boolean;
+    is_featured: boolean;
   }
 
   let plans = $state<Plan[]>([]);
@@ -117,6 +118,7 @@
         planForm.features.map((f) => f.trim()).filter(Boolean),
       ),
       active: editingPlan ? editingPlan.active : false,
+      is_featured: editingPlan ? editingPlan.is_featured : false,
     });
     try {
       if (editingPlan) {
@@ -167,6 +169,21 @@
       );
     } catch (e: unknown) {
       err = e instanceof Error ? e.message : "Gagal mengubah status paket.";
+    }
+  }
+  async function toggleFeatured(p: Plan) {
+    err = "";
+    try {
+      await admin.updatePlan(p.id, { is_featured: !p.is_featured });
+      plans = plans.map((x) =>
+        x.id === p.id ? { ...x, is_featured: !p.is_featured } : x,
+      );
+      addToast(
+        "success",
+        p.is_featured ? "Highlight populer dicabut." : "Paket ditandai populer.",
+      );
+    } catch (e: unknown) {
+      err = e instanceof Error ? e.message : "Gagal mengubah highlight.";
     }
   }
 </script>
@@ -221,6 +238,14 @@
               <div class="flex gap-1 shrink-0">
                 <button
                   type="button"
+                  title={p.is_featured ? "Cabut populer" : "Tandai populer"}
+                  aria-label={p.is_featured ? `Cabut populer ${p.name}` : `Tandai populer ${p.name}`}
+                  onclick={() => toggleFeatured(p)}
+                  class="cursor-pointer px-1 {p.is_featured ? 'text-amber-500' : 'text-[var(--text-muted)] hover:text-amber-500'}"
+                  ><i class="fa-solid fa-star"></i></button
+                >
+                <button
+                  type="button"
                   title={p.active ? "Tarik ke draft" : "Publish"}
                   aria-label={p.active ? `Tarik ${p.name} ke draft` : `Publish ${p.name}`}
                   onclick={() => togglePublish(p)}
@@ -246,6 +271,9 @@
             <p class="text-lg font-extrabold text-[var(--accent)]">
               {fmtPrice(p.price)}
             </p>
+            {#if p.is_featured}<p class="text-[10px] font-semibold text-amber-500">
+                ★ Populer — highlight di landing
+              </p>{/if}
             {#if !p.active}<p class="text-[10px] font-semibold text-amber-500">
                 ● Draft — belum tampil ke customer
               </p>{/if}

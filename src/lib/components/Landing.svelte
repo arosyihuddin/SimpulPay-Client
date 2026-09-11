@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import Logo from "$lib/components/Logo.svelte";
   import { auth, readAuthHint } from "$lib/auth.svelte";
   import { theme, toggleTheme } from "$lib/theme.svelte";
+  import { API_BASE } from "$lib/api";
 
-  // Landing public — gak butuh auth. Konten hardcoded (harga contoh), tanpa call API.
+  // Landing public — harga dari /public/plans, fallback PLANS statis bila API mati/maintenance.
 
   let menuOpen = $state(false);
   // Penanda login terakhir (localStorage) — tanpa call /me biar kebal maintenance.
@@ -68,7 +70,18 @@
     },
   ];
 
-  const PLANS = [
+  interface LandingPlan {
+    name: string;
+    price: string;
+    suffix: string;
+    merchant: string;
+    limit: string;
+    cls: string;
+    featured: boolean;
+    features: string[];
+  }
+
+  const PLANS: LandingPlan[] = [
     {
       name: "Free",
       price: "0",
@@ -120,6 +133,60 @@
       ],
     },
   ];
+
+  // Harga dinamis dari API — fallback ke PLANS statis bila gagal.
+  interface ApiPlan {
+    name: string;
+    type: string;
+    price: number;
+    max_merchants: number;
+    daily_paid_limit: number | null;
+    features_json: string | null;
+    is_featured: boolean;
+  }
+  const parseApiFeatures = (j: string | null): string[] => {
+    if (!j) return [];
+    try {
+      const v: unknown = JSON.parse(j);
+      if (Array.isArray(v)) return v.map(String);
+      if (typeof v === "object" && v !== null)
+        return Object.keys(v).map((k) =>
+          k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        );
+    } catch {}
+    return [];
+  };
+  const toLanding = (p: ApiPlan): LandingPlan => {
+    const featured = p.is_featured === true;
+    const feats = parseApiFeatures(p.features_json);
+    return {
+      name: p.name,
+      price: p.price <= 0 ? "0" : p.price.toLocaleString("id-ID"),
+      suffix: p.price <= 0 ? "selamanya" : "/ bulan",
+      merchant: `${p.max_merchants} merchant`,
+      limit: p.daily_paid_limit == null ? "Tanpa batas" : `${p.daily_paid_limit} transaksi/hari`,
+      cls: featured ? "ring-2 ring-[var(--accent)]" : "",
+      featured,
+      features:
+        feats.length > 0
+          ? feats
+          : [
+              `${p.max_merchants} merchant`,
+              p.daily_paid_limit == null ? "Transaksi tanpa batas" : `${p.daily_paid_limit} transaksi/hari`,
+            ],
+    };
+  };
+  let displayPlans = $state<LandingPlan[]>(PLANS);
+  onMount(async () => {
+    try {
+      const r = await fetch(`${API_BASE}/public/plans`);
+      if (!r.ok) return;
+      const j: unknown = await r.json();
+      const rows = (j as { data?: { plans?: unknown } })?.data?.plans;
+      if (!Array.isArray(rows) || rows.length === 0) return;
+      displayPlans = (rows as ApiPlan[]).map(toLanding);
+    } catch {}
+  });
 
   const FAQS = [
     {
@@ -473,8 +540,8 @@
           Upgrade dan downgrade kapan saja. Tagihan prorata otomatis.
         </p>
       </div>
-      <div class="grid md:grid-cols-3 gap-4 md:gap-6 mt-12 items-stretch">
-        {#each PLANS as p (p.name)}
+      <div class="grid gap-4 md:gap-6 mt-12 items-stretch {displayPlans.length <= 1 ? 'grid-cols-1 max-w-md mx-auto' : displayPlans.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto' : 'md:grid-cols-3'}">
+        {#each displayPlans as p (p.name)}
           <div
             class="tactile-box p-6 flex flex-col relative {p.cls} {p.featured
               ? 'md:-translate-y-2'
