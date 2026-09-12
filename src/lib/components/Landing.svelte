@@ -152,6 +152,14 @@
       a: "Masuk ke menu Developer → Webhook. Isi URL endpoint kamu, dan SimpulPay akan mengirim notifikasi status transaksi secara realtime saat ada pembayaran.",
     },
     {
+      q: "Kapan transaksi dihitung 1x?",
+      a: "Transaksi dihitung 1x saat statusnya Paid (berhasil dibayar). Status Pending, Expired, atau Failed tidak mengurangi kuota harian kamu.",
+    },
+    {
+      q: "Apa yang terjadi kalau kuota harian habis?",
+      a: "QRIS baru tidak bisa dibuat sampai kuota reset otomatis tengah malam. Upgrade plan kapan saja untuk limit lebih besar atau tanpa batas.",
+    },
+    {
       q: "Bisakah upgrade/downgrade plan?",
       a: "Bisa, kapan saja dari menu Billing & Usage. Upgrade langsung aktif setelah invoice dibayar; tagihan prorata dihitung otomatis oleh sistem.",
     },
