@@ -160,6 +160,10 @@
       a: "QRIS baru tidak bisa dibuat sampai kuota reset otomatis tengah malam. Upgrade plan kapan saja untuk limit lebih besar atau tanpa batas.",
     },
     {
+      q: "Bagaimana kalau nominal pembayaran sama, tidak tertukar?",
+      a: "Setiap pembayaran ditambah kode unik otomatis, jadi nominal yang dibayar selalu berbeda. Sistem bisa membedakan tiap transaksi tanpa risiko tertukar.",
+    },
+    {
       q: "Bisakah upgrade/downgrade plan?",
       a: "Bisa, kapan saja dari menu Billing & Usage. Upgrade langsung aktif setelah invoice dibayar; tagihan prorata dihitung otomatis oleh sistem.",
     },
