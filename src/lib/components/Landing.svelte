@@ -197,6 +197,10 @@
         <span class="font-extrabold text-lg tracking-wide"
           >Simpul<span class="text-[var(--accent)]">Pay</span></span
         >
+        <span
+          class="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow"
+          >Beta</span
+        >
       </a>
 
       <div
