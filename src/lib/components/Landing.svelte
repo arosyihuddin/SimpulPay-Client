@@ -667,4 +667,12 @@
       </p>
     </div>
   </footer>
+  <a
+    href="https://wa.me/6289512480871?text=Halo%20SimpulPay%2C%20saya%20mau%20tanya-tanya%20dulu."
+    target="_blank"
+    rel="noopener"
+    aria-label="Chat WhatsApp SimpulPay"
+    class="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-2xl text-white shadow-lg transition hover:scale-105"
+    ><i class="fa-brands fa-whatsapp"></i
+  ></a>
 </div>
