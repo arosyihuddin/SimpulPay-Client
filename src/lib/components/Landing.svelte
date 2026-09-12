@@ -121,16 +121,21 @@
       features: [`${p.max_merchants} merchant`, p.daily_paid_limit == null ? "Transaksi tanpa batas" : `${p.daily_paid_limit} transaksi/hari`, ...feats],
     };
   };
-  let displayPlans = $state<LandingPlan[]>(PLANS);
+  let displayPlans = $state<LandingPlan[]>([]);
+  let plansLoaded = $state(false);
   onMount(async () => {
     try {
       const r = await fetch(`${API_BASE}/public/plans`);
-      if (!r.ok) return;
+      if (!r.ok) throw new Error("plans");
       const j: unknown = await r.json();
       const rows = (j as { data?: { plans?: unknown } })?.data?.plans;
-      if (!Array.isArray(rows) || rows.length === 0) return;
+      if (!Array.isArray(rows) || rows.length === 0) throw new Error("plans");
       displayPlans = (rows as ApiPlan[]).map(toLanding);
-    } catch {}
+    } catch {
+      displayPlans = PLANS;
+    } finally {
+      plansLoaded = true;
+    }
   });
 
   const FAQS = [
@@ -485,6 +490,25 @@
           Upgrade dan downgrade kapan saja. Tagihan prorata otomatis.
         </p>
       </div>
+      {#if !plansLoaded}
+        <div class="grid gap-4 md:gap-6 mt-12 items-stretch md:grid-cols-3" aria-hidden="true">
+          {#each [0, 1, 2] as i (i)}
+            <div class="tactile-box p-6 flex flex-col animate-pulse">
+              <div class="h-5 w-24 rounded-full bg-[var(--border-subtle)]"></div>
+              <div class="mt-4 h-9 w-40 rounded-lg bg-[var(--border-subtle)]"></div>
+              <ul class="mt-5 space-y-2.5 flex-1">
+                {#each [0, 1, 2, 3, 4, 5] as j (j)}
+                  <li class="flex items-start gap-2">
+                    <div class="mt-0.5 h-4 w-4 rounded-full bg-[var(--border-subtle)]"></div>
+                    <div class="h-4 flex-1 rounded bg-[var(--border-subtle)]"></div>
+                  </li>
+                {/each}
+              </ul>
+              <div class="mt-6 h-12 w-full rounded-xl bg-[var(--border-subtle)]"></div>
+            </div>
+          {/each}
+        </div>
+      {:else}
       <div class="grid gap-4 md:gap-6 mt-12 items-stretch {displayPlans.length <= 1 ? 'grid-cols-1 max-w-md mx-auto' : displayPlans.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto' : 'md:grid-cols-3'}">
         {#each displayPlans as p (p.name)}
           <div
@@ -528,6 +552,7 @@
           </div>
         {/each}
       </div>
+      {/if}
     </div>
   </section>
 
