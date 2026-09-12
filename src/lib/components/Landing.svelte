@@ -70,68 +70,21 @@
     },
   ];
 
+  const PLAN_FEATURES = ["Qris Dinamis", "Sandbox", "Webhook Realtime", "Api Key"];
+
   interface LandingPlan {
     name: string;
     price: string;
     suffix: string;
-    merchant: string;
-    limit: string;
     cls: string;
     featured: boolean;
     features: string[];
   }
 
   const PLANS: LandingPlan[] = [
-    {
-      name: "Free",
-      price: "0",
-      suffix: "selamanya",
-      merchant: "1 merchant",
-      limit: "10 transaksi/hari",
-      cls: "",
-      featured: false,
-      features: [
-        "1 merchant",
-        "10 transaksi/hari",
-        "QRIS dinamis",
-        "Transaksi & laporan",
-        "Email support",
-      ],
-    },
-    {
-      name: "Starter",
-      price: "49rb",
-      suffix: "/ bulan",
-      merchant: "3 merchant",
-      limit: "100 transaksi/hari",
-      cls: "ring-2 ring-[var(--accent)]",
-      featured: true,
-      features: [
-        "3 merchant",
-        "100 transaksi/hari",
-        "QRIS dinamis",
-        "Webhook realtime",
-        "Billing & usage",
-        "Priority email support",
-      ],
-    },
-    {
-      name: "Pro",
-      price: "149rb",
-      suffix: "/ bulan",
-      merchant: "Unlimited",
-      limit: "Tanpa batas",
-      cls: "",
-      featured: false,
-      features: [
-        "Merchant unlimited",
-        "Transaksi tanpa batas",
-        "QRIS dinamis",
-        "Webhook + API key",
-        "Insight lanjutan",
-        "Dedicated support",
-      ],
-    },
+    { name: "Free", price: "0", suffix: "selamanya", cls: "", featured: false, features: ["1 merchant", "10 transaksi/hari", ...PLAN_FEATURES] },
+    { name: "Starter", price: "49rb", suffix: "/ bulan", cls: "ring-2 ring-[var(--accent)]", featured: true, features: ["3 merchant", "100 transaksi/hari", ...PLAN_FEATURES] },
+    { name: "Pro", price: "149rb", suffix: "/ bulan", cls: "", featured: false, features: ["Merchant unlimited", "Transaksi tanpa batas", ...PLAN_FEATURES] },
   ];
 
   // Harga dinamis dari API — fallback ke PLANS statis bila gagal.
@@ -163,17 +116,9 @@
       name: p.name,
       price: p.price <= 0 ? "0" : p.price.toLocaleString("id-ID"),
       suffix: p.price <= 0 ? "selamanya" : "/ bulan",
-      merchant: `${p.max_merchants} merchant`,
-      limit: p.daily_paid_limit == null ? "Tanpa batas" : `${p.daily_paid_limit} transaksi/hari`,
       cls: featured ? "ring-2 ring-[var(--accent)]" : "",
       featured,
-      features:
-        feats.length > 0
-          ? feats
-          : [
-              `${p.max_merchants} merchant`,
-              p.daily_paid_limit == null ? "Transaksi tanpa batas" : `${p.daily_paid_limit} transaksi/hari`,
-            ],
+      features: [`${p.max_merchants} merchant`, p.daily_paid_limit == null ? "Transaksi tanpa batas" : `${p.daily_paid_limit} transaksi/hari`, ...feats],
     };
   };
   let displayPlans = $state<LandingPlan[]>(PLANS);
@@ -549,7 +494,7 @@
           >
             {#if p.featured}
               <span
-                class="absolute -top-3 left-1/2 -translate-x-1/2 tactile-pill pill-green px-3 py-1 text-[10px] font-bold"
+                class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold text-white shadow-lg"
                 >POPULER</span
               >
             {/if}
@@ -563,9 +508,6 @@
                 >{p.suffix}</span
               >
             </div>
-            <p class="text-xs text-[var(--text-muted)] mt-1">
-              {p.merchant} · {p.limit}
-            </p>
             <ul class="mt-5 space-y-2.5 text-sm flex-1">
               {#each p.features as ft (ft)}
                 <li class="flex items-start gap-2">
